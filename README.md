@@ -15,7 +15,8 @@ Simple, symbol-based recipes with co-op cooking, a shopping list, and a cook log
 - `css/styles.css` — all styling (light + dark mode)
 - `js/data.js` — verb icons, ingredient icons, store sections, starter recipe
 - `js/util.js` — amounts/units, ingredient-line parser, co-op scheduler
-- `js/store.js` — saving (browser localStorage for now)
+- `js/store.js` — app data (with an offline copy in the browser)
+- `js/sync.js` — shares data across devices through Firebase
 - `js/importer.js` — turns a recipe from a link or pasted text into symbol steps
 - `js/ui.js` — timers, bottom sheets, step rendering, notes
 - `js/edit.js` — inline edit mode (tap-to-change words, drag ingredients) and co-op swapping
@@ -51,4 +52,6 @@ Group similar actions into one step (e.g. one "Dice" step for all the veg) — t
 people actually cook, and it gives co-op cleaner jobs to hand out.
 
 ## Data
-Recipes live in the browser you use. Use **Cook log → Download backup** to save a copy.
+One shared set of recipes for the whole site, stored online in Firebase (Firestore) — every visitor and
+device sees the same recipes, cook log and shopping list. No sign-in. Each browser also keeps a copy so the
+app opens instantly and works offline (`js/sync.js`). Cook log → Backup downloads everything as a file.

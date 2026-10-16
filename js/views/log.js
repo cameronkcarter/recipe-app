@@ -56,12 +56,8 @@ App.views.log = root => {
       ${log.length ? `<ul class="card log-list">${log.map(row).join('')}</ul>`
         : `<div class="empty"><div class="big">📅</div><p>Nothing logged yet.<br>Finish a recipe in cook mode, or tap “I cooked this today”.</p></div>`}
 
-      <div class="section-label">Devices</div>
-      ${App.sync.enabled
-        ? `<p class="muted" style="margin-top:0">Open this link once on your phone or another device to see the same recipes. Anyone with it can edit them.</p>
-           <button class="btn small primary" data-act="link">📱 Copy kitchen link</button>`
-        : `<p class="muted" style="margin-top:0">Recipes are saved in this browser only.</p>`}
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <div class="section-label">Backup</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn small" data-act="export">⬇️ Download backup</button>
         <button class="btn small" data-act="import">⬆️ Restore backup</button>
         <input type="file" accept=".json,application/json" hidden>
@@ -82,17 +78,12 @@ App.views.log = root => {
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     }
     if (t.dataset.act === 'import') root.querySelector('input[type=file]').click();
-    if (t.dataset.act === 'link') {
-      const link = App.sync.link();
-      if (navigator.share) navigator.share({ title: 'Recipes', url: link }).catch(() => {});
-      else navigator.clipboard?.writeText(link).then(() => { t.textContent = '✓ Copied'; }, () => prompt('Copy this link:', link));
-    }
   };
   root.onchange = async e => {
     if (e.target.type !== 'file' || !e.target.files[0]) return;
     try {
       const text = await e.target.files[0].text();
-      if (!confirm('Replace everything in this browser with the backup?')) return;
+      if (!confirm('Replace all recipes with the backup?')) return;
       S.importJSON(text);
       alert('Backup restored.');
       render();
