@@ -1,8 +1,7 @@
-// Inline edit mode for the recipe page. No pop-ups: steps look the same as when cooking,
-// but the words are tappable —
-//   • action word → pick another        • step number → move the step
-//   • amount / name / note / time → type • heat → tap to cycle
-//   • drag an ingredient's icon onto another step to move it there
+// Inline edit mode for the recipe page. No pop-ups: steps look the same as when cooking, but
+//   • each ingredient is a bubble — drag it onto another step, tap its words to type
+//   • drag a step (by its number, or press-and-hold anywhere on it) to move it up or down
+//   • tap the action word to pick another; tap note / time to type; tap heat to cycle
 // Every change saves right away.
 window.App = window.App || {};
 App.edit = (() => {
@@ -10,16 +9,16 @@ App.edit = (() => {
   const save = r => S.upsertRecipe(r);
   let active = null; // the step being worked on shows its extra controls
   const ing = (r, id) => r.ingredients.find(x => x.id === id);
-  const size = v => Math.max(2, String(v || '').length + 1);
+
+  // Typing boxes are sized to their text so they read like normal words.
   const ctx = document.createElement('canvas').getContext('2d');
   function autosize(el) {
-    const cs = getComputedStyle(el);
-    ctx.font = cs.font;
+    ctx.font = getComputedStyle(el).font;
     el.style.width = Math.ceil(ctx.measureText(el.value || el.placeholder).width + 8) + 'px';
   }
   const autosizeAll = root => root.querySelectorAll('.inl').forEach(autosize);
   const inl = (attrs, value, ph, cls = '') =>
-    `<input class="inl ${cls}" ${attrs} value="${U.esc(value ?? '')}" placeholder="${U.esc(ph)}" size="${size(value || ph)}" autocomplete="off">`;
+    `<input class="inl ${cls}" ${attrs} value="${U.esc(value ?? '')}" placeholder="${U.esc(ph)}" autocomplete="off">`;
 
   const verbOptions = sel => [...new Set(App.VERBS.map(v => v.group))].map(g =>
     `<optgroup label="${g}">${App.VERBS.filter(v => v.group === g)
@@ -29,28 +28,27 @@ App.edit = (() => {
   function stepHtml(r, s, i, chefCls) {
     const v = App.verb(s.verb);
     const usedBefore = new Set(r.steps.slice(0, i).flatMap(x => (x.uses || []).map(u => u.ing)));
-    const items = (s.uses || []).map(u => {
+    const bubbles = (s.uses || []).map((u, k) => {
       const g = ing(r, u.ing);
       if (!g) return '';
       const first = !usedBefore.has(g.id);
       const amt = first && g.qty != null ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
-      return `<li class="ing-item" data-ing="${g.id}">
-        <span class="grip" title="Drag to another step">${U.ingIconHtml(g)}</span>
-        ${first ? inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt') : ''}
+      return `<li class="bubble" data-ing="${g.id}" style="--i:${(i + k) % 5}">
+        ${U.ingIconHtml(g)}
+        ${first ? inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt' + (amt ? '' : ' empty')) : ''}
         ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
-        ${u.note ? `<span class="un">· ${U.esc(u.note)}</span>` : ''}
+        ${u.note ? `<span class="un">${U.esc(u.note)}</span>` : ''}
         <button class="x" data-rm-use="${g.id}" aria-label="Remove ${U.esc(g.name)}">✕</button>
       </li>`;
     }).join('');
-    const positions = r.steps.map((_, k) => `<option value="${k}" ${k === i ? 'selected' : ''}>${k + 1}</option>`).join('');
     return `<div class="card step edit ${chefCls} ${s.id === active ? 'active' : ''}" data-step="${s.id}">
-      <label class="num num-pick ${chefCls}" aria-label="Step number">${i + 1}<select data-pos="${s.id}">${positions}</select></label>
+      <div class="num step-handle ${chefCls}" title="Drag to move">${i + 1}</div>
       <div class="body">
         <div class="s-grid">
-          <label class="s-verb verb-pick"><span class="vi">${v.icon}</span><span class="vl">${U.esc(v.label)}</span>
+          <label class="s-verb verb-pick ${v.label.length > 7 ? 'long' : ''}"><span class="vi">${v.icon}</span><span class="vl">${U.esc(v.label)}</span>
             <select data-verb="${s.id}" aria-label="Action">${verbOptions(s.verb)}</select></label>
           <div class="s-what">
-            ${items ? `<ul class="s-ings">${items}</ul>` : ''}
+            ${bubbles ? `<ul class="s-ings">${bubbles}</ul>` : ''}
             ${inl(`data-add-ing="${s.id}" aria-label="Add ingredient" enterkeyhint="done"`, '', '+ ingredient', 'add-ing')}
             <div class="s-meta">
               ${inl(`data-text="${s.id}" aria-label="Note"`, s.text, '+ note', 'note' + (s.text ? '' : ' empty'))}
@@ -135,35 +133,35 @@ App.edit = (() => {
   }
 
   // ---------- Events ----------
-  // Returns a cleanup function (drag listeners live on window).
+  // Returns a cleanup function.
   function bind(root, r, rerender) {
     const commit = (redraw = false) => { save(r); if (redraw) rerender(); };
     const handlers = [];
-    const on = (type, fn) => { root.addEventListener(type, fn); handlers.push([type, fn]); };
+    const on = (target, type, fn, opts) => { target.addEventListener(type, fn, opts); handlers.push([target, type, fn, opts]); };
 
-    on('input', e => {
-      const t = e.target;
-      if (t.classList.contains('inl')) autosize(t);
-    });
-    on('change', e => {
+    on(root, 'input', e => { if (e.target.classList.contains('inl')) autosize(e.target); });
+    on(root, 'change', e => {
       const t = e.target, d = t.dataset;
       if (d.verb) { r.steps.find(s => s.id === d.verb).verb = t.value; commit(true); }
-      else if (d.pos) { moveStep(r, d.pos, +t.value); commit(true); }
       else if (d.amt) { setAmount(ing(r, d.amt), t.value); commit(); }
       else if (d.name) {
         const g = ing(r, d.name);
         if (t.value.trim()) g.name = t.value.trim();
-        root.querySelectorAll('[data-name="' + d.name + '"]').forEach(x => { if (x !== t) { x.value = g.name; autosize(x); } });
+        root.querySelectorAll(`[data-name="${d.name}"]`).forEach(x => { if (x !== t) { x.value = g.name; autosize(x); } });
         commit();
       }
       else if (d.text) { r.steps.find(s => s.id === d.text).text = t.value.trim() || undefined; commit(); }
-      else if (d.time) { const n = parseFloat(t.value.replace(/[^d.]/g, '')); r.steps.find(s => s.id === d.time).time = n > 0 ? n : undefined; t.value = n > 0 ? '⏲ ' + n + ' min' : ''; autosize(t); commit(); }
+      else if (d.time) {
+        const n = parseFloat(t.value.replace(/[^\d.]/g, ''));
+        r.steps.find(s => s.id === d.time).time = n > 0 ? n : undefined;
+        t.value = n > 0 ? '⏲ ' + n + ' min' : ''; autosize(t); commit();
+      }
       else if (d.addIng && t.value.trim()) { addIngredientToStep(r, d.addIng, t.value); commit(true); }
     });
-    on('keydown', e => {
+    on(root, 'keydown', e => {
       if (e.key === 'Enter' && e.target.classList.contains('inl')) { e.preventDefault(); e.target.blur(); }
     });
-    on('click', e => {
+    on(root, 'click', e => {
       const card = e.target.closest('.step.edit');
       if (card && card.dataset.step !== active) {
         active = card.dataset.step;
@@ -182,68 +180,113 @@ App.edit = (() => {
         deleteStep(r, d.rmStep); commit(true);
       }
     });
-    const unDrag = bindDrag(root, r, commit);
-    return () => { handlers.forEach(([t, fn]) => root.removeEventListener(t, fn)); unDrag(); };
+    bindDrag(root, r, commit, on);
+    return () => handlers.forEach(([t, type, fn, opts]) => t.removeEventListener(type, fn, opts));
   }
 
-  // Drag an ingredient (by its icon) onto another step, or onto "+ Add step" to start a new one.
-  function bindDrag(root, r, commit) {
-    let drag = null;
-    const targetAt = (x, y) => {
-      drag.ghost.style.display = 'none';
-      const el = document.elementFromPoint(x, y);
-      drag.ghost.style.display = '';
-      return el && (el.closest('.step.edit') || el.closest('[data-act="add-step"]'));
-    };
-    const onMove = e => {
-      if (!drag) return;
-      e.preventDefault();
-      drag.ghost.style.transform = `translate(${e.clientX - drag.dx}px, ${e.clientY - drag.dy}px)`;
-      const tgt = targetAt(e.clientX, e.clientY);
-      if (tgt !== drag.over) { drag.over?.classList.remove('drop'); drag.over = tgt; tgt?.classList.add('drop'); }
-      // scroll when dragging near the top or bottom edge
-      const edge = 70;
-      if (e.clientY < edge) window.scrollBy(0, -12); else if (e.clientY > innerHeight - edge) window.scrollBy(0, 12);
-    };
-    const onUp = () => {
-      if (!drag) return;
-      const { over, ingId, from } = drag;
-      drag.ghost.remove(); drag.item.classList.remove('dragging'); over?.classList.remove('drop');
-      document.body.classList.remove('dragging-ing');
-      drag = null;
-      if (!over) return;
-      const to = over.dataset.act === 'add-step' ? newStep(r).id : over.dataset.step;
-      moveUse(r, from, to, ingId);
-      commit(true);
-    };
-    const onDown = e => {
-      const grip = e.target.closest('.grip');
-      if (!grip || e.button > 0) return;
-      const item = grip.closest('.ing-item'), step = grip.closest('[data-step]');
-      if (!item || !step) return;
-      e.preventDefault();
-      const rect = item.getBoundingClientRect();
-      const ghost = item.cloneNode(true);
-      ghost.classList.add('drag-ghost');
+  // ---------- Dragging ----------
+  // Ingredient bubbles: drag onto another step (or "+ Add step"). A tap still edits the word.
+  // Steps: drag by the number right away, or press-and-hold anywhere on the step (on touch).
+  function bindDrag(root, r, commit, on) {
+    let pending = null, drag = null, holdTimer = null;
+
+    const isControl = el => el.closest('select, button, .add-ing, .s-meta, .verb-pick');
+    const startDrag = (p, e) => {
+      const el = p.el, rect = el.getBoundingClientRect();
+      const ghost = el.cloneNode(true);
+      ghost.classList.add(p.kind === 'ing' ? 'bubble-ghost' : 'step-ghost');
+      ghost.classList.remove('active');
       ghost.style.width = rect.width + 'px';
-      ghost.style.transform = `translate(${rect.left}px, ${rect.top}px)`;
       document.body.appendChild(ghost);
-      item.classList.add('dragging');
-      document.body.classList.add('dragging-ing');
-      drag = { item, ghost, ingId: item.dataset.ing, from: step.dataset.step, dx: e.clientX - rect.left, dy: e.clientY - rect.top, over: null };
+      el.classList.add(p.kind === 'ing' ? 'dragging' : 'placeholder');
+      document.body.classList.add('dragging-now');
+      document.activeElement?.blur?.();
+      drag = { ...p, ghost, dx: p.x - rect.left, dy: p.y - rect.top, over: null };
+      place(e.clientX, e.clientY);
       navigator.vibrate?.(15);
     };
-    root.addEventListener('pointerdown', onDown);
-    window.addEventListener('pointermove', onMove, { passive: false });
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onUp);
-    return () => {
-      root.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onUp);
-      drag?.ghost.remove();
+    const place = (x, y) => { drag.ghost.style.transform = `translate(${x - drag.dx}px, ${y - drag.dy}px)`; };
+    const under = (x, y) => {
+      drag.ghost.style.visibility = 'hidden';
+      const el = document.elementFromPoint(x, y);
+      drag.ghost.style.visibility = '';
+      return el;
     };
+
+    on(root, 'pointerdown', e => {
+      if (e.button > 0 || drag) return;
+      const bubble = e.target.closest('.step.edit .bubble');
+      const card = e.target.closest('.step.edit');
+      if (!card || e.target.closest('.x, .step-x')) return;
+      if (bubble) {
+        if (e.target === document.activeElement) return;      // already typing in it
+        e.preventDefault();                                     // don't focus yet — might be a drag
+        pending = { kind: 'ing', el: bubble, from: card.dataset.step, ingId: bubble.dataset.ing, x: e.clientX, y: e.clientY, tapTarget: e.target };
+      } else if (e.target.closest('.step-handle')) {
+        e.preventDefault();
+        pending = { kind: 'step', el: card, x: e.clientX, y: e.clientY, now: true };
+      } else if (!isControl(e.target) && !e.target.closest('input')) {
+        pending = { kind: 'step', el: card, x: e.clientX, y: e.clientY, now: e.pointerType === 'mouse' };
+        if (e.pointerType !== 'mouse') holdTimer = setTimeout(() => { if (pending) startDrag(pending, e); }, 350);
+      }
+    });
+
+    on(window, 'pointermove', e => {
+      if (pending && !drag) {
+        const moved = Math.hypot(e.clientX - pending.x, e.clientY - pending.y);
+        if (pending.kind === 'step' && !pending.now) { if (moved > 8) { clearTimeout(holdTimer); pending = null; } return; } // scrolling
+        if (moved > 5) startDrag(pending, e);
+        return;
+      }
+      if (!drag) return;
+      e.preventDefault();
+      place(e.clientX, e.clientY);
+      if (drag.kind === 'ing') {
+        const el = under(e.clientX, e.clientY);
+        const tgt = el && (el.closest('.step.edit') || el.closest('[data-act="add-step"]'));
+        if (tgt !== drag.over) { drag.over?.classList.remove('drop'); drag.over = tgt; tgt?.classList.add('drop'); }
+      } else {
+        // slide the step's empty slot to where it would land
+        const cards = [...root.querySelectorAll('.step.edit:not(.placeholder)')];
+        const before = cards.find(c => { const b = c.getBoundingClientRect(); return e.clientY < b.top + b.height / 2; });
+        const list = drag.el.parentNode;
+        if (before) { if (drag.el.nextElementSibling !== before) list.insertBefore(drag.el, before); }
+        else if (list.lastElementChild !== drag.el) list.appendChild(drag.el);
+      }
+      const edge = 80;
+      if (e.clientY < edge) window.scrollBy(0, -14); else if (e.clientY > innerHeight - edge) window.scrollBy(0, 14);
+    }, { passive: false });
+
+    // stop the page scrolling while something is being dragged (touch)
+    on(window, 'touchmove', e => { if (drag) e.preventDefault(); }, { passive: false });
+
+    const end = () => {
+      clearTimeout(holdTimer);
+      const p = pending; pending = null;
+      if (!drag) {
+        // a tap on a bubble's word → start typing in it
+        if (p?.kind === 'ing' && p.tapTarget.matches('input')) { p.tapTarget.focus(); p.tapTarget.select(); }
+        return;
+      }
+      const d = drag; drag = null;
+      d.ghost.remove();
+      document.body.classList.remove('dragging-now');
+      if (d.kind === 'ing') {
+        d.el.classList.remove('dragging'); d.over?.classList.remove('drop');
+        if (d.over) {
+          const to = d.over.dataset.act === 'add-step' ? newStep(r).id : d.over.dataset.step;
+          moveUse(r, d.from, to, d.ingId);
+        }
+      } else {
+        d.el.classList.remove('placeholder');
+        const order = [...root.querySelectorAll('.step.edit')].map(c => c.dataset.step);
+        active = d.el.dataset.step;
+        moveStep(r, active, order.indexOf(active));
+      }
+      commit(true);
+    };
+    on(window, 'pointerup', end);
+    on(window, 'pointercancel', end);
   }
 
   // ---------- Co-op ----------

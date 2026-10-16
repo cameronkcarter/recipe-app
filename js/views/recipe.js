@@ -55,7 +55,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       <header class="topbar">
         <a class="icon-btn" href="#/" aria-label="Back">←</a>
         <span class="title-sm"></span>
-        ${edit ? `<a class="btn primary small" href="#/r/${enc}">Done</a>`
+        ${edit ? `<a class="btn primary small" href="#/r/${enc}" data-done>Done</a>`
                : `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">✏️</a>`}
       </header>
       ${imported ? `<div class="import-banner">Imported. Tap any word to fix it.</div>` : ''}
@@ -90,7 +90,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       </div>
       ${ingOpen ? (r.ingredients.length ? `<ul class="card ing-list ${edit ? 'edit' : ''}">${ingHtml}</ul>` : `<div class="muted">No ingredients yet.</div>`) : ''}
 
-      <div class="section-label">Steps${edit ? ' <span class="hint">drag an icon to move it</span>' : ''}</div>
+      <div class="section-label">Steps${edit ? ' <span class="hint">drag to move · tap to change</span>' : ''}</div>
       <div class="steps">${stepHtml || (edit ? '' : '<div class="muted">No steps yet.</div>')}</div>
       ${edit ? `<button class="btn block add-step" data-act="add-step">+ Add step</button>` : ''}
 
@@ -114,6 +114,9 @@ App.views.recipe = (root, { id, edit = false }) => {
   };
 
   root.onclick = e => {
+    // Done: let the bubbles settle into place, then switch back to the cooking view
+    const done = e.target.closest('[data-done]');
+    if (done) { e.preventDefault(); root.classList.add('settling'); setTimeout(() => { root.classList.remove('settling'); location.hash = done.getAttribute('href'); }, 260); return; }
     const t = e.target.closest('button');
     if (!t) return;
     const d = t.dataset;
@@ -144,9 +147,12 @@ App.views.recipe = (root, { id, edit = false }) => {
   const unbind = edit ? E.bind(root, r, render) : null;
   render();
   if (edit && !r.title) root.querySelector('.title-input')?.focus();
+  // bubbles wiggle when edit mode opens, so it's obvious they can be moved
+  if (edit) { root.classList.add('wiggle'); setTimeout(() => root.classList.remove('wiggle'), 1300); }
   ui.keepAwake(!edit); // keep the phone screen on while cooking
   return () => {
     unbind?.();
+    root.classList.remove('wiggle', 'settling');
     ui.keepAwake(false);
     if (edit && App.session.justImported === r.id) delete App.session.justImported;
     if (edit && !r.title.trim() && !r.ingredients.length && !r.steps.length) S.deleteRecipe(r.id); // abandoned blank recipe

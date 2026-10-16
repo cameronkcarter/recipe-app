@@ -28,9 +28,10 @@ edit mode. Link import tries, in order: the local server (`serve.js`, uses curl)
 Jina Reader (r.jina.ai) so it also works on the public site. Some sites block both — then paste the text.
 
 ## Editing
-✏️ turns the recipe page into edit mode — no pop-ups. Tap the action word to pick another, tap a step
-number to move the step, tap an amount/name/note/time to type, tap heat to cycle. Drag an ingredient by
-its icon onto another step (or onto + Add step). The tapped step shows ✕ and + ingredient.
+✏️ turns the recipe page into edit mode — no pop-ups. Ingredients become bubbles (they wiggle so it's
+clear they move): drag one onto another step or onto + Add step; tap its words to type. Drag a step by its
+number (or press-and-hold anywhere on it) to move it up or down. Tap the action word to pick another, tap
+note/time to type, tap heat to cycle. The tapped step shows ✕ and + ingredient.
 In co-op (normal view), tap a step number to swap chefs; ↺ Auto-split resets.
 
 ## How co-op works

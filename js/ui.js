@@ -40,7 +40,7 @@ App.ui = {};
     }).join('');
     const text = step.text ? `<div class="s-text ${items ? '' : 'solo'}">${U.esc(step.text)}</div>` : '';
     return `<div class="s-grid">
-      <div class="s-verb"><span class="vi">${v.icon}</span><span class="vl">${U.esc(v.label)}</span></div>
+      <div class="s-verb ${v.label.length > 7 ? 'long' : ''}"><span class="vi">${v.icon}</span><span class="vl">${U.esc(v.label)}</span></div>
       <div class="s-what">${items ? `<ul class="s-ings">${items}</ul>` : ''}${text}${App.ui.stepMeta(step, recipe, opts)}</div>
     </div>`;
   };
