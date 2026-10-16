@@ -11,6 +11,8 @@ App.views.recipe = (root, { id, edit = false }) => {
   if (!r) { root.innerHTML = `<div class="empty"><p>Recipe not found.</p><a href="#/">Back to recipes</a></div>`; return; }
   const enc = encodeURIComponent(r.id);
 
+  // Steps swiped off as done while cooking. Lives only while the recipe is open.
+  const done = new Set();
   const servings = () => edit ? (r.servings || 1) : (App.session.servings[r.id] || r.servings || 1);
   const scale = () => servings() / (r.servings || 1);
 
@@ -41,10 +43,11 @@ App.views.recipe = (root, { id, edit = false }) => {
         const other = U.stepDeps(r, i).filter(d => duo.byId[d] && duo.byId[d].chef !== chef);
         if (other.length) wait = `<span class="s-wait">⏸ after ${other.map(d => '#' + (r.steps.findIndex(x => x.id === d) + 1)).join(', ')}</span>`;
       }
+      const isDone = done.has(s.id), label = isDone ? '✓' : i + 1;
       const num = coop
-        ? `<button class="num ${chefCls}" data-swap="${s.id}" aria-label="Step ${i + 1}: Chef ${chef}. Tap to switch chef">${i + 1}</button>`
-        : `<div class="num">${i + 1}</div>`;
-      return `<div class="card step ${chefCls}">
+        ? `<button class="num ${chefCls}" data-swap="${s.id}" aria-label="Step ${i + 1}: Chef ${chef}. Tap to switch chef">${label}</button>`
+        : `<div class="num">${label}</div>`;
+      return `<div class="card step swipe ${chefCls} ${isDone ? 'done' : ''}" data-sid="${s.id}" aria-label="Step ${i + 1}${isDone ? ', done' : ''}">
         ${num}
         <div class="body">
           ${ui.step(r, s, sc, { extra: wait })}
@@ -91,7 +94,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       </div>
       ${ingOpen ? (r.ingredients.length ? `<ul class="card ing-list ${edit ? 'edit' : ''}">${ingHtml}</ul>` : `<div class="muted">No ingredients yet.</div>`) : ''}
 
-      <div class="section-label">Steps${edit ? ' <span class="hint">drag to move · tap to change</span>' : ''}</div>
+      <div class="section-label">Steps <span class="hint">${edit ? 'drag to move · tap to change' : 'swipe → when done'}</span></div>
       <div class="steps">${stepHtml || (edit ? '' : '<div class="muted">No steps yet.</div>')}</div>
       ${edit ? `<button class="btn block add-step" data-act="add-step">+ Add step</button>` : ''}
 
@@ -145,7 +148,52 @@ App.views.recipe = (root, { id, edit = false }) => {
     }
   };
 
-  const unbind = edit ? E.bind(root, r, render) : null;
+  const unbind = edit ? E.bind(root, r, render) : bindSwipe();
+
+  // Swipe a step right to mark it done, left to unmark. Vertical scrolling is left alone.
+  function bindSwipe() {
+    let g = null, swallowClick = false;
+    const down = e => {
+      const card = e.target.closest('.step.swipe');
+      if (!card || e.button > 0) return;
+      g = { card, x: e.clientX, y: e.clientY, dx: 0, horiz: null };
+    };
+    const move = e => {
+      if (!g) return;
+      const dx = e.clientX - g.x, dy = e.clientY - g.y;
+      if (g.horiz === null && Math.hypot(dx, dy) > 8) g.horiz = Math.abs(dx) > Math.abs(dy) * 1.3;
+      if (!g.horiz) return;
+      g.dx = dx;
+      g.card.style.transition = 'none';
+      g.card.style.transform = `translateX(${Math.max(-90, Math.min(90, dx))}px)`;
+      g.card.classList.toggle('will-done', dx > 60);
+      g.card.classList.toggle('will-undo', dx < -60);
+    };
+    const up = () => {
+      if (!g) return;
+      const { card, dx, horiz } = g; g = null;
+      card.style.transition = ''; card.style.transform = '';
+      card.classList.remove('will-done', 'will-undo');
+      if (!horiz) return;
+      swallowClick = true; setTimeout(() => { swallowClick = false; }, 50); // a swipe isn't a tap
+      const id = card.dataset.sid;
+      if (dx > 60 && !done.has(id)) { done.add(id); navigator.vibrate?.(10); render(); }
+      else if (dx < -60 && done.has(id)) { done.delete(id); render(); }
+    };
+    const click = e => { if (swallowClick) { e.stopPropagation(); e.preventDefault(); } };
+    root.addEventListener('pointerdown', down);
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    root.addEventListener('click', click, true);
+    return () => {
+      root.removeEventListener('pointerdown', down);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      root.removeEventListener('click', click, true);
+    };
+  }
   render();
   if (edit && !r.title) root.querySelector('.title-input')?.focus();
   // bubbles wiggle when edit mode opens, so it's obvious they can be moved

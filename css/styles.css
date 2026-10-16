@@ -395,3 +395,11 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .bubble .inl { max-width: 100%; }
 .bubble .inl.un { max-width: 100%; text-overflow: clip; }
 .bubble .x { border: none; background: none; color: var(--muted); padding: 0 4px; font-size: .8rem; opacity: .6; }
+
+/* ---------- swipe a step right when it's done (cooking view) ---------- */
+.step.swipe { touch-action: pan-y; transition: transform .2s ease, opacity .2s ease; user-select: none; -webkit-user-select: none; }
+.step.swipe.will-done { box-shadow: inset 4px 0 0 var(--good), var(--shadow); }
+.step.swipe.will-undo { box-shadow: inset -4px 0 0 var(--muted), var(--shadow); }
+.step.done { opacity: .45; }
+.step.done .s-ings li > span:not(.ing-ico), .step.done .vl, .step.done .s-meta > :not(.dot) { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.step.done:not(.chef-A):not(.chef-B) .num { background: var(--good); color: #fff; }
