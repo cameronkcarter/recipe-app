@@ -8,6 +8,14 @@
     [/^#\/r\/([^/]+)$/,         m => App.views.recipe(root, { id: m[1] }), 'recipes'],
     [/^#\/new$/,                () => { location.replace('#/edit/' + encodeURIComponent(App.store.addRecipe({}))); }, 'recipes'],
     [/^#\/edit\/([^/]+)$/,      m => App.views.recipe(root, { id: m[1], edit: true }), 'recipes'],
+    // Recipe sent from the "Save to Recipes" bookmark
+    [/^#\/import\/(.+)$/,       m => {
+      try {
+        const id = App.store.addRecipe(App.importer.fromBookmark(m[1]));
+        App.session.justImported = id;
+        location.replace('#/edit/' + encodeURIComponent(id));
+      } catch (e) { alert('Couldn’t read that recipe.'); location.replace('#/'); }
+    }, 'recipes'],
     [/^#\/list$/,               () => App.views.shopping(root),         'list'],
     [/^#\/log$/,                () => App.views.log(root),              'log'],
   ];

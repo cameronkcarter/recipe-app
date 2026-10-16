@@ -310,3 +310,7 @@ button.num { border: none; cursor: pointer; padding: 0; color: #fff; box-shadow:
 .paste-box[open] summary { margin-bottom: 8px; }
 .hint { color: var(--muted); font-size: .85rem; margin: 0 0 8px; }
 .new-ing { margin-top: 8px; padding: 9px 12px; font-size: .9rem; }
+.block-link { display: block; margin: 14px auto 0; font-size: .9rem; }
+.bm-link { cursor: grab; }
+.bm-step { margin: 0 0 8px; font-size: .92rem; }
+.bm-steps { margin: 0; padding-left: 20px; font-size: .92rem; line-height: 1.9; }

@@ -31,6 +31,31 @@ App.views.library = root => {
 
   root.onclick = e => { if (e.target.closest('[data-act=add]')) addSheet(); };
 
+  // One-time setup for the bookmark that imports from any recipe page (even sites that block us).
+  function bookmarkSheet() {
+    const code = App.importer.bookmarklet();
+    App.ui.sheet(`
+      <div class="sheet-head"><h3>🔖 Save to Recipes</h3><button class="btn small" data-close>Done</button></div>
+      <p class="muted" style="margin-top:0">A bookmark that adds the recipe you're looking at. Works on every site.</p>
+      <div class="mini">Computer</div>
+      <p class="bm-step">Drag this to your bookmarks bar:</p>
+      <a class="btn primary bm-link" href="${App.util.esc(code)}" onclick="event.preventDefault(); alert('Drag this button to your bookmarks bar.')">＋ Save to Recipes</a>
+      <div class="mini">Phone</div>
+      <ol class="bm-steps">
+        <li><button class="btn small" data-copy>Copy the code</button></li>
+        <li>Bookmark any page, then edit that bookmark</li>
+        <li>Name it <b>Save to Recipes</b> and paste the code as the address</li>
+      </ol>
+      <div class="mini">Use it</div>
+      <p class="bm-step">On a recipe page, open your bookmarks and tap <b>Save to Recipes</b>.</p>`,
+      el => {
+        el.querySelector('[data-copy]').onclick = async e => {
+          try { await navigator.clipboard.writeText(code); e.target.textContent = '✓ Copied'; }
+          catch (err) { prompt('Copy this:', code); }
+        };
+      });
+  }
+
   function addSheet() {
     // Imported recipes are saved right away and open in edit mode to check.
     const open = draft => {
@@ -50,11 +75,13 @@ App.views.library = root => {
         <button class="btn primary block" data-paste style="margin-top:8px">Convert</button>
         <div class="import-msg paste-msg" role="status"></div>
       </details>
-      <button class="btn block" data-blank style="margin-top:8px">✏️ Blank recipe</button>`,
+      <button class="btn block" data-blank style="margin-top:8px">✏️ Blank recipe</button>
+      <button class="link block-link" data-bm>🔖 Get the Save to Recipes button</button>`,
       (el, close) => {
         const input = el.querySelector('[name=url]'), msg = el.querySelector('.import-msg'), btn = el.querySelector('[data-import]');
         input.focus();
         el.querySelector('[data-blank]').onclick = () => { close(); location.hash = '#/new'; };
+        el.querySelector('[data-bm]').onclick = () => { close(); bookmarkSheet(); };
         el.querySelector('[data-paste]').onclick = () => {
           const pm = el.querySelector('.paste-msg');
           try { const draft = App.importer.fromText(el.querySelector('[name=text]').value); close(); open(draft); }

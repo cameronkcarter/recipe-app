@@ -34,6 +34,7 @@ App.VERBS = [
   { id: 'cook',     label: 'Cook',     icon: '🍳', group: 'Stove' },
   { id: 'boil',     label: 'Boil',     icon: '♨️', group: 'Stove', passive: true },
   { id: 'simmer',   label: 'Simmer',   icon: '♨️', group: 'Stove', passive: true },
+  { id: 'pressure', label: 'Pressure cook', icon: '⏲️', group: 'Stove', passive: true },
   { id: 'steam',    label: 'Steam',    icon: '♨️', group: 'Stove', passive: true },
   { id: 'melt',     label: 'Melt',     icon: '🧈', group: 'Stove' },
   // Oven
@@ -56,7 +57,7 @@ App.verb = id => App.VERBS.find(v => v.id === id) || { id, label: id, icon: '•
 
 // Keyword → icon. Checked in order, so put specific phrases first.
 App.ING_ICONS = [
-  ['sweet potato', '🍠'], ['green onion', '🌱'], ['scallion', '🌱'], ['bell pepper', '🫑'],
+  ['butternut', '🎃'], ['squash', '🎃'], ['pumpkin seed', '🌰'], ['pumpkin', '🎃'], ['sweet potato', '🍠'], ['green onion', '🌱'], ['scallion', '🌱'], ['bell pepper', '🫑'],
   ['chili powder', '🌶️'], ['black bean', '🫘'], ['olive oil', '🫒'], ['sour cream', '🥛'],
   ['cornbread', '🍞'], ['soy sauce', '🫗'], ['maple', '🍁'], ['peanut', '🥜'],
   ['ketchup', '🍅'], ['tomato', '🍅'], ['mustard', '🟡'], ['onion', '🧅'], ['garlic', '🧄'], ['shallot', '🧅'], ['potato', '🥔'],
