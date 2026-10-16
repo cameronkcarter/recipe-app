@@ -65,6 +65,8 @@ App.sync = (() => {
     const remote = snap.docs.map(d => d.data()).sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
     if (first) {
       first = false;
+      // Never wipe this device with an empty kitchen — fill the kitchen from here instead.
+      if (!remote.length && S.recipes().length) { pushAll(); mode = 'existing'; return; }
       // Joining from this device: add any recipes this device has that the kitchen doesn't.
       if (mode === 'join') {
         const have = new Set(remote.map(r => r.id));
