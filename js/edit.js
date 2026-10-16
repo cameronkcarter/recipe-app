@@ -51,8 +51,8 @@ App.edit = (() => {
             ${bubbles ? `<ul class="s-ings">${bubbles}</ul>` : ''}
             ${inl(`data-add-ing="${s.id}" aria-label="Add ingredient" enterkeyhint="done"`, '', '+ ingredient', 'add-ing')}
             <div class="s-meta">
-              ${inl(`data-text="${s.id}" aria-label="Note"`, s.text, '+ note', 'note' + (s.text ? '' : ' empty'))}
               ${inl(`data-time="${s.id}" inputmode="numeric" aria-label="Minutes"`, s.time ? '⏲ ' + s.time + ' min' : '', '⏲ + time', 'time' + (s.time ? '' : ' empty'))}
+              ${inl(`data-text="${s.id}" aria-label="Note"`, s.text, '+ note', 'note' + (s.text ? '' : ' empty'))}
               <button class="heat-btn ${s.heat ? '' : 'off empty'}" data-heat="${s.id}">🔥 ${s.heat ? U.HEAT[s.heat].toLowerCase() : 'no'} heat</button>
             </div>
           </div>

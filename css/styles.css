@@ -195,9 +195,9 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .s-ings .ing-ico.letter { width: 20px; height: 20px; font-size: .7rem; }
 .s-ings b { font-weight: 700; }
 .un { color: var(--muted); font-size: .9em; }
-.s-text { color: var(--muted); font-size: .9rem; margin-top: 2px; }
-.s-text.solo { color: var(--text); font-size: 1rem; margin-top: 1px; }
-.s-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; margin-top: 6px; font-size: .8rem; color: var(--muted); }
+.s-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; margin-top: 6px; font-size: .85rem; color: var(--muted); }
+/* a step with no ingredients ("Simmer"): the time/cue line is the main content */
+.s-meta.solo { margin-top: 2px; font-size: .95rem; color: var(--text); }
 .s-meta .dot { opacity: .5; }
 .s-timer { border: none; background: none; padding: 0; color: inherit; font-size: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
 .s-wait { font-style: italic; }

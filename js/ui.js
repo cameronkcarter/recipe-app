@@ -38,23 +38,25 @@ App.ui = {};
       const amt = use.qty != null || !usedBefore.has(ing.id) ? App.ui.useAmount(use, ing, scale) : '';
       return `<li>${U.ingIconHtml(ing)}<span>${amt ? `<b>${U.esc(amt)}</b> ` : ''}${U.esc(ing.name)}${use.note ? ` <span class="un">· ${U.esc(use.note)}</span>` : ''}</span></li>`;
     }).join('');
-    const text = step.text ? `<div class="s-text ${items ? '' : 'solo'}">${U.esc(step.text)}</div>` : '';
     return `<div class="s-grid">
       <div class="s-verb ${v.label.length > 7 ? 'long' : ''}"><span class="vi">${v.icon}</span><span class="vl">${U.esc(v.label)}</span></div>
-      <div class="s-what">${items ? `<ul class="s-ings">${items}</ul>` : ''}${text}${App.ui.stepMeta(step, recipe, opts)}</div>
+      <div class="s-what">${items ? `<ul class="s-ings">${items}</ul>` : ''}${App.ui.stepMeta(step, recipe, { ...opts, solo: !items })}</div>
     </div>`;
   };
 
+  // One line under the ingredients: time first, then its cue, then heat —
+  // "⏲ 5 min · until softened · 🔥 medium heat".
   App.ui.stepMeta = (step, recipe, opts = {}) => {
     const out = [];
     if (step.time) {
       const v = App.verb(step.verb);
       out.push(`<button class="s-timer" data-action="timer" data-mins="${+step.time}" data-label="${U.esc(v.label + (recipe ? ' · ' + recipe.title : ''))}" title="Start a timer">⏲ ${U.esc(U.fmtMins(+step.time))}</button>`);
     }
+    if (step.text) out.push(`<span class="s-text">${U.esc(step.text)}</span>`);
     if (step.heat) out.push(`<span>🔥 ${U.HEAT[step.heat].toLowerCase()} heat</span>`);
     if (step.temp) out.push(`<span>🌡 ${U.esc(step.temp)}</span>`);
     if (opts.extra) out.push(opts.extra);
-    return out.length ? `<div class="s-meta">${out.join('<span class="dot">·</span>')}</div>` : '';
+    return out.length ? `<div class="s-meta ${opts.solo ? 'solo' : ''}">${out.join('<span class="dot">·</span>')}</div>` : '';
   };
 
   // ---------- Timers ----------
