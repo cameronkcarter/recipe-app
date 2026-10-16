@@ -11,6 +11,12 @@ App.views.recipe = (root, { id, edit = false }) => {
   if (!r) { root.innerHTML = `<div class="empty"><p>Recipe not found.</p><a href="#/">Back to recipes</a></div>`; return; }
   const enc = encodeURIComponent(r.id);
 
+  // "Cooked it" logs today once; after that it shows as done with an Undo.
+  const todaysCook = () => S.cooksFor(r.id).find(l => l.date === U.todayStr());
+  const cookedHtml = () => todaysCook()
+    ? `<div class="cooked done-state"><span>✓ Cooked today</span><button class="link" data-act="unlog">Undo</button></div>`
+    : `<div class="cooked"><button class="cook-btn" data-act="log">✅ Cooked it</button></div>`;
+
   // Steps swiped off as done while cooking. Lives only while the recipe is open.
   const done = new Set();
   const servings = () => edit ? (r.servings || 1) : (App.session.servings[r.id] || r.servings || 1);
@@ -103,7 +109,7 @@ App.views.recipe = (root, { id, edit = false }) => {
         <label class="field"><span>Source link</span><input class="input" data-f="source" value="${U.esc(r.source || '')}" placeholder="https://"></label>
         <label class="field"><span>Tags</span><input class="input" data-f="tags" value="${U.esc((r.tags || []).join(', '))}" placeholder="vegan, quick"></label>
         <button class="btn danger block" data-act="delete" style="margin-top:20px">Delete recipe</button>`
-      : `<button class="btn small" data-act="log" style="margin-top:28px">✅ Cooked it today</button>`}`;
+      : cookedHtml()}`;
     if (edit) E.autosizeAll(root);
     window.scrollTo(0, y);
   }
@@ -137,7 +143,8 @@ App.views.recipe = (root, { id, edit = false }) => {
       if (confirm(`Delete “${r.title || 'this recipe'}”?`)) { S.deleteRecipe(r.id); location.hash = '#/'; }
     }
     else if (d.act === 'toggle-ings') { App.session.ingOpen = !App.session.ingOpen; render(); }
-    else if (d.act === 'log') { S.logCook(r.id, App.session.mode); t.textContent = '✓ Logged'; }
+    else if (d.act === 'log') { if (!todaysCook()) { S.logCook(r.id, App.session.mode); navigator.vibrate?.(15); } render(); }
+    else if (d.act === 'unlog') { const c = todaysCook(); if (c) S.deleteLog(c.id); render(); }
     else if (d.act === 'to-list') {
       const list = S.state.list;
       const ex = list.recipes.find(x => x.id === r.id);

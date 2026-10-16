@@ -403,3 +403,14 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .step.done { opacity: .45; }
 .step.done .s-ings li > span:not(.ing-ico), .step.done .vl, .step.done .s-meta > :not(.dot) { text-decoration: line-through; text-decoration-thickness: 1.5px; }
 .step.done:not(.chef-A):not(.chef-B) .num { background: var(--good); color: #fff; }
+
+/* "Cooked it" — a centered, rounded app button; after tapping it shows a check with Undo */
+.cooked { display: flex; justify-content: center; align-items: center; gap: 12px; margin: 32px 0 8px; min-height: 52px; }
+.cook-btn {
+  border: none; border-radius: 999px; padding: 15px 34px; font-size: 1.05rem; font-weight: 700;
+  background: var(--accent); color: var(--accent-ink); box-shadow: 0 6px 18px rgba(217, 98, 43, .35);
+  transition: transform .12s, box-shadow .12s;
+}
+.cook-btn:active { transform: scale(.96); box-shadow: 0 3px 10px rgba(217, 98, 43, .3); }
+.cooked.done-state { font-weight: 700; color: var(--good); font-size: 1.05rem; }
+.cooked.done-state .link { font-size: .95rem; color: var(--muted); text-decoration: underline; }

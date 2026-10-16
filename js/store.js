@@ -101,14 +101,6 @@ App.store = (() => {
     },
     deleteLog(id) { state.log = state.log.filter(l => l.id !== id); save(); },
     cooksFor: id => state.log.filter(l => l.recipeId === id),
-    exportJSON: () => JSON.stringify(state, null, 2),
-    importJSON(text) {
-      const data = JSON.parse(text);
-      if (!Array.isArray(data.recipes)) throw new Error('Not a backup file');
-      state = data;
-      state.log ||= []; state.list ||= { recipes: [], checked: {}, extras: [] };
-      save(); state.recipes.forEach(syncRecipe);
-    },
     // Changes arriving from another device. Saved locally only (no echo back), then the
     // current screen redraws.
     applyRemote(patch) {

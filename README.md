@@ -54,4 +54,4 @@ people actually cook, and it gives co-op cleaner jobs to hand out.
 ## Data
 One shared set of recipes for the whole site, stored online in Firebase (Firestore) — every visitor and
 device sees the same recipes, cook log and shopping list. No sign-in. Each browser also keeps a copy so the
-app opens instantly and works offline (`js/sync.js`). Cook log → Backup downloads everything as a file.
+app opens instantly and works offline (`js/sync.js`).

@@ -54,40 +54,12 @@ App.views.log = root => {
 
       <div class="section-label">History</div>
       ${log.length ? `<ul class="card log-list">${log.map(row).join('')}</ul>`
-        : `<div class="empty"><div class="big">📅</div><p>Nothing logged yet.<br>Finish a recipe in cook mode, or tap “I cooked this today”.</p></div>`}
-
-      <div class="section-label">Backup</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn small" data-act="export">⬇️ Download backup</button>
-        <button class="btn small" data-act="import">⬆️ Restore backup</button>
-        <input type="file" accept=".json,application/json" hidden>
-      </div>`;
+        : `<div class="empty"><div class="big">📅</div><p>Nothing yet. Tap “Cooked it” on a recipe.</p></div>`}`;
   }
 
   root.onclick = e => {
     const del = e.target.closest('[data-del]');
     if (del) { if (confirm('Remove this entry?')) { S.deleteLog(del.dataset.del); render(); } return; }
-    const t = e.target.closest('[data-act]');
-    if (!t) return;
-    if (t.dataset.act === 'export') {
-      const blob = new Blob([S.exportJSON()], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `recipes-backup-${U.todayStr()}.json`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    }
-    if (t.dataset.act === 'import') root.querySelector('input[type=file]').click();
-  };
-  root.onchange = async e => {
-    if (e.target.type !== 'file' || !e.target.files[0]) return;
-    try {
-      const text = await e.target.files[0].text();
-      if (!confirm('Replace all recipes with the backup?')) return;
-      S.importJSON(text);
-      alert('Backup restored.');
-      render();
-    } catch (err) { alert('That file could not be read as a backup.'); }
   };
 
   render();
