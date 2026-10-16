@@ -185,7 +185,7 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .extra { color: var(--muted); }
 
 /* Step: action column | ingredients column */
-.s-grid { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: start; }
+.s-grid { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: start; }
 .s-verb { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 1.05rem; padding-top: 1px; }
 .s-verb .vi { font-size: 1.25rem; }
 .s-what { min-width: 0; border-left: 1px solid var(--line); padding-left: 12px; }
@@ -377,15 +377,13 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .s-verb .vi { line-height: 1.2; flex: none; }
 .s-verb .vl { line-height: 1.25; padding-top: 1px; }
 /* keep each bubble on one line; a long note shortens with "…" */
-.step.edit .s-grid { grid-template-columns: 74px 1fr; gap: 8px; }
+.step.edit .s-grid { grid-template-columns: 98px 1fr; gap: 8px; }
 .step.edit .s-what { padding-left: 8px; min-width: 0; }
 .step.edit .s-ings li.bubble { flex-wrap: nowrap; gap: 2px; }
 .bubble .inl.un { min-width: 2em; max-width: 9em; flex: 0 1 auto; text-overflow: ellipsis; }
 .bubble .inl { flex: none; }
 .step.edit { padding-left: 10px; gap: 8px; }
 /* long action words ("Pressure cook"): icon on top, word underneath */
-.s-verb.long { flex-direction: column; gap: 2px; }
-.s-verb.long .vl { font-size: .92rem; }
 .step.edit:not(.active) .bubble .inl.empty { display: none; }
 
 /* bubbles never spill off the screen; a note wraps to a second line inside the bubble */
@@ -397,8 +395,7 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 
 /* ---------- swipe a step right when it's done (cooking view) ---------- */
 .step.swipe { touch-action: pan-y; transition: transform .2s ease, opacity .2s ease; user-select: none; -webkit-user-select: none; }
-.step.swipe.will-done { box-shadow: inset 4px 0 0 var(--good), var(--shadow); }
-.step.swipe.will-undo { box-shadow: inset -4px 0 0 var(--muted), var(--shadow); }
+.step.swipe.will-toggle { box-shadow: 0 0 0 2px var(--good), var(--shadow); }
 .step.done { opacity: .45; }
 .step.done .s-ings li > span:not(.ing-ico), .step.done .vl, .step.done .s-meta > :not(.dot) { text-decoration: line-through; text-decoration-thickness: 1.5px; }
 .step.done:not(.chef-A):not(.chef-B) .num { background: var(--good); color: #fff; }
@@ -413,3 +410,7 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .cook-btn:active { transform: scale(.96); box-shadow: 0 3px 10px rgba(217, 98, 43, .3); }
 .cooked.done-state { font-weight: 700; color: var(--good); font-size: 1.05rem; }
 .cooked.done-state .link { font-size: .95rem; color: var(--muted); text-decoration: underline; }
+/* every action word sits beside its icon; a long one ("Pressure cook") wraps under its first word */
+.s-verb .vl { min-width: 0; overflow-wrap: normal; }
+.step.edit .s-verb { gap: 4px; }
+.step.edit .s-verb .vl { font-size: .92rem; }

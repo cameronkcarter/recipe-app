@@ -95,7 +95,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       </div>
       ${ingOpen ? (r.ingredients.length ? `<ul class="card ing-list ${edit ? 'edit' : ''}">${ingHtml}</ul>` : `<div class="muted">No ingredients yet.</div>`) : ''}
 
-      <div class="section-label">Steps <span class="hint">${edit ? 'drag to move · tap to change' : 'swipe → when done'}</span></div>
+      <div class="section-label">Steps <span class="hint">${edit ? 'drag to move · tap to change' : 'swipe when done'}</span></div>
       <div class="steps">${stepHtml || (edit ? '' : '<div class="muted">No steps yet.</div>')}</div>
       ${edit ? `<button class="btn block add-step" data-act="add-step">+ Add step</button>` : ''}
 
@@ -152,7 +152,7 @@ App.views.recipe = (root, { id, edit = false }) => {
 
   const unbind = edit ? E.bind(root, r, render) : bindSwipe();
 
-  // Swipe a step right to mark it done, left to unmark. Vertical scrolling is left alone.
+  // Swipe a step either way to mark it done; swipe again to unmark. Vertical scrolling is left alone.
   function bindSwipe() {
     let g = null, swallowClick = false;
     const down = e => {
@@ -168,19 +168,20 @@ App.views.recipe = (root, { id, edit = false }) => {
       g.dx = dx;
       g.card.style.transition = 'none';
       g.card.style.transform = `translateX(${Math.max(-90, Math.min(90, dx))}px)`;
-      g.card.classList.toggle('will-done', dx > 60);
-      g.card.classList.toggle('will-undo', dx < -60);
+      g.card.classList.toggle('will-toggle', Math.abs(dx) > 60);
     };
     const up = () => {
       if (!g) return;
       const { card, dx, horiz } = g; g = null;
       card.style.transition = ''; card.style.transform = '';
-      card.classList.remove('will-done', 'will-undo');
+      card.classList.remove('will-toggle');
       if (!horiz) return;
       swallowClick = true; setTimeout(() => { swallowClick = false; }, 50); // a swipe isn't a tap
       const id = card.dataset.sid;
-      if (dx > 60 && !done.has(id)) { done.add(id); navigator.vibrate?.(10); render(); }
-      else if (dx < -60 && done.has(id)) { done.delete(id); render(); }
+      if (Math.abs(dx) > 60) {
+        if (done.has(id)) done.delete(id); else { done.add(id); navigator.vibrate?.(10); }
+        render();
+      }
     };
     const click = e => { if (swallowClick) { e.stopPropagation(); e.preventDefault(); } };
     root.addEventListener('pointerdown', down);
