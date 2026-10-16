@@ -57,13 +57,6 @@ App.ui = {};
     return out.length ? `<div class="s-meta">${out.join('<span class="dot">·</span>')}</div>` : '';
   };
 
-  // ---------- Notes ----------
-  App.ui.notesFor = (recipe, target, removable = true) =>
-    (recipe.notes || []).filter(n => n.target === target).map(n => {
-      const t = App.NOTE_TYPES.find(x => x.id === n.type) || App.NOTE_TYPES[4];
-      return `<div class="note"><span>${t.icon}</span><span><span class="who">${U.esc(n.author || 'Me')}:</span> ${U.esc(n.text)}</span>${removable ? `<button class="x" data-action="del-note" data-id="${n.id}" aria-label="Delete note">✕</button>` : ''}</div>`;
-    }).join('');
-
   // ---------- Timers ----------
   const timers = [];
   let tickHandle = null, audioCtx = null;

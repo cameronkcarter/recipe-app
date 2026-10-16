@@ -25,10 +25,8 @@ App.views.recipe = (root, { id, edit = false }) => {
       const head = (ing.group || '') !== lastGroup && ing.group ? `<li class="group-head">${U.esc(ing.group)}</li>` : '';
       lastGroup = ing.group || '';
       const amt = ing.qty != null ? U.fmtAmount(ing.qty * sc, U.normUnit(ing.unit)) : '';
-      const notes = edit ? '' : ui.notesFor(r, 'ing:' + ing.id);
       return `${head}<li ${edit ? `class="tap" data-ing="${ing.id}"` : ''}>${U.ingIconHtml(ing)}<span class="qty">${U.esc(amt) || '—'}</span>
-        <span class="nm">${U.esc(ing.name)}${ing.note ? ` <span class="extra">· ${U.esc(ing.note)}</span>` : ''}</span>${edit ? '<span class="chev">›</span>' : ''}</li>
-        ${notes ? `<li style="display:block;padding:0;border:none">${notes}</li>` : ''}`;
+        <span class="nm">${U.esc(ing.name)}${ing.note ? ` <span class="extra">· ${U.esc(ing.note)}</span>` : ''}</span>${edit ? '<span class="chev">›</span>' : ''}</li>`;
     }).join('');
 
     const stepHtml = r.steps.map((s, i) => {
@@ -47,8 +45,6 @@ App.views.recipe = (root, { id, edit = false }) => {
         <div class="body">
           ${ui.step(r, s, sc, { extra: wait })}
           ${!edit && s.detail ? `<details class="detail"><summary>more</summary>${U.esc(s.detail)}</details>` : ''}
-          ${edit ? '' : ui.notesFor(r, 'step:' + s.id)}
-          ${edit ? '' : (s.uses || []).filter(u => r.steps.findIndex(x => (x.uses || []).some(v => v.ing === u.ing)) === i).map(u => ui.notesFor(r, 'ing:' + u.ing)).join('')}
         </div>
         ${edit ? `<div class="reorder">
           <button data-move="-1" data-id="${s.id}" aria-label="Move up" ${i === 0 ? 'disabled' : ''}>▲</button>
@@ -106,9 +102,7 @@ App.views.recipe = (root, { id, edit = false }) => {
         <label class="field"><span>Tags</span><input class="input" data-f="tags" value="${U.esc((r.tags || []).join(', '))}" placeholder="vegan, quick"></label>
         <button class="btn danger block" data-act="delete" style="margin-top:20px">Delete recipe</button>`
       : `
-        <div class="section-label">Notes <button class="btn small" data-act="add-note">+ Note</button></div>
-        ${ui.notesFor(r, 'recipe')}
-        <button class="btn small" data-act="log" style="margin-top:24px">✅ Cooked it today</button>`}`;
+        <button class="btn small" data-act="log" style="margin-top:28px">✅ Cooked it today</button>`}`;
   }
 
   root.oninput = e => {
@@ -146,10 +140,6 @@ App.views.recipe = (root, { id, edit = false }) => {
     else if (d.act === 'delete') {
       if (confirm(`Delete “${r.title || 'this recipe'}”?`)) { S.deleteRecipe(r.id); location.hash = '#/'; }
     }
-    else if (d.action === 'del-note') {
-      if (confirm('Delete this note?')) { r.notes = r.notes.filter(n => n.id !== d.id); S.upsertRecipe(r); render(); }
-    }
-    else if (d.act === 'add-note') noteSheet();
     else if (d.act === 'toggle-ings') { App.session.ingOpen = !App.session.ingOpen; render(); }
     else if (d.act === 'log') { S.logCook(r.id, App.session.mode); t.textContent = '✓ Logged'; }
     else if (d.act === 'to-list') {
@@ -161,35 +151,6 @@ App.views.recipe = (root, { id, edit = false }) => {
       setTimeout(() => { t.textContent = '🛒 Add to list'; }, 1400);
     }
   };
-
-  function noteSheet() {
-    const opts = [`<option value="recipe">Whole recipe</option>`,
-      ...r.ingredients.map(i => `<option value="ing:${i.id}">${U.esc(i.name)}</option>`),
-      ...r.steps.map((s, i) => `<option value="step:${s.id}">Step ${i + 1} · ${U.esc(App.verb(s.verb).label)}</option>`)].join('');
-    let type = 'tip';
-    ui.sheet(`
-      <div class="sheet-head"><h3>Note</h3><button class="btn small" data-close>Cancel</button></div>
-      <select class="input" name="target" aria-label="About">${opts}</select>
-      <div class="chips" style="margin:10px 0">${App.NOTE_TYPES.map(t => `<button class="chip ${t.id === type ? 'on' : ''}" data-type="${t.id}">${t.icon} ${t.label}</button>`).join('')}</div>
-      <input class="input" name="text" placeholder="+1 tsp cumin" aria-label="Note">
-      <input class="input" name="author" value="${U.esc(localStorage.getItem('recipeapp.author') || 'Me')}" aria-label="From" style="margin-top:8px">
-      <button class="btn primary block" data-save style="margin-top:12px">Save</button>`,
-      (el, close) => {
-        el.querySelector('[name=text]').focus();
-        el.addEventListener('click', e => {
-          const tb = e.target.closest('[data-type]');
-          if (tb) { type = tb.dataset.type; el.querySelectorAll('[data-type]').forEach(b => b.classList.toggle('on', b === tb)); }
-          if (e.target.closest('[data-save]')) {
-            const text = el.querySelector('[name=text]').value.trim();
-            if (!text) return el.querySelector('[name=text]').focus();
-            const author = el.querySelector('[name=author]').value.trim() || 'Me';
-            try { localStorage.setItem('recipeapp.author', author); } catch (err) {}
-            r.notes.push({ id: U.uid('n'), type, target: el.querySelector('[name=target]').value, text, author, date: U.todayStr() });
-            S.upsertRecipe(r); close(); render();
-          }
-        });
-      });
-  }
 
   render();
   if (edit && !r.title) root.querySelector('.title-input')?.focus();

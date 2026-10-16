@@ -203,15 +203,6 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .s-wait { font-style: italic; }
 .detail { margin-top: 6px; font-size: .9rem; color: var(--muted); }
 
-/* notes */
-.note { display: flex; gap: 8px; align-items: flex-start; font-size: .88rem; padding: 6px 10px; border-radius: 10px; background: #eef4ff; color: #1f3a66; margin-top: 8px; }
-.note .who { font-weight: 700; }
-.note .x { margin-left: auto; border: none; background: none; color: inherit; opacity: .5; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .note { background: #1c2a40; color: #c5d8f5; }
-}
-.ing-list .note { margin: 0 14px 8px 52px; }
-
 /* Timers */
 .timers { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 50; display: flex; flex-direction: column; gap: 6px; width: min(608px, calc(100% - 32px)); pointer-events: none; }
 .timer-pill { pointer-events: auto; display: flex; align-items: center; gap: 10px; background: #2b2520; color: #fff; padding: 10px 14px; border-radius: 14px; box-shadow: var(--shadow); font-weight: 600; }

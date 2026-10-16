@@ -54,15 +54,6 @@ App.VERBS = [
 ];
 App.verb = id => App.VERBS.find(v => v.id === id) || { id, label: id, icon: '•' };
 
-// Note types for comments on a recipe / step / ingredient.
-App.NOTE_TYPES = [
-  { id: 'more', icon: '➕', label: 'More' },
-  { id: 'less', icon: '➖', label: 'Less' },
-  { id: 'swap', icon: '🔄', label: 'Swap' },
-  { id: 'add',  icon: '✨', label: 'Add' },
-  { id: 'tip',  icon: '💬', label: 'Tip' },
-];
-
 // Keyword → icon. Checked in order, so put specific phrases first.
 App.ING_ICONS = [
   ['sweet potato', '🍠'], ['green onion', '🌱'], ['scallion', '🌱'], ['bell pepper', '🫑'],
@@ -151,10 +142,6 @@ App.SEED_RECIPES = [
       { id: 's10', verb: 'mash',   uses: [{ ing: 'sweet', note: 'some' }], text: 'optional — makes it thicker', after: ['s8'], detail: 'Back of a spoon against the side of the pot.' },
       { id: 's11', verb: 'serve',  uses: [{ ing: 'avocado' }, { ing: 'cilantro' }, { ing: 'green' }, { ing: 'sour' }], text: 'top with', after: ['s9', 's10'] },
     ],
-    // Example notes so you can see how friend notes look — delete any time.
-    notes: [
-      { id: 'n1', type: 'more', target: 'ing:cumin', text: '+1 tsp, makes it smokier', author: 'Sam (example)', date: '2026-10-01' },
-      { id: 'n2', type: 'tip',  target: 'step:s11', text: 'Great with tortilla chips crushed on top', author: 'Sam (example)', date: '2026-10-01' },
-    ],
+    notes: [],
   },
 ];

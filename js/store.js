@@ -21,6 +21,8 @@ App.store = (() => {
       state = fresh();
     }
     state.recipes ||= []; state.log ||= []; state.list ||= { recipes: [], checked: {}, extras: [] };
+    // The old example friend notes ("Sam (example)") are gone from the app; drop them from saved data.
+    state.recipes.forEach(r => { if (r.notes) r.notes = r.notes.filter(n => !/\(example\)/.test(n.author || '')); });
     // Refresh the starter recipe(s) if they've been updated, keeping any notes you added.
     if ((state.seedVersion || 1) < App.SEED_VERSION) {
       for (const seed of App.SEED_RECIPES) {
