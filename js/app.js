@@ -30,6 +30,19 @@
     location.hash = '#/';
   }
 
+  // Another device changed something: redraw, unless you're in the middle of editing or typing.
+  let pending = false;
+  App.onRemoteChange = () => {
+    const busy = /^#\/edit\//.test(location.hash) || document.querySelector('.sheet-back') ||
+      (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+    if (busy) { pending = true; return; }
+    pending = false;
+    const y = window.scrollY;
+    render();
+    window.scrollTo(0, y);
+  };
+  window.addEventListener('hashchange', () => { if (pending) setTimeout(App.onRemoteChange, 0); });
+
   // Timer buttons work on every screen.
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-action="timer"]');

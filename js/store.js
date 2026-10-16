@@ -1,5 +1,5 @@
-// Saves everything in the browser (localStorage) for now.
-// Later this can be swapped for a real database without changing the views much.
+// Saves everything in the browser (localStorage) as a fast offline copy, and passes changes
+// to App.sync (js/sync.js), which shares them across devices through Firebase.
 window.App = window.App || {};
 
 App.store = (() => {
@@ -48,9 +48,25 @@ App.store = (() => {
       save();
     }
   }
-  function save() {
+  function saveLocal() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { console.warn('Could not save', e); }
   }
+  // Cook log and shopping list are changed from several screens, so every save sends whichever
+  // of them actually changed (shortly after, so quick taps become one write).
+  const sent = {};
+  let metaTimer = null;
+  function save() {
+    saveLocal();
+    if (!App.sync?.enabled) return;
+    clearTimeout(metaTimer);
+    metaTimer = setTimeout(() => {
+      for (const name of ['log', 'list']) {
+        const json = JSON.stringify(state[name]);
+        if (sent[name] !== json) { sent[name] = json; App.sync.meta(name, state[name]); }
+      }
+    }, 400);
+  }
+  const syncRecipe = r => App.sync?.enabled && App.sync.recipe(r);
   load();
 
   return {
@@ -61,7 +77,7 @@ App.store = (() => {
     upsertRecipe(r) {
       const i = state.recipes.findIndex(x => x.id === r.id);
       if (i > -1) state.recipes[i] = r; else state.recipes.unshift(r);
-      save();
+      save(); syncRecipe(r);
     },
     // Saves a new recipe (blank or imported) and returns its id.
     addRecipe(data) {
@@ -69,14 +85,15 @@ App.store = (() => {
       const base = U.slug(data.title || 'recipe');
       let id = base, n = 2;
       while (state.recipes.some(r => r.id === id)) id = base + '-' + n++;
-      state.recipes.unshift({ title: '', emoji: '🍽️', servings: 4, source: '', tags: [], ingredients: [], steps: [], notes: [], ...data, id });
-      save();
+      state.recipes.unshift({ title: '', emoji: '🍽️', servings: 4, source: '', tags: [], ingredients: [], steps: [], notes: [], ...data, id, addedAt: Date.now() });
+      save(); syncRecipe(state.recipes[0]);
       return id;
     },
     deleteRecipe(id) {
       state.recipes = state.recipes.filter(r => r.id !== id);
       state.list.recipes = state.list.recipes.filter(x => x.id !== id);
       save();
+      if (App.sync?.enabled) App.sync.removeRecipe(id);
     },
     logCook(recipeId, mode) {
       state.log.unshift({ id: App.util.uid('l'), recipeId, date: App.util.todayStr(), mode });
@@ -90,7 +107,21 @@ App.store = (() => {
       if (!Array.isArray(data.recipes)) throw new Error('Not a backup file');
       state = data;
       state.log ||= []; state.list ||= { recipes: [], checked: {}, extras: [] };
-      save();
+      save(); state.recipes.forEach(syncRecipe);
+    },
+    // Changes arriving from another device. Saved locally only (no echo back), then the
+    // current screen redraws.
+    applyRemote(patch) {
+      let changed = false;
+      for (const [k, v] of Object.entries(patch)) {
+        const json = JSON.stringify(v);
+        if (json === JSON.stringify(state[k])) continue;
+        state[k] = v; changed = true;
+        if (k !== 'recipes') sent[k] = json;
+      }
+      if (!changed) return;
+      saveLocal();
+      App.onRemoteChange?.();
     },
     reset() { state = fresh(); save(); },
   };
