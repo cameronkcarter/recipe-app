@@ -2,7 +2,7 @@
 //   • each ingredient is a bubble — drag it onto another step, tap its words to type
 //   • drag a step (by its number, or press-and-hold anywhere on it) to move it up or down
 //   • tap the action word to pick another; tap note / time to type; tap heat to cycle
-// Every change saves right away.
+// Changes stay on a working copy until Done (Cancel discards them).
 window.App = window.App || {};
 App.edit = (() => {
   const U = App.util, S = App.store;
@@ -37,7 +37,7 @@ App.edit = (() => {
         ${U.ingIconHtml(g)}
         ${first ? inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt' + (amt ? '' : ' empty')) : ''}
         ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
-        ${u.note ? `<span class="un">${U.esc(u.note)}</span>` : ''}
+        ${inl(`data-unote="${g.id}" aria-label="Note"`, u.note, '+ note', 'un' + (u.note ? '' : ' empty'))}
         <button class="x" data-rm-use="${g.id}" aria-label="Remove ${U.esc(g.name)}">✕</button>
       </li>`;
     }).join('');
@@ -135,7 +135,7 @@ App.edit = (() => {
   // ---------- Events ----------
   // Returns a cleanup function.
   function bind(root, r, rerender) {
-    const commit = (redraw = false) => { save(r); if (redraw) rerender(); };
+    const commit = (redraw = false) => { if (redraw) rerender(); }; // saved on Done
     const handlers = [];
     const on = (target, type, fn, opts) => { target.addEventListener(type, fn, opts); handlers.push([target, type, fn, opts]); };
 
@@ -148,6 +148,11 @@ App.edit = (() => {
         const g = ing(r, d.name);
         if (t.value.trim()) g.name = t.value.trim();
         root.querySelectorAll(`[data-name="${d.name}"]`).forEach(x => { if (x !== t) { x.value = g.name; autosize(x); } });
+        commit();
+      }
+      else if (d.unote) {
+        const st = r.steps.find(s => s.id === t.closest('[data-step]').dataset.step);
+        st.uses.find(u => u.ing === d.unote).note = t.value.trim() || undefined;
         commit();
       }
       else if (d.text) { r.steps.find(s => s.id === d.text).text = t.value.trim() || undefined; commit(); }

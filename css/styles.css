@@ -350,7 +350,7 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .bubble .ing-ico { width: 24px; font-size: 1.1rem; }
 .bubble .inl { border-bottom-color: transparent; cursor: grab; }
 .bubble .inl:focus { cursor: text; background: var(--surface); }
-.bubble .un { color: var(--muted); font-size: .85em; }
+.bubble .inl.un { color: var(--muted); font-size: .85em; }
 .bubble .x { margin-left: 2px; }
 .bubble.dragging { opacity: .25; }
 .bubble-ghost, .step-ghost { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; margin: 0; list-style: none; }
@@ -367,8 +367,8 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .step.placeholder { opacity: .35; outline: 2px dashed var(--line); outline-offset: -2px; box-shadow: none; }
 
 /* wiggle when edit mode opens; settle into place on Done */
-@keyframes wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-2.5deg); } 75% { transform: rotate(2.5deg); } }
-.wiggle .bubble { animation: wiggle .28s ease-in-out 4; animation-delay: calc(var(--i, 0) * 40ms); }
+@keyframes wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-1deg); } 75% { transform: rotate(1deg); } }
+.wiggle .bubble { animation: wiggle .35s ease-in-out 2; animation-delay: calc(var(--i, 0) * 40ms); }
 @keyframes settle { 0% { transform: scale(1.04); } 100% { transform: scale(1); background: transparent; border-color: transparent; box-shadow: none; } }
 .settling .bubble { animation: settle .25s ease-out forwards; }
 @media (prefers-reduced-motion: reduce) { .wiggle .bubble, .settling .bubble { animation: none; } }
@@ -381,10 +381,17 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .step.edit .s-grid { grid-template-columns: 74px 1fr; gap: 8px; }
 .step.edit .s-what { padding-left: 8px; min-width: 0; }
 .step.edit .s-ings li.bubble { flex-wrap: nowrap; gap: 2px; }
-.bubble .un { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+.bubble .inl.un { min-width: 2em; max-width: 9em; flex: 0 1 auto; text-overflow: ellipsis; }
 .bubble .inl { flex: none; }
 .step.edit { padding-left: 10px; gap: 8px; }
 /* long action words ("Pressure cook"): icon on top, word underneath */
 .s-verb.long { flex-direction: column; gap: 2px; }
 .s-verb.long .vl { font-size: .92rem; }
 .step.edit:not(.active) .bubble .inl.empty { display: none; }
+
+/* bubbles never spill off the screen; a note wraps to a second line inside the bubble */
+.step.edit .body, .step.edit .s-grid > *, .step.edit .s-what { min-width: 0; }
+.step.edit .s-ings li.bubble { flex-wrap: wrap; row-gap: 0; max-width: 100%; }
+.bubble .inl { max-width: 100%; }
+.bubble .inl.un { max-width: 100%; text-overflow: clip; }
+.bubble .x { border: none; background: none; color: var(--muted); padding: 0 4px; font-size: .8rem; opacity: .6; }

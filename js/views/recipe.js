@@ -5,7 +5,9 @@ App.session = App.session || { servings: {}, mode: 'solo', ingOpen: false };
 
 App.views.recipe = (root, { id, edit = false }) => {
   const U = App.util, S = App.store, ui = App.ui, E = App.edit;
-  const r = S.recipe(id);
+  const stored = S.recipe(id);
+  // Edit mode changes a copy: Done saves it, Cancel throws it away.
+  const r = edit && stored ? JSON.parse(JSON.stringify(stored)) : stored;
   if (!r) { root.innerHTML = `<div class="empty"><p>Recipe not found.</p><a href="#/">Back to recipes</a></div>`; return; }
   const enc = encodeURIComponent(r.id);
 
@@ -46,14 +48,13 @@ App.views.recipe = (root, { id, edit = false }) => {
         ${num}
         <div class="body">
           ${ui.step(r, s, sc, { extra: wait })}
-          ${s.detail ? `<details class="detail"><summary>more</summary>${U.esc(s.detail)}</details>` : ''}
         </div>
       </div>`;
     }).join('');
 
     root.innerHTML = `
       <header class="topbar">
-        <a class="icon-btn" href="#/" aria-label="Back">←</a>
+        ${edit ? `<a class="btn small" href="#/r/${enc}" data-cancel>Cancel</a>` : `<a class="icon-btn" href="#/" aria-label="Back">←</a>`}
         <span class="title-sm"></span>
         ${edit ? `<a class="btn primary small" href="#/r/${enc}" data-done>Done</a>`
                : `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">✏️</a>`}
@@ -110,25 +111,25 @@ App.views.recipe = (root, { id, edit = false }) => {
     if (!f) return;
     if (f === 'tags') r.tags = e.target.value.split(',').map(x => x.trim()).filter(Boolean);
     else r[f] = e.target.value;
-    S.upsertRecipe(r);
+    if (!edit) S.upsertRecipe(r);
   };
 
   root.onclick = e => {
     // Done: let the bubbles settle into place, then switch back to the cooking view
     const done = e.target.closest('[data-done]');
-    if (done) { e.preventDefault(); root.classList.add('settling'); setTimeout(() => { root.classList.remove('settling'); location.hash = done.getAttribute('href'); }, 260); return; }
+    if (done) { e.preventDefault(); S.upsertRecipe(r); root.classList.add('settling'); setTimeout(() => { root.classList.remove('settling'); location.hash = done.getAttribute('href'); }, 260); return; }
     const t = e.target.closest('button');
     if (!t) return;
     const d = t.dataset;
     if (d.mode) { App.session.mode = d.mode; render(); }
     else if (d.serv) {
-      if (edit) { r.servings = Math.max(1, (r.servings || 1) + +d.serv); S.upsertRecipe(r); }
+      if (edit) r.servings = Math.max(1, (r.servings || 1) + +d.serv);
       else App.session.servings[r.id] = Math.max(1, servings() + +d.serv);
       render();
     }
     else if (d.swap) { E.swapChef(r, d.swap); render(); }
     else if (d.act === 'auto') { E.autoSplit(r); render(); }
-    else if (d.act === 'add-step') { E.newStep(r); S.upsertRecipe(r); render(); root.querySelector('.step.edit:last-child [data-add-ing]')?.focus(); }
+    else if (d.act === 'add-step') { E.newStep(r); render(); root.querySelector('.step.edit:last-child [data-add-ing]')?.focus(); }
     else if (d.act === 'delete') {
       if (confirm(`Delete “${r.title || 'this recipe'}”?`)) { S.deleteRecipe(r.id); location.hash = '#/'; }
     }
@@ -155,6 +156,7 @@ App.views.recipe = (root, { id, edit = false }) => {
     root.classList.remove('wiggle', 'settling');
     ui.keepAwake(false);
     if (edit && App.session.justImported === r.id) delete App.session.justImported;
-    if (edit && !r.title.trim() && !r.ingredients.length && !r.steps.length) S.deleteRecipe(r.id); // abandoned blank recipe
+    const saved = S.recipe(id);
+    if (edit && saved && !saved.title.trim() && !saved.ingredients.length && !saved.steps.length) S.deleteRecipe(id); // abandoned blank recipe
   };
 };

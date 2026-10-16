@@ -1,6 +1,7 @@
 // Turns a recipe from a website (ingredient lines + instruction sentences) into this app's
 // step format: one verb, the ingredients it uses, plus time / heat when the step is timed.
-// It's rule-based, so it gets close but not perfect — the result opens in the editor to check.
+// Principles: few words, ONE knife step with prep as ingredient notes, back-to-back steps combined,
+// no tips or "more" text. Rule-based, so the result opens in edit mode to check.
 window.App = window.App || {};
 App.importer = (() => {
   const U = App.util;
@@ -8,7 +9,7 @@ App.importer = (() => {
   // Words in instructions → verb ids from App.VERBS
   const SYN = {
     'sauté': 'saute', saute: 'saute', sautee: 'saute', cook: 'cook', fry: 'fry', brown: 'cook', sear: 'sear',
-    heat: 'heat', boil: 'boil', bring: 'boil', simmer: 'simmer', pressure: 'pressure', steam: 'steam', melt: 'melt',
+    heat: 'heat', boil: 'boil', bring: 'boil', simmer: 'simmer', steam: 'steam', melt: 'melt',
     preheat: 'preheat', bake: 'bake', roast: 'roast', broil: 'broil', grill: 'grill', toast: 'toast',
     add: 'add', pour: 'pour', place: 'add', put: 'add', transfer: 'pour', combine: 'mix', mix: 'mix', toss: 'mix',
     stir: 'stir', whisk: 'whisk', beat: 'whisk', fold: 'fold', blend: 'blend', puree: 'blend', 'purée': 'blend',
@@ -17,9 +18,6 @@ App.importer = (() => {
     grate: 'grate', shred: 'grate', peel: 'peel', rest: 'rest', chill: 'chill', refrigerate: 'chill', cool: 'cool',
     spread: 'spread', top: 'top', garnish: 'garnish', serve: 'serve',
   };
-  // Prep words found on ingredient lines ("1 onion, diced") → verb
-  const PREP = { diced: 'dice', chopped: 'chop', minced: 'mince', sliced: 'slice', grated: 'grate', shredded: 'grate', peeled: 'peel', cubed: 'dice' };
-  const CUT_ORDER = ['dice', 'chop', 'mince', 'slice', 'grate', 'peel'];
   const STOP = new Set(['fresh', 'large', 'medium', 'small', 'vegan', 'ground', 'dried', 'extra', 'virgin', 'kosher', 'sea', 'smoked', 'unsalted', 'salted', 'whole', 'raw', 'boneless', 'skinless', 'plain', 'light', 'dark', 'frozen', 'canned', 'low-sodium', 'of', 'mild', 'hot', 'sweet', 'extra-virgin', 'fire-roasted', 'yellow', 'white', 'freshly']);
   const GENERIC = new Set(['powder', 'sauce', 'paste', 'seed', 'seeds', 'leaf', 'leaves', 'juice', 'flakes', 'extract', 'mix', 'chips', 'zest']);
 
@@ -28,29 +26,87 @@ App.importer = (() => {
   const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
 
+  // ---------- Prep descriptors ----------
+  // Knife / prep work never becomes its own sentence-step. It becomes a short note on the
+  // ingredient ("peeled, 1" cubes") inside ONE combined knife step — whether the recipe wrote it
+  // in the ingredient list ("1 onion, diced") or in the instructions ("Peel and dice the onion").
+  const PREP_WORDS = {
+    peel: 'peeled', core: 'cored', seed: 'seeds removed', deseed: 'seeds removed', halve: 'halved', quarter: 'quartered',
+    trim: 'trimmed', stem: 'stemmed', pit: 'pitted', chop: 'chopped', dice: 'diced', mince: 'minced', slice: 'sliced',
+    grate: 'grated', shred: 'grated', cube: 'cubed', julienne: 'julienned', cut: '',
+  };
+  const DESC_ORDER = ['peeled', 'trimmed', 'stemmed', 'cored', 'pitted', 'seeds removed', 'halved', 'quartered'];
+  const CUT_VERB = { diced: 'dice', chopped: 'chop', minced: 'mince', sliced: 'slice', grated: 'grate', cubed: 'dice', julienned: 'slice', peeled: 'peel' };
+  const isSize = s => /^(small|medium|large|big|extra[- ]large|jumbo)$/i.test(s.trim());
+  const isPrepText = s => /\b(diced|chopped|minced|sliced|grated|shredded|peeled|cubed|seeded|cored|halved|quartered|trimmed|stemmed|pitted|julienned|cut into|seeds removed)\b/i.test(s);
+  const isDrainText = s => /\b(drained|rinsed)\b/i.test(s);
+
+  // "1-inch cubes", "½" pieces" → '1" cubes'
+  const sizeDesc = text => {
+    const m = text.match(/(\d+\s*\/\s*\d+|\d*\s*[½¼¾⅓⅔]|\d+(?:\.\d+)?)\s*-?\s*(?:inch(?:es)?|in\b\.?|")\s*(cubes?|pieces?|chunks?|dice|slices?|rounds?|strips?|thick)?/i);
+    if (!m) return null;
+    return `${m[1].replace(/\s+/g, '')}" ${(m[2] || 'pieces').toLowerCase()}`;
+  };
+  // Pull prep descriptors out of a phrase (ingredient note part or instruction clause).
+  function prepDescs(text) {
+    const t = text.toLowerCase();
+    const out = new Set();
+    const size = sizeDesc(t);
+    for (const [w, past] of Object.entries(PREP_WORDS)) {
+      if (!past) continue;
+      if (new RegExp(`\\b(${w}s?|${w}d|${w}ed|${past})\\b`).test(t)) out.add(past);
+    }
+    if (/\b(scoop|remove|discard)\b[^.]*\bseeds?\b|\bseeded\b/.test(t)) out.add('seeds removed');
+    if (/\bfinely\b/.test(t)) { for (const c of ['chopped', 'minced', 'diced']) if (out.has(c)) { out.delete(c); out.add('finely ' + c); } }
+    if (/\bdiced small\b|\bsmall dice\b/.test(t) && out.has('diced')) { out.delete('diced'); out.add('diced small'); }
+    if (size) { for (const d of ['cubed', 'chopped', 'diced', 'halved', 'quartered', 'trimmed']) out.delete(d); out.add(size); }
+    return [...out].sort((a, b) => rank(a) - rank(b));
+  }
+  const rank = d => { const i = DESC_ORDER.indexOf(d); return i < 0 ? 100 + (/"/.test(d) ? 1 : 0) : i; };
+  const drainDescs = text => {
+    const t = text.toLowerCase();
+    return [/\bdrained\b|\bdrain\b/.test(t) && 'drained', /\brinsed\b|\brinse\b/.test(t) && 'rinsed'].filter(Boolean);
+  };
+
   // ---------- Ingredients ----------
+  // Pick one option from "X or Y": "yellow or white onion" → "yellow onion",
+  // "water or vegetable broth" → "water", "greek yogurt or sour cream" → "greek yogurt".
+  function orName(name) {
+    const m = name.match(/^(.+?)\s+or\s+(.+)$/);
+    if (!m) return name;
+    const left = m[1].trim(), right = m[2].trim();
+    // keep the left option; borrow the noun from the right if the left one ends in a describing word
+    if (U.ingIcon(left.split(' ').pop()) || !right.includes(' ')) return left;
+    return left + ' ' + right.split(' ').pop();
+  }
+
   function buildIngredients(lines) {
     return lines.map(line => {
       const p = U.parseIngredientLine(line);
       if (!p) return null;
-      p.name = p.name.replace(/\*/g, '').replace(/\s+or\s+[a-z]+(?=\s+[a-z])/i, '').replace(/\s*\/.*$/, '').replace(/\s+(or|from|for)\s+.*$/i, '').trim().toLowerCase();
-      // Split the note into "how to prep it" (→ prep step) and everything else (stays on the ingredient)
-      const parts = (p.note || '').split(/,\s*/).filter(Boolean);
-      const prepParts = [], keep = [];
-      for (const part of parts) {
-        if (/\b(diced|chopped|minced|sliced|grated|shredded|peeled|cubed|drained|rinsed)\b/i.test(part)) prepParts.push(part.toLowerCase().replace(/\s+or\s+.*$/, '').replace(/\*/g, '').trim());
-        else if (!/^or\b/i.test(part)) keep.push(part);
+      p.name = orName(p.name.replace(/\*/g, '').replace(/\s*\/.*$/, '').toLowerCase()).replace(/\s+(from|for)\s+.*$/i, '').trim();
+      p._size = []; p._prep = []; p._drain = [];
+      const keep = [];
+      for (let part of (p.note || '').split(/,\s*/)) {
+        part = part.replace(/\*/g, '').replace(/^and\s+/i, '').replace(/\s+or\s+.*$/i, '').trim();
+        if (!part) continue;
+        if (isSize(part)) p._size.push(part.toLowerCase());
+        else if (isPrepText(part) || isDrainText(part)) {
+          p._prep.push(...prepDescs(part));
+          p._drain.push(...drainDescs(part));
+        }
+        else if (!/^(or|optional|plus|about|to taste|for serving|for garnish|garnish|divided)\b/i.test(part)) keep.push(part);
       }
-      // "chopped cilantro" — the parser moved "chopped" into the note already
-      p.note = keep.join(', ') || undefined;
-      const prepText = prepParts.join(', ');
-      p._prep = Object.entries(PREP).filter(([w]) => new RegExp('\\b' + w + '\\b').test(prepText)).map(([, v]) => v);
-      p._prepText = prepText;
-      p._rinse = /\brinsed\b/.test(prepText) || (/\bdrained\b/.test(prepText) && /bean|chickpea|lentil|corn/.test(p.name));
-      p._drained = /\bdrained\b/.test(prepText);
+      p.note = keep.join(', ') || undefined; // stays in the ingredient list (e.g. "15-ounce"), not in steps
       return p;
     }).filter(Boolean);
   }
+  const addDescs = (ing, list) => {
+    for (const d of list) if (!ing._prep.includes(d)) ing._prep.push(d);
+    // once there's a final size ('1" chunks'), the in-between steps aren't worth saying
+    if (ing._prep.some(d => d.includes('"'))) ing._prep = ing._prep.filter(d => !['cubed', 'chopped', 'diced', 'halved', 'quartered', 'trimmed'].includes(d));
+    ing._prep.sort((a, b) => rank(a) - rank(b));
+  };
 
   // Words that identify each ingredient inside an instruction sentence.
   function buildKeys(ings, title = '') {
@@ -63,7 +119,7 @@ App.importer = (() => {
       const last = singular(name.split(' ').pop());
       if (last.length >= 3 && !GENERIC.has(last)) ks.add(last);
       const first = singular(trimmed.split(' ')[0] || '');
-      if (trimmed.includes(' ') && first.length >= 4 && !GENERIC.has(first) && !titleWords.has(first) && !titleWords.has(first + 's')) ks.add(first);
+      if (trimmed.includes(' ') && first.length >= 4 && !GENERIC.has(first) && !/^(diced|chopped|crushed|sliced|minced|grated|shredded|ground|whole|canned|cooked|vegetable|roasted|toasted|baby|green|red)$/.test(first) && !titleWords.has(first) && !titleWords.has(first + 's')) ks.add(first);
       return ks;
     });
     // A short key shared by several ingredients ("onion" → yellow onion and pickled onions) goes to the
@@ -100,14 +156,15 @@ App.importer = (() => {
   }
 
   // ---------- Instruction sentences ----------
-  function findVerb(text) {
+  function findVerb(text, skipPrep = false) {
     const cleaned = text.toLowerCase()
       .replace(/\b(low|medium|med|high|medium[- ]high|medium[- ]low)\s+heat\b/g, ' ')
       .replace(/\b(the|from|off|raise|reduce|lower|increase|up|down)\s+(?:the\s+)?heat\b/g, ' ')
-      .replace(/\bsteam (?:to )?escape\b|\blet (?:the )?steam\b/g, ' ')
+      .replace(/\bsteam (?:to )?escape\b|\b(let|allow|release|vent) (?:the |some )?steam\b/g, ' ')
       .replace(/\bon top\b|\bthe rest\b|\bgolden brown\b|\bcut side\b/g, ' ');
+    if (/\b(high|low) pressure\b|\bpressure[- ]cook(?!er)/.test(cleaned)) return 'pressure';
     const words = cleaned.match(/[a-zé]+/g) || [];
-    for (const w of words) if (SYN[w]) return SYN[w];
+    for (const w of words) if (SYN[w] && !(skipPrep && App.verb(SYN[w]).group === 'Prep')) return SYN[w];
     return null;
   }
   const findTime = text => {
@@ -128,7 +185,8 @@ App.importer = (() => {
     const until = text.match(/\buntil ([^,.;–—(]+)/i);
     if (until) {
       // keep it short: "until no longer pink in the center" → "until no longer pink"
-      let words = until[1].trim().split(/\s+/).slice(0, 4);
+      let phrase = until[1].trim().replace(/^(the|it|they)\s+(?:[a-z]+\s+){0,2}?(is|are|has|have|looks?|becomes?)\s+/i, '').replace(/^(starting|beginning|just starting) to\s+(\w+)/i, (m, a, v) => v.replace(/e$/, '') + 'ed').replace(/^(begins?|starts?) to\s+(\w+)/i, (m, a, v) => v.replace(/e$/, '') + 'ed');
+      let words = phrase.split(/\s+/).slice(0, 4);
       const cut = words.findIndex((w, k) => k > 0 && /^(in|about|or|and|on|at|to)$/i.test(w));
       if (cut > 0) words = words.slice(0, cut);
       while (words.length > 1 && /^(the|a|an|of|is|are)$/i.test(words[words.length - 1])) words.pop();
@@ -169,88 +227,123 @@ App.importer = (() => {
   }
 
   // ---------- Convert ----------
+  // Sentences that are tips, options or storage advice — not cooking steps.
+  const SKIP = /^(if\b|it will|it takes|this will|when the cook time|quick release|natural(ly)? release|lock the lid|seal|optional|note|tip|store|storage|leftover|to store|make[- ]ahead|to make ahead|you can|feel free|for best|enjoy|reheat|freeze|nutrition|this recipe|recipe)/i;
+  const PREP_START = /^(peel|core|seed|deseed|halve|quarter|trim|stem|pit|cube|scoop|remove|cut|chop|dice|mince|slice|grate|shred|julienne|drain|rinse|wash|pat)\b/i;
+
   function convert(data) {
+    data = { ...data, steps: (data.steps || []).filter(p => !/^(storage|notes?|tips?|make[- ]ahead|leftovers?|recipe notes?|to store|freezing)\b/i.test(p.trim())) };
     const ings = buildIngredients(data.ingredients || []);
     const keys = buildKeys(ings, data.name);
     const byId = Object.fromEntries(ings.map(i => [i.id, i]));
-    // Cheese is usually bought grated/shredded, so that isn't a prep job.
-    const cutIds = new Set(ings.filter(i => U.category(i) !== 'dairy' && U.normUnit(i.unit) !== 'can' && (i._prep.some(v => v !== 'peel') || (i._prep.length && !i._rinse))).map(i => i.id));
+    // Cheese is usually bought grated, canned things come ready — neither is knife work.
+    const knifeOk = i => !(U.category(i) === 'dairy' && i._prep.every(d => d === 'grated')) && U.normUnit(i.unit) !== 'can';
 
-    // 1) Instruction steps
+    // 1) Read the instructions. Prep sentences only add notes to ingredients; everything else
+    //    becomes a step with one action, its ingredients, and a short note / time / heat.
     const instr = [];
+    let lastPrep = [];
     for (const { text, parallel } of clauses(data.steps || [])) {
+      if (SKIP.test(text)) continue;
+      const uses = findIngs(text, keys);
       const verb = findVerb(text);
-      let uses = findIngs(text, keys);
+      const first = (text.match(/^[a-z]+/i) || [''])[0].toLowerCase();
+      const seen = id => instr.some(st => st.uses.some(u => u.ing === id));
+      let prepish = PREP_START.test(text) || !!(verb && App.verb(verb).group === 'Prep');
+      // "Drain the beans" before using them is a note; "drain the pasta" after cooking is a step.
+      if (['drain', 'rinse', 'wash'].includes(first) || ['drain', 'rinse'].includes(verb)) prepish = uses.length > 0 && !uses.some(seen);
+      // "Remove from heat" isn't prep; "remove the seeds" is.
+      if (['remove', 'discard'].includes(first) && !/\b(seeds?|stems?|skin|core|pits?|peel)\b/i.test(text)) prepish = false;
+      if (prepish) {
+        const targets = uses.length ? uses : lastPrep;
+        const descs = prepDescs(text), drains = drainDescs(text);
+        for (const id of targets) { addDescs(byId[id], descs); for (const d of drains) if (!byId[id]._drain.includes(d)) byId[id]._drain.push(d); }
+        lastPrep = targets;
+        // "Dice the onion and add it to the pot" also has a cooking action — keep going with that.
+        const cook = findVerb(text.replace(PREP_START, ''), true);
+        if (!cook) continue;
+      } else lastPrep = [];
+
+      const v0 = prepish ? findVerb(text.replace(PREP_START, ''), true) : verb;
       const time = findTime(text), heat = findHeat(text), temp = findTemp(text);
       const last = instr[instr.length - 1];
-      const sentence = cap(text.replace(/\s+/g, ' ').replace(/\.?$/, '.'));
-      // Fold clauses that add nothing new ("Stir to combine.") into the previous step's details.
-      const filler = !verb || (['stir', 'mix', 'cook'].includes(verb) && last && uses.every(id => last.uses.some(u => u.ing === id)) && (!time || (!last.time && App.verb(last.verb).group !== 'Prep')));
-      // Skip "Dice the onion" style sentences when the ingredient list already says "diced".
-      const dupPrep = verb && App.verb(verb).group === 'Prep' && uses.length && uses.every(id => cutIds.has(id) || byId[id]._rinse);
-      if ((filler || dupPrep) && last) {
-        last.detail = (last.detail ? last.detail + ' ' : '') + sentence;
-        if (!last.time && time && App.verb(last.verb).group !== 'Prep') last.time = time;
-        if (!last.text) last.text = findShort(text);
-        if (!last.heat && heat) last.heat = heat;
+      // Clauses that add nothing new ("Stir to combine", "cook until soft") fold into the step before.
+      const filler = !v0 || (['stir', 'mix', 'cook'].includes(v0) && last && uses.every(id => last.uses.some(u => u.ing === id)) && (!time || !last.time));
+      if (filler) {
+        if (last) {
+          if (!last.time && time) last.time = time;
+          if (!last.text) last.text = findShort(text);
+          if (!last.heat && heat) last.heat = heat;
+        }
         continue;
       }
-      if (!verb) continue;
-      let v = verb;
+      let v = v0;
       const allFat = uses.length && uses.every(id => /\b(oil|butter|ghee)\b/.test(byId[id].name));
       if ((v === 'add' || v === 'pour') && allFat && heat) v = 'heat';
       if ((v === 'add' || v === 'stir') && uses.length && uses.every(id => U.category(byId[id]) === 'spices' && !/oil/.test(byId[id].name))) v = 'season';
       const vd = App.verb(v);
       instr.push({
         id: U.uid('s'), verb: v, uses: uses.map(ing => ({ ing })),
-        text: findShort(text) || (uses.length ? undefined : objectOf(text, verb)),
-        parallel,
-        time: time && vd.group !== 'Prep' ? time : undefined,
-        heat, temp: vd.group === 'Oven' ? temp : undefined,
-        detail: sentence,
+        text: findShort(text) || (uses.length ? undefined : objectOf(text, v0)),
+        parallel, time: time || undefined, heat, temp: vd.group === 'Oven' ? temp : undefined,
       });
     }
 
-    // 2) Toppings: ingredients that first show up in a serve / top / garnish step
+    // 2) Combine back-to-back steps with the same action ("Season: salt" + "Season: pepper").
+    for (let k = instr.length - 1; k > 0; k--) {
+      const a = instr[k - 1], b = instr[k];
+      // a timed step, or one that goes "until …", is its own stage
+      if (a.verb !== b.verb || b.parallel || App.verb(a.verb).passive || a.time || b.time || /until/.test((a.text || '') + (b.text || ''))) continue;
+      for (const u of b.uses) if (!a.uses.some(x => x.ing === u.ing)) a.uses.push(u);
+      a.text = [...new Set([a.text, b.text].filter(Boolean))].join(', ') || undefined;
+      a.time = a.time || b.time; a.heat = a.heat || b.heat;
+      instr.splice(k, 1);
+    }
+
+    // 3) Toppings: ingredients first used when serving, or listed after everything the steps use.
     const firstUse = {};
     instr.forEach((s, i) => s.uses.forEach(u => { if (firstUse[u.ing] == null) firstUse[u.ing] = i; }));
     const toppingIds = new Set(ings.filter(i => firstUse[i.id] != null && ['serve', 'top', 'garnish'].includes(instr[firstUse[i.id]].verb)).map(i => i.id));
     const lastUsed = Math.max(-1, ...ings.map((i, k) => firstUse[i.id] != null ? k : -1));
     ings.forEach((i, k) => { if (lastUsed >= 0 && k > lastUsed && firstUse[i.id] == null) toppingIds.add(i.id); });
     ings.forEach(i => { if (toppingIds.has(i.id)) i.group = 'Toppings'; });
+    const ordered = [...ings.filter(i => !toppingIds.has(i.id)), ...ings.filter(i => toppingIds.has(i.id))];
 
-    // 3) Prep steps built from the ingredient list ("diced", "minced", "drained and rinsed")
-    const prepStep = list => {
-      if (!list.length) return null;
-      const tally = {};
-      list.forEach(i => i._prep.filter(v => v !== 'peel').forEach(v => tally[v] = (tally[v] || 0) + 1));
-      const verb = Object.keys(tally).sort((a, b) => tally[b] - tally[a] || CUT_ORDER.indexOf(a) - CUT_ORDER.indexOf(b))[0] || 'chop';
-      const past = Object.keys(PREP).find(w => PREP[w] === verb);
-      return {
+    // 4) ONE knife step for everything that needs prep. The action is the shared cut if they all
+    //    match (all diced → "Dice"), otherwise "Chop"; each ingredient's note says how.
+    const knife = ordered.filter(i => i._prep.length && knifeOk(i));
+    let knifeStep = null;
+    if (knife.length) {
+      const cutOf = i => CUT_VERB[i._prep.find(d => CUT_VERB[d] && d !== 'peeled') || (i._prep.includes('peeled') ? 'peeled' : '')] || null;
+      const cuts = [...new Set(knife.map(cutOf))];
+      const verb = cuts.length === 1 && cuts[0] ? cuts[0] : 'chop';
+      const bare = Object.keys(CUT_VERB).filter(d => CUT_VERB[d] === verb && d !== 'julienned');
+      knifeStep = {
         id: U.uid('s'), verb, after: [],
-        uses: list.map(i => {
-          const note = i._prepText.split(/,\s*/).map(x => x.replace(new RegExp('\\b' + past + '\\b'), '').replace(/\b(drained|rinsed)\b/g, '').replace(/\band\b/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean).join(', ');
+        uses: knife.map(i => {
+          const note = [...i._size, ...i._prep.filter(d => !bare.includes(d))].join(', ');
           return note ? { ing: i.id, note } : { ing: i.id };
         }),
       };
-    };
-    const cutMain = ings.filter(i => cutIds.has(i.id) && !toppingIds.has(i.id));
-    const cutTop = ings.filter(i => cutIds.has(i.id) && toppingIds.has(i.id));
-    const rinse = ings.filter(i => i._rinse);
-    const mainPrep = prepStep(cutMain);
-    const topPrep = prepStep(cutTop);
-    if (topPrep) topPrep.text = 'toppings';
-    const rinseStep = rinse.length ? { id: U.uid('s'), verb: 'rinse', after: [], uses: rinse.map(i => i._drained ? { ing: i.id, note: 'drained' } : { ing: i.id }) } : null;
+    }
+    // Everyone else gets their size / drained note on the first step that uses them.
+    const noted = new Set(knifeStep ? knifeStep.uses.map(u => u.ing) : []);
+    for (const s of instr) for (const u of s.uses) {
+      const g = byId[u.ing];
+      if (noted.has(g.id)) continue;
+      noted.add(g.id);
+      const note = [...g._size, ...(knifeOk(g) ? [] : g._prep.filter(d => d !== 'grated')), ...g._drain].join(', ');
+      if (note) u.note = note;
+    }
 
-    // 4) Dependencies: each instruction step follows the one before it, plus any prep it needs.
+    // 5) Dependencies: each step follows the one before it, plus the knife step if it needs it.
     let chainPrev = null, preheat = null;
     const touch = {}; // stepId → ingredients it (or the step it continues) handled
     for (const s of instr) {
       const after = [];
-      if (s.verb === 'preheat') { s.after = []; preheat = s.id; continue; }
+      if (s.verb === 'preheat') { s.after = []; preheat = s.id; delete s.parallel; continue; }
       if (chainPrev && !s.parallel) after.push(chainPrev);
       // Also wait for the last earlier step that used any of the same ingredients (e.g. the drained pasta).
-      // Steps with no ingredients ("drain") carry on with whatever the step before them had.
       const before = instr.slice(0, instr.indexOf(s));
       for (const u of s.uses) {
         const prev = [...before].reverse().find(p => touch[p.id]?.has(u.ing));
@@ -258,38 +351,29 @@ App.importer = (() => {
       }
       touch[s.id] = s.uses.length ? new Set(s.uses.map(u => u.ing)) : new Set(s.parallel ? [] : touch[chainPrev] || []);
       if (preheat && ['bake', 'roast', 'broil'].includes(s.verb)) after.push(preheat);
-      const used = new Set(s.uses.map(u => u.ing));
-      for (const p of [mainPrep, rinseStep, topPrep]) if (p && p.uses.some(u => used.has(u.ing))) after.push(p.id);
+      if (knifeStep && s.uses.some(u => knifeStep.uses.some(k => k.ing === u.ing))) after.push(knifeStep.id);
       s.after = after;
       delete s.parallel;
       chainPrev = s.id;
     }
 
-    // 5) Order: prep first, toppings prep just before the first step that uses toppings.
-    const steps = [mainPrep, rinseStep].filter(Boolean);
-    let topAt = instr.findIndex(s => s.uses.some(u => toppingIds.has(u.ing)));
-    if (topAt < 0) topAt = instr.findIndex(s => ['serve', 'top', 'garnish'].includes(s.verb));
-    const serve = instr[topAt];
-    if (serve && ['serve', 'top', 'garnish'].includes(serve.verb) && !serve.uses.length && toppingIds.size) {
+    // 6) A "serve with toppings" step lists the toppings.
+    const serve = instr.find(s => ['serve', 'top', 'garnish'].includes(s.verb));
+    if (serve && !serve.uses.length && toppingIds.size) {
       serve.uses = [...toppingIds].map(ing => ({ ing }));
-      if (/toppings/.test(serve.text || '')) serve.text = 'top with';
-      if (topPrep) serve.after.push(topPrep.id);
+      serve.text = /toppings/.test(serve.text || '') ? undefined : serve.text;
+      if (knifeStep && !serve.after.includes(knifeStep.id)) serve.after.push(knifeStep.id);
     }
-    instr.forEach((s, i) => { if (i === topAt && topPrep) steps.push(topPrep); steps.push(s); });
-    if (topPrep && topAt < 0) steps.push(topPrep);
 
-    // Tidy ingredients: toppings at the end, drop helper fields.
-    const ordered = [...ings.filter(i => !toppingIds.has(i.id)), ...ings.filter(i => toppingIds.has(i.id))]
-      .map(({ _prep, _prepText, _rinse, _drained, ...rest }) => rest);
+    const steps = [knifeStep, ...instr].filter(Boolean);
     steps.forEach(s => Object.keys(s).forEach(k => s[k] === undefined && delete s[k]));
-
     return {
       title: data.name || 'Imported recipe',
       emoji: guessEmoji(data.name || '', ordered),
       servings: data.servings || 4,
       source: data.source || '',
       tags: [],
-      ingredients: ordered,
+      ingredients: ordered.map(({ _size, _prep, _drain, ...rest }) => rest),
       steps,
       notes: [],
     };

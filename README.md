@@ -22,6 +22,12 @@ Simple, symbol-based recipes with co-op cooking, a shopping list, and a cook log
 - `js/views/` — one file per screen (library, recipe, shopping, log)
 - `js/app.js` — router
 
+## Style rules (the whole point of the app)
+- Few words: no "more" paragraphs; steps read at a glance.
+- ONE knife step: chop/dice/mince/peel together; each ingredient's note says how ("peeled, 1" cubes", "diced").
+- Size / drained / prep notes live on the ingredient in the step ("2 cans black beans · drained, rinsed").
+- Back-to-back same steps are combined; tips, options and storage advice are dropped.
+
 ## Adding recipes
 Tap **+** → paste a link, paste recipe text, or start blank. Imports save right away and open in
 edit mode. Link import tries, in order: the local server (`serve.js`, uses curl), then the free
@@ -31,7 +37,7 @@ Jina Reader (r.jina.ai) so it also works on the public site. Some sites block bo
 ✏️ turns the recipe page into edit mode — no pop-ups. Ingredients become bubbles (they wiggle so it's
 clear they move): drag one onto another step or onto + Add step; tap its words to type. Drag a step by its
 number (or press-and-hold anywhere on it) to move it up or down. Tap the action word to pick another, tap
-note/time to type, tap heat to cycle. The tapped step shows ✕ and + ingredient.
+note/time to type, tap heat to cycle. The tapped step shows ✕, + note and + ingredient. Changes save on Done; Cancel discards them.
 In co-op (normal view), tap a step number to swap chefs; ↺ Auto-split resets.
 
 ## How co-op works

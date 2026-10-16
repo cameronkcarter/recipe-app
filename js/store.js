@@ -14,8 +14,9 @@ App.store = (() => {
   });
 
   function load() {
+    let raw = null;
     try {
-      const raw = localStorage.getItem(KEY);
+      raw = localStorage.getItem(KEY);
       state = raw ? JSON.parse(raw) : fresh();
     } catch (e) {
       state = fresh();
@@ -23,6 +24,16 @@ App.store = (() => {
     state.recipes ||= []; state.log ||= []; state.list ||= { recipes: [], checked: {}, extras: [] };
     // The old example friend notes ("Sam (example)") are gone from the app; drop them from saved data.
     state.recipes.forEach(r => { if (r.notes) r.notes = r.notes.filter(n => !/\(example\)/.test(n.author || '')); });
+    // Steps don't carry "more" paragraphs any more — the app is meant to be read at a glance.
+    state.recipes.forEach(r => (r.steps || []).forEach(s => delete s.detail));
+    // One-time rewrites of early imports in the app's style (see App.RECIPE_FIXES).
+    state.fixes ||= {};
+    for (const [id, fix] of Object.entries(App.RECIPE_FIXES || {})) {
+      const r = state.recipes.find(x => x.id === id);
+      if (r && !state.fixes[id]) Object.assign(r, JSON.parse(JSON.stringify(fix)));
+      state.fixes[id] = true;
+    }
+    if (raw) save();
     // Refresh the starter recipe(s) if they've been updated, keeping any notes you added.
     if ((state.seedVersion || 1) < App.SEED_VERSION) {
       for (const seed of App.SEED_RECIPES) {

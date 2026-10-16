@@ -58,6 +58,11 @@ const UNIT_ALIASES = {
   head: ['head', 'heads'],
   sprig: ['sprig', 'sprigs'],
   handful: ['handful', 'handfuls'],
+  box: ['box', 'boxes'],
+  jar: ['jar', 'jars'],
+  bag: ['bag', 'bags'],
+  bottle: ['bottle', 'bottles'],
+  carton: ['carton', 'cartons'],
 };
 const ALIAS = {};
 for (const [k, list] of Object.entries(UNIT_ALIASES)) for (const a of list) ALIAS[a] = k;
@@ -70,9 +75,10 @@ U.UNITS = Object.keys(UNIT_ALIASES);
 
 const VOL = { tsp: 1, tbsp: 3, cup: 48, 'fl oz': 6, ml: 0.202884, l: 202.884 }; // in tsp
 const WT = { g: 1, kg: 1000, oz: 28.3495, lb: 453.592 };                       // in grams
-const PLURAL = new Set(['cup', 'clove', 'can', 'pinch', 'dash', 'bunch', 'package', 'slice', 'stick', 'head', 'sprig', 'handful']);
+const PLURAL = new Set(['cup', 'clove', 'can', 'jar', 'bag', 'bottle', 'carton', 'pinch', 'dash', 'bunch', 'package', 'slice', 'stick', 'head', 'sprig', 'handful']);
 U.fmtUnit = (unit, qty) => {
   if (!unit) return '';
+  if (unit === 'box' && qty != null && qty > 1) return 'boxes';
   if (PLURAL.has(unit) && qty != null && qty > 1) return unit === 'pinch' || unit === 'dash' || unit === 'bunch' ? unit + 'es' : unit + 's';
   return unit;
 };

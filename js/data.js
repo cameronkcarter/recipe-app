@@ -62,7 +62,7 @@ App.ING_ICONS = [
   ['cornbread', '🍞'], ['soy sauce', '🫗'], ['maple', '🍁'], ['peanut', '🥜'],
   ['ketchup', '🍅'], ['tomato', '🍅'], ['mustard', '🟡'], ['onion', '🧅'], ['garlic', '🧄'], ['shallot', '🧅'], ['potato', '🥔'],
   ['avocado', '🥑'], ['cilantro', '🌿'], ['parsley', '🌿'], ['basil', '🌿'], ['thyme', '🌿'],
-  ['rosemary', '🌿'], ['oregano', '🌿'], ['mint', '🌿'], ['dill', '🌿'],
+  ['rosemary', '🌿'], ['sage', '🌿'], ['oregano', '🌿'], ['mint', '🌿'], ['dill', '🌿'],
   ['jalapeño', '🌶️'], ['jalapeno', '🌶️'], ['chili', '🌶️'], ['paprika', '🌶️'], ['cayenne', '🌶️'],
   ['salt', '🧂'], ['cumin', '🫙'], ['cinnamon', '🫙'], ['nutmeg', '🫙'], ['turmeric', '🫙'], ['curry', '🫙'], ['vanilla', '🫙'], ['pepper', '🧂'], ['bean', '🫘'], ['lentil', '🫘'], ['chickpea', '🫘'],
   ['broth', '🍲'], ['stock', '🍲'], ['water', '💧'], ['oil', '🫒'],
@@ -129,20 +129,24 @@ App.SEED_RECIPES = [
       { id: 'green',   qty: null, unit: '',     name: 'green onions', group: 'Toppings' },
       { id: 'sour',    qty: null, unit: '',     name: 'vegan sour cream', group: 'Toppings' },
     ],
-    // Grouped the way you'd actually cook it: all the chopping happens at once, etc.
+    // One knife step for all the prep; how each thing is cut lives in its note.
     steps: [
-      { id: 's1',  verb: 'dice',   uses: [{ ing: 'onion', note: 'small' }, { ing: 'garlic', note: 'minced' }, { ing: 'sweet', note: 'peeled, ½" cubes' }], after: [] },
-      { id: 's2',  verb: 'rinse',  uses: [{ ing: 'beans', note: 'drained' }], after: [] },
-      { id: 's3',  verb: 'heat',   uses: [{ ing: 'oil' }], text: 'large pot', heat: 2, after: [] },
-      { id: 's4',  verb: 'saute',  uses: [{ ing: 'onion' }], text: 'until clear', heat: 2, time: 4, after: ['s1', 's3'] },
-      { id: 's5',  verb: 'add',    uses: [{ ing: 'garlic' }, { ing: 'sweet' }], text: 'cook, stirring', heat: 2, time: 2, after: ['s4'] },
-      { id: 's6',  verb: 'season', uses: [{ ing: 'chili' }, { ing: 'cumin' }, { ing: 'paprika' }, { ing: 'salt' }], text: 'stir in', after: ['s5'] },
-      { id: 's7',  verb: 'add',    uses: [{ ing: 'tomato', note: 'with juice' }, { ing: 'beans' }, { ing: 'broth' }], text: 'stir', after: ['s2', 's6'] },
-      { id: 's8',  verb: 'simmer', uses: [], text: 'uncovered, until potato is soft', heat: 1, time: 20, after: ['s7'], detail: '20–25 min total.' },
-      { id: 's9',  verb: 'chop',   uses: [{ ing: 'avocado' }, { ing: 'cilantro' }, { ing: 'green' }], text: 'toppings', after: [] },
-      { id: 's10', verb: 'mash',   uses: [{ ing: 'sweet', note: 'some' }], text: 'optional — makes it thicker', after: ['s8'], detail: 'Back of a spoon against the side of the pot.' },
-      { id: 's11', verb: 'serve',  uses: [{ ing: 'avocado' }, { ing: 'cilantro' }, { ing: 'green' }, { ing: 'sour' }], text: 'top with', after: ['s9', 's10'] },
+      { id: 's1', verb: 'chop',   uses: [{ ing: 'onion', note: 'medium, diced small' }, { ing: 'garlic', note: 'minced' }, { ing: 'sweet', note: 'large, peeled, ½" cubes' }, { ing: 'avocado' }, { ing: 'cilantro' }, { ing: 'green' }], after: [] },
+      { id: 's2', verb: 'heat',   uses: [{ ing: 'oil' }], text: 'large pot', heat: 2, after: [] },
+      { id: 's3', verb: 'saute',  uses: [{ ing: 'onion' }], text: 'until clear', heat: 2, time: 4, after: ['s1', 's2'] },
+      { id: 's4', verb: 'add',    uses: [{ ing: 'garlic' }, { ing: 'sweet' }], heat: 2, time: 2, after: ['s3'] },
+      { id: 's5', verb: 'season', uses: [{ ing: 'chili' }, { ing: 'cumin' }, { ing: 'paprika' }, { ing: 'salt' }], after: ['s4'] },
+      { id: 's6', verb: 'add',    uses: [{ ing: 'tomato' }, { ing: 'beans', note: 'drained, rinsed' }, { ing: 'broth' }], after: ['s5'] },
+      { id: 's7', verb: 'simmer', uses: [], text: 'uncovered', heat: 1, time: 20, after: ['s6'] },
+      { id: 's8', verb: 'mash',   uses: [{ ing: 'sweet', note: 'some' }], text: 'optional', after: ['s7'] },
+      { id: 's9', verb: 'serve',  uses: [{ ing: 'avocado' }, { ing: 'cilantro' }, { ing: 'green' }, { ing: 'sour' }], after: ['s8', 's1'] },
     ],
     notes: [],
   },
 ];
+
+// One-time fixes to recipes imported before the converter followed the app's style
+// (one knife step, prep as ingredient notes, no extra text). Applied once by store.js.
+App.RECIPE_FIXES = {
+  'instant-pot-butternut-squash-soup': {"emoji":"🍲","servings":6,"source":"https://www.thekitchn.com/instant-pot-butternut-squash-soup-recipe-23100726","ingredients":[{"id":"q1","qty":4,"unit":"lb","name":"butternut squash","note":"2 medium"},{"id":"q2","qty":1,"unit":"","name":"Granny Smith apple"},{"id":"q3","qty":1,"unit":"","name":"yellow onion"},{"id":"q4","qty":2,"unit":"tbsp","name":"olive oil"},{"id":"q5","qty":10,"unit":"","name":"sage leaves","note":"fresh"},{"id":"q6","qty":1,"unit":"box","name":"low-sodium vegetable broth","note":"32-ounce"},{"id":"q7","qty":2,"unit":"tsp","name":"kosher salt"},{"id":"q8","qty":0.25,"unit":"tsp","name":"freshly ground black pepper"},{"id":"q9","qty":0.333,"unit":"cup","name":"heavy cream"},{"id":"q10","qty":0.5,"unit":"cup","name":"toasted pumpkin seeds","group":"Toppings"}],"steps":[{"id":"qs1","verb":"chop","after":[],"uses":[{"ing":"q1","note":"peeled, seeds removed, 1\" chunks"},{"ing":"q2","note":"large, peeled, cored, diced"},{"ing":"q3","note":"medium, diced"}]},{"id":"qs2","verb":"heat","uses":[{"ing":"q4"}],"after":[]},{"id":"qs3","verb":"add","uses":[{"ing":"q2"},{"ing":"q3"},{"ing":"q5"}],"text":"until softened","time":5,"after":["qs2","qs1"]},{"id":"qs4","verb":"add","uses":[{"ing":"q1"},{"ing":"q6"},{"ing":"q7"},{"ing":"q8"}],"after":["qs3","qs1"]},{"id":"qs5","verb":"pressure","uses":[],"time":10,"after":["qs4"]},{"id":"qs6","verb":"stir","uses":[{"ing":"q9"}],"after":["qs5"]},{"id":"qs7","verb":"blend","uses":[],"text":"until smooth","after":["qs6"]},{"id":"qs8","verb":"season","uses":[{"ing":"q7"},{"ing":"q8"}],"after":["qs7","qs5"]},{"id":"qs9","verb":"serve","uses":[{"ing":"q10"},{"ing":"q9"},{"ing":"q8"}],"after":["qs8","qs7"]}]},
+};
