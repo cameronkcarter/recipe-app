@@ -242,6 +242,9 @@ App.importer = (() => {
     // 1) Read the instructions. Prep sentences only add notes to ingredients; everything else
     //    becomes a step with one action, its ingredients, and a short note / time / heat.
     const instr = [];
+    // Is the pan already hot by this step (or, with null, by now)?
+    const atStove = s => instr.slice(0, s ? instr.indexOf(s) + 1 : instr.length)
+      .some(p => ['heat', 'saute', 'cook', 'fry', 'sear', 'melt'].includes(p.verb) || p.heat);
     let lastPrep = [];
     for (const { text, parallel } of clauses(data.steps || [])) {
       if (SKIP.test(text)) continue;
@@ -274,6 +277,8 @@ App.importer = (() => {
           if (!last.time && time) last.time = time;
           if (!last.text) last.text = findShort(text);
           if (!last.heat && heat) last.heat = heat;
+          // "Add the onion… Cook, stirring, until soft" — that's a sauté, so call it one.
+          if (last.verb === 'add' && ['cook', 'stir', 'saute', 'fry'].includes(v0) && (last.time || /until/.test(last.text || '')) && atStove(last) && instr[instr.length - 2]?.verb !== 'saute') last.verb = 'saute';
         }
         continue;
       }
@@ -281,6 +286,8 @@ App.importer = (() => {
       const allFat = uses.length && uses.every(id => /\b(oil|butter|ghee)\b/.test(byId[id].name));
       if ((v === 'add' || v === 'pour') && allFat && heat) v = 'heat';
       if ((v === 'add' || v === 'stir') && uses.length && uses.every(id => U.category(byId[id]) === 'spices' && !/oil/.test(byId[id].name))) v = 'season';
+      // "Add the garlic and cook 2 minutes" in a hot pan is a sauté too.
+      if (v === 'add' && /\b(cook|saut|fry|stir)\w*/i.test(text.replace(/^.*?\badd\b/i, '')) && (time || /\buntil\b/i.test(text)) && atStove(null) && instr[instr.length - 1]?.verb !== 'saute') v = 'saute'; // already sautéing → it's just "Add"
       const vd = App.verb(v);
       instr.push({
         id: U.uid('s'), verb: v, uses: uses.map(ing => ({ ing })),
