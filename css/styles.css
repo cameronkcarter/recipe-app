@@ -200,7 +200,6 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .s-meta.solo { margin-top: 2px; font-size: .95rem; color: var(--text); }
 .s-meta .dot { opacity: .5; }
 .s-timer { border: none; background: none; padding: 0; color: inherit; font-size: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
-.s-wait { font-style: italic; }
 .detail { margin-top: 6px; font-size: .9rem; color: var(--muted); }
 
 /* Timers */

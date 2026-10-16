@@ -44,11 +44,6 @@ App.views.recipe = (root, { id, edit = false }) => {
       const chef = duo.byId[s.id].chef;
       const chefCls = coop ? 'chef-' + chef : '';
       if (edit) return E.stepHtml(r, s, i, chefCls);
-      let wait = '';
-      if (coop) {
-        const other = U.stepDeps(r, i).filter(d => duo.byId[d] && duo.byId[d].chef !== chef);
-        if (other.length) wait = `<span class="s-wait">⏸ after ${other.map(d => '#' + (r.steps.findIndex(x => x.id === d) + 1)).join(', ')}</span>`;
-      }
       const isDone = done.has(s.id), label = isDone ? '✓' : i + 1;
       const num = coop
         ? `<button class="num ${chefCls}" data-swap="${s.id}" aria-label="Step ${i + 1}: Chef ${chef}. Tap to switch chef">${label}</button>`
@@ -56,7 +51,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       return `<div class="card step swipe ${chefCls} ${isDone ? 'done' : ''}" data-sid="${s.id}" aria-label="Step ${i + 1}${isDone ? ', done' : ''}">
         ${num}
         <div class="body">
-          ${ui.step(r, s, sc, { extra: wait })}
+          ${ui.step(r, s, sc)}
         </div>
       </div>`;
     }).join('');
