@@ -217,13 +217,14 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .sheet h3 { margin: 0 0 14px; }
 .sheet .row { display: flex; gap: 8px; }
 
-/* ============ Edit mode (on the recipe page) ============ */
+/* ============ Edit mode (inline, on the recipe page) ============ */
 .muted { color: var(--muted); font-size: .9rem; }
-.mini { font-size: .72rem; color: var(--muted); font-weight: 700; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .05em; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chips .chip { border: none; }
-.row-btns { display: inline-flex; gap: 6px; }
 .link { border: none; background: none; color: var(--accent); font-weight: 600; padding: 0; margin-left: 6px; font-size: inherit; }
+.hint { text-transform: none; letter-spacing: 0; font-weight: 500; opacity: .8; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sheet-head h3 { margin: 0; }
 
 .hero .emoji-input { width: 60px; height: 60px; font-size: 2.2rem; text-align: center; border: 1px dashed var(--line); border-radius: 14px; background: var(--surface); flex: none; }
 .hero .title-input { flex: 1; min-width: 0; font-size: 1.4rem; font-weight: 700; border: none; border-bottom: 2px dashed var(--line); background: transparent; padding: 6px 2px; }
@@ -234,26 +235,44 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .coop-line .b { color: var(--chef-b); font-weight: 700; }
 button.num { border: none; cursor: pointer; padding: 0; color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.08); }
 
-.tap { cursor: pointer; }
-.step.tap:hover, .ing-list li.tap:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
-.ing-list .chev, .step .chev { color: var(--muted); margin-left: auto; font-size: 1.2rem; }
-.reorder { display: flex; flex-direction: column; gap: 4px; margin-left: 4px; }
-.reorder button { width: 30px; height: 26px; border: none; border-radius: 7px; background: var(--surface-2); color: var(--muted); font-size: .7rem; }
-.reorder button:disabled { opacity: .3; }
+/* words you can tap: look like text with a faint dotted underline */
+.inl {
+  font: inherit; color: inherit; background: transparent; border: none; padding: 1px 2px; margin: 0;
+  border-bottom: 1.5px dotted color-mix(in srgb, var(--muted) 60%, transparent); border-radius: 0; min-width: 1.5em;
+}
+.inl:focus { outline: none; border-bottom: 2px solid var(--accent); background: var(--surface-2); border-radius: 4px 4px 0 0; }
+.inl::placeholder { color: var(--muted); opacity: .7; }
+.inl.amt { font-weight: 700; }
+.inl.add-ing { margin-top: 4px; font-size: .9rem; border-bottom-color: transparent; color: var(--muted); }
+.inl.add-ing:focus { color: var(--text); }
+.s-meta .inl { font-size: inherit; }
+.s-meta .t { white-space: nowrap; }
 
-/* edit panels */
-.sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.sheet-head h3 { margin: 0; }
-.verb-select { font-size: 1.15rem; font-weight: 700; padding: 12px; }
-.use-row { display: grid; grid-template-columns: 1fr 90px 1fr; gap: 6px; align-items: center; margin-top: 6px; font-size: .9rem; }
-.use-row input { padding: 7px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); min-width: 0; }
-.es-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.es-more { margin-top: 14px; }
-.es-more summary { color: var(--muted); font-weight: 600; cursor: pointer; }
-.es-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 20px; }
-.es-ing { display: grid; grid-template-columns: 70px 80px 1fr; gap: 6px; }
-.toggle { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-weight: 600; }
-.toggle input { width: 20px; height: 20px; accent-color: var(--accent); }
+/* tap the step number or action word → native picker sits invisibly on top */
+.num-pick, .verb-pick { position: relative; cursor: pointer; }
+.num-pick select, .verb-pick select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+.num-pick { box-shadow: inset 0 0 0 1.5px var(--line); }
+.verb-pick .vl { border-bottom: 1.5px dotted color-mix(in srgb, var(--muted) 60%, transparent); }
+
+.step.edit { padding-right: 34px; }
+.step.edit .s-ings li { gap: 4px; }
+.grip { cursor: grab; touch-action: none; user-select: none; padding: 2px; border-radius: 6px; }
+.grip:hover { background: var(--surface-2); }
+.ing-item .x, .step-x { border: none; background: none; color: var(--muted); opacity: .55; padding: 2px 6px; font-size: .85rem; }
+.ing-item .x { margin-left: auto; }
+.step-x { position: absolute; top: 8px; right: 6px; }
+.heat-btn { border: none; background: none; color: inherit; font: inherit; padding: 0; border-bottom: 1.5px dotted color-mix(in srgb, var(--muted) 60%, transparent); }
+.heat-btn.off { opacity: .6; }
+.ing-list.edit li { gap: 6px; }
+
+/* dragging */
+.drag-ghost { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; list-style: none; display: flex; align-items: center; gap: 6px;
+  background: var(--surface); box-shadow: 0 8px 24px rgba(0,0,0,.3); border-radius: 10px; padding: 6px 10px; opacity: .95; }
+.drag-ghost .x { display: none; }
+.ing-item.dragging { opacity: .3; }
+body.dragging-ing { user-select: none; cursor: grabbing; }
+.step.edit.drop, .add-step.drop { outline: 2.5px dashed var(--accent); outline-offset: -3px; }
+.add-step { margin-top: 10px; }
 
 /* ============ Shopping ============ */
 .shop-recipes { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -309,8 +328,17 @@ button.num { border: none; cursor: pointer; padding: 0; color: #fff; box-shadow:
 .paste-box summary::-webkit-details-marker { display: none; }
 .paste-box[open] summary { margin-bottom: 8px; }
 .hint { color: var(--muted); font-size: .85rem; margin: 0 0 8px; }
-.new-ing { margin-top: 8px; padding: 9px 12px; font-size: .9rem; }
-.block-link { display: block; margin: 14px auto 0; font-size: .9rem; }
-.bm-link { cursor: grab; }
-.bm-step { margin: 0 0 8px; font-size: .92rem; }
-.bm-steps { margin: 0; padding-left: 20px; font-size: .92rem; line-height: 1.9; }
+
+/* edit mode: keep steps clean; the tapped step shows its extra controls */
+.step.edit .s-grid { grid-template-columns: 84px 1fr; gap: 10px; }
+.step.edit .s-what { padding-left: 10px; }
+.step.edit .s-ings li { flex-wrap: wrap; row-gap: 0; }
+.step.edit .inl { flex: 0 0 auto; max-width: 100%; }
+.step.edit .s-meta { flex-wrap: wrap; }
+.step.edit:not(.active) .empty,
+.step.edit:not(.active) .add-ing,
+.step.edit:not(.active) .x,
+.step.edit:not(.active) .step-x { display: none; }
+.step.edit:not(.active) .s-meta:not(:has(> :not(.empty):not(.dot))) { display: none; }
+.step.edit.active { box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
+.step.edit .s-meta .dot { display: none; }

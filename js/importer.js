@@ -345,21 +345,6 @@ App.importer = (() => {
     };
   }
 
-  // ---------- "Save to Recipes" bookmark ----------
-  // Runs on the recipe page in the person's own browser (so sites that block servers still work),
-  // finds the recipe data and opens this app at #/import/<data>.
-  function bookmarklet() {
-    const app = location.origin + location.pathname;
-    const code = `(()=>{const f=n=>{if(!n||typeof n!='object')return null;if(Array.isArray(n)){for(const x of n){const r=f(x);if(r)return r}return null}const t=n['@type'];if(t=='Recipe'||(Array.isArray(t)&&t.includes('Recipe')))return n;return f(n['@graph'])||f(n.mainEntity)};let r=null;document.querySelectorAll('script[type="application/ld+json"]').forEach(s=>{if(!r)try{r=f(JSON.parse(s.textContent))}catch(e){}});if(!r){alert('No recipe found on this page.');return}const d={name:r.name,recipeYield:r.recipeYield,recipeIngredient:r.recipeIngredient,recipeInstructions:r.recipeInstructions,url:location.href.split('#')[0]};location.href=${JSON.stringify(app)}+'#/import/'+encodeURIComponent(JSON.stringify(d,(k,v)=>/^(image|video|url)$/.test(k)&&typeof v=='object'?undefined:v))})()`;
-    return 'javascript:' + encodeURIComponent(code); // encoded so "#" etc. survive being saved as a bookmark
-  }
-  function fromBookmark(json) {
-    const d = JSON.parse(json);
-    const data = normalize(d, d.url || '');
-    if (!data.ingredients.length) throw new Error('No ingredients found.');
-    return convert(data);
-  }
-
   const isLocal = () => /^(localhost|127\.0\.0\.1|\[::1\]|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)$/.test(location.hostname);
   const READER = 'https://r.jina.ai/';
   const blocked = html => /<title>(just a moment|attention required|access denied)/i.test(html) || /performing security verification/i.test(html);
@@ -401,7 +386,7 @@ App.importer = (() => {
       }
     } catch (e) { /* give up below */ }
 
-    throw new Error('That site blocks importing. Use the Save to Recipes button on the recipe page, or paste the text.');
+    throw new Error('That site blocks importing. Copy the recipe and use “Paste recipe text”.');
   }
 
   // Pasted recipe text (copied from a page, or from a photo with the phone's "copy text").
@@ -440,5 +425,5 @@ App.importer = (() => {
     return convert({ name: title || 'Pasted recipe', servings, ingredients, steps, source: meta.source || '' });
   }
 
-  return { convert, fromUrl, fromText, fromBookmark, bookmarklet };
+  return { convert, fromUrl, fromText };
 })();

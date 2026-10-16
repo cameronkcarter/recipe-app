@@ -1,218 +1,255 @@
-// Edit panels used by the recipe page's edit mode: step, ingredient, paste list.
-// Every change is applied to the recipe and saved right away — there's no separate "save".
+// Inline edit mode for the recipe page. No pop-ups: steps look the same as when cooking,
+// but the words are tappable —
+//   • action word → pick another        • step number → move the step
+//   • amount / name / note / time → type • heat → tap to cycle
+//   • drag an ingredient's icon onto another step to move it there
+// Every change saves right away.
 window.App = window.App || {};
 App.edit = (() => {
   const U = App.util, S = App.store;
   const save = r => S.upsertRecipe(r);
+  let active = null; // the step being worked on shows its extra controls
+  const ing = (r, id) => r.ingredients.find(x => x.id === id);
+  const size = v => Math.max(2, String(v || '').length + 1);
+  const ctx = document.createElement('canvas').getContext('2d');
+  function autosize(el) {
+    const cs = getComputedStyle(el);
+    ctx.font = cs.font;
+    el.style.width = Math.ceil(ctx.measureText(el.value || el.placeholder).width + 8) + 'px';
+  }
+  const autosizeAll = root => root.querySelectorAll('.inl').forEach(autosize);
+  const inl = (attrs, value, ph, cls = '') =>
+    `<input class="inl ${cls}" ${attrs} value="${U.esc(value ?? '')}" placeholder="${U.esc(ph)}" size="${size(value || ph)}" autocomplete="off">`;
 
   const verbOptions = sel => [...new Set(App.VERBS.map(v => v.group))].map(g =>
     `<optgroup label="${g}">${App.VERBS.filter(v => v.group === g)
-      .map(v => `<option value="${v.id}" ${v.id === sel ? 'selected' : ''}>${v.icon} ${v.label}</option>`).join('')}</optgroup>`).join('');
+      .map(v => `<option value="${v.id}" ${v.id === sel ? 'selected' : ''}>${v.label}</option>`).join('')}</optgroup>`).join('');
 
-  // ---------- Step ----------
-  function stepSheet(r, id, onClose) {
-    const s = () => r.steps.find(x => x.id === id);
-    const idx = () => r.steps.findIndex(x => x.id === id);
-
-    let moreOpen = false;
-    App.ui.sheet('<div class="es"></div>', (el, close) => {
-      const box = el.querySelector('.es');
-      const draw = () => {
-        const st = s(), i = idx();
-        const used = (st.uses || []).map(u => u.ing);
-        const deps = U.stepDeps(r, i);
-        const oven = App.verb(st.verb).group === 'Oven';
-        box.innerHTML = `
-          <div class="sheet-head"><h3>Step ${i + 1}</h3><button class="btn small primary" data-close>Done</button></div>
-          <select class="input verb-select" data-f="verb" aria-label="Action">${verbOptions(st.verb)}</select>
-
-          <div class="mini">Ingredients</div>
-          <div class="chips">${r.ingredients.map(ing => `<button class="chip ${used.includes(ing.id) ? 'on' : ''}" data-use="${ing.id}">${U.ingIcon(ing.name) || ''} ${U.esc(ing.name)}</button>`).join('')
-            }</div>
-          <input class="input new-ing" data-newing placeholder="+ New ingredient, e.g. 1 tbsp butter" aria-label="New ingredient">
-
-          <div class="mini">Note</div>
-          <input class="input" data-f="text" value="${U.esc(st.text || '')}" placeholder="large pot · until golden">
-
-          <div class="es-row">
-            <div><div class="mini">Time</div><input class="input" type="number" min="0" inputmode="numeric" data-f="time" value="${st.time ?? ''}" placeholder="min"></div>
-            ${oven ? `<div><div class="mini">Oven</div><input class="input" data-f="temp" value="${U.esc(st.temp || '')}" placeholder="400°F"></div>` : ''}
+  // ---------- Rendering ----------
+  function stepHtml(r, s, i, chefCls) {
+    const v = App.verb(s.verb);
+    const usedBefore = new Set(r.steps.slice(0, i).flatMap(x => (x.uses || []).map(u => u.ing)));
+    const items = (s.uses || []).map(u => {
+      const g = ing(r, u.ing);
+      if (!g) return '';
+      const first = !usedBefore.has(g.id);
+      const amt = first && g.qty != null ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
+      return `<li class="ing-item" data-ing="${g.id}">
+        <span class="grip" title="Drag to another step">${U.ingIconHtml(g)}</span>
+        ${first ? inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt') : ''}
+        ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
+        ${u.note ? `<span class="un">· ${U.esc(u.note)}</span>` : ''}
+        <button class="x" data-rm-use="${g.id}" aria-label="Remove ${U.esc(g.name)}">✕</button>
+      </li>`;
+    }).join('');
+    const positions = r.steps.map((_, k) => `<option value="${k}" ${k === i ? 'selected' : ''}>${k + 1}</option>`).join('');
+    return `<div class="card step edit ${chefCls} ${s.id === active ? 'active' : ''}" data-step="${s.id}">
+      <label class="num num-pick ${chefCls}" aria-label="Step number">${i + 1}<select data-pos="${s.id}">${positions}</select></label>
+      <div class="body">
+        <div class="s-grid">
+          <label class="s-verb verb-pick"><span class="vi">${v.icon}</span><span class="vl">${U.esc(v.label)}</span>
+            <select data-verb="${s.id}" aria-label="Action">${verbOptions(s.verb)}</select></label>
+          <div class="s-what">
+            ${items ? `<ul class="s-ings">${items}</ul>` : ''}
+            ${inl(`data-add-ing="${s.id}" aria-label="Add ingredient" enterkeyhint="done"`, '', '+ ingredient', 'add-ing')}
+            <div class="s-meta">
+              ${inl(`data-text="${s.id}" aria-label="Note"`, s.text, '+ note', 'note' + (s.text ? '' : ' empty'))}
+              ${inl(`data-time="${s.id}" inputmode="numeric" aria-label="Minutes"`, s.time ? '⏲ ' + s.time + ' min' : '', '⏲ + time', 'time' + (s.time ? '' : ' empty'))}
+              <button class="heat-btn ${s.heat ? '' : 'off empty'}" data-heat="${s.id}">🔥 ${s.heat ? U.HEAT[s.heat].toLowerCase() : 'no'} heat</button>
+            </div>
           </div>
-          <div class="mini">Heat</div>
-          <div class="seg">${U.HEAT.map((h, n) => `<button data-heat="${n}" class="${(st.heat || 0) === n ? 'on' : ''}">${n ? h : 'Off'}</button>`).join('')}</div>
-
-          <details class="es-more" ${moreOpen ? "open" : ""}>
-            <summary>More</summary>
-            ${(st.uses || []).length ? `<div class="mini">Amount · note per ingredient</div>` : ""}
-            ${(st.uses || []).map(u => {
-              const ing = r.ingredients.find(x => x.id === u.ing);
-              if (!ing) return '';
-              const amt = u.qty != null ? U.fmtQty(u.qty) + (u.unit && u.unit !== ing.unit ? ' ' + u.unit : '') : '';
-              return `<div class="use-row"><span>${U.esc(ing.name)}</span>
-                <input data-amt="${ing.id}" value="${U.esc(amt)}" placeholder="${U.esc(U.fmtAmount(ing.qty, U.normUnit(ing.unit)) || 'amt')}" aria-label="Amount for ${U.esc(ing.name)}">
-                <input data-unote="${ing.id}" value="${U.esc(u.note || '')}" placeholder="note" aria-label="Note for ${U.esc(ing.name)}"></div>`;
-            }).join('')}
-            <div class="mini">Details</div>
-            <textarea class="input" rows="3" data-f="detail" placeholder="Extra instructions (hidden until tapped)">${U.esc(st.detail || '')}</textarea>
-            ${i > 0 ? `<div class="mini">Waits for</div>
-              <div class="chips">${r.steps.slice(0, i).map((p, j) => `<button class="chip ${deps.includes(p.id) ? 'on' : ''}" data-dep="${p.id}">${j + 1} · ${App.verb(p.verb).label}</button>`).join('')}</div>` : ''}
-          </details>
-
-          <div class="es-foot">
-            ${i < r.steps.length - 1 ? `<button class="btn small" data-act="merge">⤓ Merge with next</button>` : '<span></span>'}
-            <button class="btn small danger" data-act="delete">Delete step</button>
-          </div>`;
-      };
-
-      // Typing a new ingredient + Enter adds it to the recipe and to this step.
-      box.addEventListener('toggle', e => { if (e.target.classList.contains('es-more')) moreOpen = e.target.open; }, true);
-      box.onkeydown = e => {
-        if (e.key !== 'Enter' || e.target.dataset.newing == null) return;
-        e.preventDefault();
-        const p = U.parseIngredientLine(e.target.value);
-        if (!p) return;
-        const firstTop = r.ingredients.findIndex(i => i.group);
-        if (firstTop < 0) r.ingredients.push(p); else r.ingredients.splice(firstTop, 0, p);
-        (s().uses ||= []).push({ ing: p.id });
-        save(r); draw();
-        box.querySelector('[data-newing]').focus();
-      };
-      box.oninput = e => {
-        const t = e.target, st = s();
-        if (t.dataset.f) {
-          const f = t.dataset.f;
-          if (f === 'time') st.time = t.value === '' ? undefined : +t.value;
-          else st[f] = t.value || undefined;
-          save(r);
-          if (f === 'verb') draw();
-        } else if (t.dataset.amt) {
-          const u = st.uses.find(x => x.ing === t.dataset.amt);
-          const v = t.value.trim();
-          if (!v) { delete u.qty; delete u.unit; }
-          else { const p = U.parseIngredientLine(v + ' x'); u.qty = p?.qty ?? U.parseQty(v); u.unit = p?.unit || undefined; }
-          save(r);
-        } else if (t.dataset.unote) {
-          st.uses.find(x => x.ing === t.dataset.unote).note = t.value.trim() || undefined;
-          save(r);
-        }
-      };
-      box.onclick = e => {
-        const t = e.target.closest('button');
-        if (!t) return;
-        const st = s(), i = idx();
-        if (t.dataset.use) {
-          st.uses ||= [];
-          const k = st.uses.findIndex(u => u.ing === t.dataset.use);
-          if (k > -1) st.uses.splice(k, 1); else st.uses.push({ ing: t.dataset.use });
-        } else if (t.dataset.heat) {
-          st.heat = +t.dataset.heat || undefined;
-        } else if (t.dataset.dep) {
-          const deps = U.stepDeps(r, i);
-          const k = deps.indexOf(t.dataset.dep);
-          if (k > -1) deps.splice(k, 1); else deps.push(t.dataset.dep);
-          st.after = deps;
-        } else if (t.dataset.act === 'merge') {
-          mergeWithNext(r, i);
-        } else if (t.dataset.act === 'delete') {
-          if (!confirm('Delete this step?')) return;
-          deleteStep(r, i); save(r); close(); return;
-        } else return;
-        save(r); draw();
-      };
-      draw();
-    }, onClose);
-  }
-
-  function mergeWithNext(r, i) {
-    const a = r.steps[i], b = r.steps[i + 1];
-    for (const u of b.uses || []) if (!(a.uses ||= []).some(x => x.ing === u.ing)) a.uses.push(u);
-    a.text = [a.text, b.text].filter(Boolean).join(', ') || undefined;
-    a.detail = [a.detail, b.detail].filter(Boolean).join(' ') || undefined;
-    a.time = a.time || b.time ? (+a.time || 0) + (+b.time || 0) : undefined;
-    a.heat = a.heat || b.heat;
-    a.temp = a.temp || b.temp;
-    a.after = [...new Set([...U.stepDeps(r, i), ...U.stepDeps(r, i + 1)])].filter(x => x !== a.id);
-    r.steps.splice(i + 1, 1);
-    // anything that waited for the removed step now waits for the merged one
-    r.steps.forEach(s => {
-      if (Array.isArray(s.after) && s.after.includes(b.id)) s.after = [...new Set(s.after.map(x => x === b.id ? a.id : x))].filter(x => x !== s.id);
-    });
-  }
-
-  function deleteStep(r, i) {
-    const gone = r.steps[i];
-    const goneDeps = U.stepDeps(r, i);
-    // explicit "after" lists keep their order, implicit ones (previous step) need to be pinned first
-    r.steps.forEach((s, j) => { s.after = U.stepDeps(r, j); });
-    r.steps.splice(i, 1);
-    r.steps.forEach(s => {
-      if (s.after.includes(gone.id)) s.after = [...new Set(s.after.filter(x => x !== gone.id).concat(goneDeps))];
-    });
-    r.notes = (r.notes || []).filter(n => n.target !== 'step:' + gone.id);
-  }
-
-  // ---------- Ingredient ----------
-  function ingredientSheet(r, id, onClose) {
-    const ing = r.ingredients.find(x => x.id === id);
-    App.ui.sheet(`
-      <div class="sheet-head"><h3>Ingredient</h3><button class="btn small primary" data-close>Done</button></div>
-      <div class="es-ing">
-        <input class="input" data-f="qty" value="${ing.qty != null ? U.esc(U.fmtQty(ing.qty)) : ''}" placeholder="qty" inputmode="decimal" aria-label="Quantity">
-        <input class="input" data-f="unit" value="${U.esc(ing.unit || '')}" placeholder="unit" list="units" aria-label="Unit">
-        <input class="input" data-f="name" value="${U.esc(ing.name)}" placeholder="name" aria-label="Name">
+        </div>
       </div>
-      <datalist id="units">${U.UNITS.map(u => `<option value="${u}">`).join('')}</datalist>
-      <input class="input" data-f="note" value="${U.esc(ing.note || '')}" placeholder="note (optional)" style="margin-top:8px" aria-label="Note">
-      <label class="toggle"><input type="checkbox" data-f="topping" ${ing.group ? 'checked' : ''}> Topping</label>
-      <div class="es-foot"><span></span><button class="btn small danger" data-act="delete">Delete</button></div>`,
-      (el, close) => {
-        if (!ing.name) el.querySelector('[data-f=name]').focus();
-        el.oninput = e => {
-          const f = e.target.dataset.f;
-          if (!f) return;
-          if (f === 'qty') ing.qty = U.parseQty(e.target.value);
-          else if (f === 'unit') ing.unit = U.normUnit(e.target.value);
-          else if (f === 'topping') { if (e.target.checked) ing.group = 'Toppings'; else delete ing.group; }
-          else ing[f] = e.target.value.trim() || (f === 'name' ? '' : undefined);
-          save(r);
-        };
-        el.querySelector('[data-act=delete]').onclick = () => { removeIngredient(r, id); save(r); close(); };
-      },
-      () => { if (!ing.name) removeIngredient(r, id); sortToppingsLast(r); save(r); onClose && onClose(); });
+      <button class="step-x" data-rm-step="${s.id}" aria-label="Delete step">✕</button>
+    </div>`;
   }
 
+  function ingRowHtml(r, g) {
+    const amt = g.qty != null ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
+    return `<li class="ing-item">${U.ingIconHtml(g)}
+      ${inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt')}
+      ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
+      <button class="x" data-rm-ing="${g.id}" aria-label="Delete ${U.esc(g.name)}">✕</button></li>`;
+  }
+
+  // ---------- Changes ----------
+  function setAmount(g, v) {
+    v = v.trim();
+    if (!v) { g.qty = null; g.unit = ''; return; }
+    const p = U.parseIngredientLine(v + ' x');
+    g.qty = p?.qty ?? U.parseQty(v);
+    g.unit = p?.unit || '';
+  }
+  function addIngredientToStep(r, stepId, text) {
+    const p = U.parseIngredientLine(text);
+    if (!p) return;
+    const s = r.steps.find(x => x.id === stepId);
+    let g = r.ingredients.find(x => x.name.toLowerCase() === p.name.toLowerCase());
+    if (!g) {
+      g = p;
+      const firstTop = r.ingredients.findIndex(x => x.group);
+      if (firstTop < 0) r.ingredients.push(g); else r.ingredients.splice(firstTop, 0, g);
+    }
+    s.uses ||= [];
+    if (!s.uses.some(u => u.ing === g.id)) s.uses.push({ ing: g.id });
+  }
+  // Removing an ingredient from its last step removes it from the recipe too.
+  function removeUse(r, stepId, ingId) {
+    const s = r.steps.find(x => x.id === stepId);
+    s.uses = (s.uses || []).filter(u => u.ing !== ingId);
+    if (!r.steps.some(x => (x.uses || []).some(u => u.ing === ingId))) removeIngredient(r, ingId);
+  }
   function removeIngredient(r, id) {
     r.ingredients = r.ingredients.filter(x => x.id !== id);
     r.steps.forEach(s => { s.uses = (s.uses || []).filter(u => u.ing !== id); });
-    r.notes = (r.notes || []).filter(n => n.target !== 'ing:' + id);
   }
-  const sortToppingsLast = r => { r.ingredients = [...r.ingredients.filter(i => !i.group), ...r.ingredients.filter(i => i.group)]; };
+  function moveUse(r, fromId, toId, ingId) {
+    const from = r.steps.find(x => x.id === fromId), to = r.steps.find(x => x.id === toId);
+    const use = (from.uses || []).find(u => u.ing === ingId);
+    if (!use || !to || from === to) return;
+    from.uses = from.uses.filter(u => u !== use);
+    to.uses ||= [];
+    if (!to.uses.some(u => u.ing === ingId)) to.uses.push(use);
+  }
+  // Pin every step's "waits for" list first, so moving/deleting doesn't silently change it.
+  const pinDeps = r => r.steps.forEach((s, k) => { s.after = U.stepDeps(r, k); });
+  function moveStep(r, id, to) {
+    pinDeps(r);
+    const from = r.steps.findIndex(s => s.id === id);
+    const [s] = r.steps.splice(from, 1);
+    r.steps.splice(to, 0, s);
+  }
+  function deleteStep(r, id) {
+    pinDeps(r);
+    const gone = r.steps.find(s => s.id === id);
+    r.steps = r.steps.filter(s => s !== gone);
+    r.steps.forEach(s => { if (s.after.includes(id)) s.after = [...new Set(s.after.filter(x => x !== id).concat(gone.after))]; });
+  }
+  function newStep(r) {
+    const prev = r.steps[r.steps.length - 1];
+    const s = { id: U.uid('s'), verb: 'add', uses: [], after: prev ? [prev.id] : [] };
+    active = s.id;
+    if (isCustomSplit(r)) s.chef = 'A';
+    r.steps.push(s);
+    return s;
+  }
 
-  function pasteSheet(r, onClose) {
-    App.ui.sheet(`
-      <div class="sheet-head"><h3>Paste ingredients</h3><button class="btn small" data-close>Cancel</button></div>
-      <textarea class="input" rows="9" placeholder="One per line&#10;2 tbsp olive oil&#10;1 onion, diced"></textarea>
-      <button class="btn primary block" data-add style="margin-top:10px">Add</button>`,
-      (el, close) => {
-        el.querySelector('textarea').focus();
-        el.querySelector('[data-add]').onclick = () => {
-          let group;
-          for (const line of el.querySelector('textarea').value.split('\n')) {
-            const l = line.trim();
-            if (!l) continue;
-            if (/:$/.test(l)) { group = /topping|serv|garnish/i.test(l) ? 'Toppings' : undefined; continue; }
-            const p = U.parseIngredientLine(l);
-            if (p) { if (group) p.group = group; r.ingredients.push(p); }
-          }
-          sortToppingsLast(r); save(r); close();
-        };
-      }, onClose);
+  // ---------- Events ----------
+  // Returns a cleanup function (drag listeners live on window).
+  function bind(root, r, rerender) {
+    const commit = (redraw = false) => { save(r); if (redraw) rerender(); };
+    const handlers = [];
+    const on = (type, fn) => { root.addEventListener(type, fn); handlers.push([type, fn]); };
+
+    on('input', e => {
+      const t = e.target;
+      if (t.classList.contains('inl')) autosize(t);
+    });
+    on('change', e => {
+      const t = e.target, d = t.dataset;
+      if (d.verb) { r.steps.find(s => s.id === d.verb).verb = t.value; commit(true); }
+      else if (d.pos) { moveStep(r, d.pos, +t.value); commit(true); }
+      else if (d.amt) { setAmount(ing(r, d.amt), t.value); commit(); }
+      else if (d.name) {
+        const g = ing(r, d.name);
+        if (t.value.trim()) g.name = t.value.trim();
+        root.querySelectorAll('[data-name="' + d.name + '"]').forEach(x => { if (x !== t) { x.value = g.name; autosize(x); } });
+        commit();
+      }
+      else if (d.text) { r.steps.find(s => s.id === d.text).text = t.value.trim() || undefined; commit(); }
+      else if (d.time) { const n = parseFloat(t.value.replace(/[^d.]/g, '')); r.steps.find(s => s.id === d.time).time = n > 0 ? n : undefined; t.value = n > 0 ? '⏲ ' + n + ' min' : ''; autosize(t); commit(); }
+      else if (d.addIng && t.value.trim()) { addIngredientToStep(r, d.addIng, t.value); commit(true); }
+    });
+    on('keydown', e => {
+      if (e.key === 'Enter' && e.target.classList.contains('inl')) { e.preventDefault(); e.target.blur(); }
+    });
+    on('click', e => {
+      const card = e.target.closest('.step.edit');
+      if (card && card.dataset.step !== active) {
+        active = card.dataset.step;
+        root.querySelectorAll('.step.edit.active').forEach(x => x.classList.remove('active'));
+        card.classList.add('active');
+      }
+      const t = e.target.closest('button');
+      if (!t) return;
+      const d = t.dataset;
+      if (d.heat) { const s = r.steps.find(x => x.id === d.heat); s.heat = ((s.heat || 0) + 1) % 4 || undefined; commit(true); }
+      else if (d.rmUse) { removeUse(r, t.closest('[data-step]').dataset.step, d.rmUse); commit(true); }
+      else if (d.rmIng) { removeIngredient(r, d.rmIng); commit(true); }
+      else if (d.rmStep) {
+        const s = r.steps.find(x => x.id === d.rmStep);
+        if ((s.uses || []).length && !confirm('Delete this step?')) return;
+        deleteStep(r, d.rmStep); commit(true);
+      }
+    });
+    const unDrag = bindDrag(root, r, commit);
+    return () => { handlers.forEach(([t, fn]) => root.removeEventListener(t, fn)); unDrag(); };
+  }
+
+  // Drag an ingredient (by its icon) onto another step, or onto "+ Add step" to start a new one.
+  function bindDrag(root, r, commit) {
+    let drag = null;
+    const targetAt = (x, y) => {
+      drag.ghost.style.display = 'none';
+      const el = document.elementFromPoint(x, y);
+      drag.ghost.style.display = '';
+      return el && (el.closest('.step.edit') || el.closest('[data-act="add-step"]'));
+    };
+    const onMove = e => {
+      if (!drag) return;
+      e.preventDefault();
+      drag.ghost.style.transform = `translate(${e.clientX - drag.dx}px, ${e.clientY - drag.dy}px)`;
+      const tgt = targetAt(e.clientX, e.clientY);
+      if (tgt !== drag.over) { drag.over?.classList.remove('drop'); drag.over = tgt; tgt?.classList.add('drop'); }
+      // scroll when dragging near the top or bottom edge
+      const edge = 70;
+      if (e.clientY < edge) window.scrollBy(0, -12); else if (e.clientY > innerHeight - edge) window.scrollBy(0, 12);
+    };
+    const onUp = () => {
+      if (!drag) return;
+      const { over, ingId, from } = drag;
+      drag.ghost.remove(); drag.item.classList.remove('dragging'); over?.classList.remove('drop');
+      document.body.classList.remove('dragging-ing');
+      drag = null;
+      if (!over) return;
+      const to = over.dataset.act === 'add-step' ? newStep(r).id : over.dataset.step;
+      moveUse(r, from, to, ingId);
+      commit(true);
+    };
+    const onDown = e => {
+      const grip = e.target.closest('.grip');
+      if (!grip || e.button > 0) return;
+      const item = grip.closest('.ing-item'), step = grip.closest('[data-step]');
+      if (!item || !step) return;
+      e.preventDefault();
+      const rect = item.getBoundingClientRect();
+      const ghost = item.cloneNode(true);
+      ghost.classList.add('drag-ghost');
+      ghost.style.width = rect.width + 'px';
+      ghost.style.transform = `translate(${rect.left}px, ${rect.top}px)`;
+      document.body.appendChild(ghost);
+      item.classList.add('dragging');
+      document.body.classList.add('dragging-ing');
+      drag = { item, ghost, ingId: item.dataset.ing, from: step.dataset.step, dx: e.clientX - rect.left, dy: e.clientY - rect.top, over: null };
+      navigator.vibrate?.(15);
+    };
+    root.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      root.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      drag?.ghost.remove();
+    };
   }
 
   // ---------- Co-op ----------
   // First manual change freezes the current split, so only the tapped step moves.
   function swapChef(r, stepId) {
-    if (!r.steps.some(s => s.chef === 'A' || s.chef === 'B')) {
+    if (!isCustomSplit(r)) {
       const duo = U.schedule(r, 2);
       r.steps.forEach(s => { s.chef = duo.byId[s.id].chef; });
     }
@@ -220,22 +257,8 @@ App.edit = (() => {
     s.chef = s.chef === 'A' ? 'B' : 'A';
     save(r);
   }
-  const isCustomSplit = r => r.steps.some(s => s.chef === 'A' || s.chef === 'B');
+  function isCustomSplit(r) { return r.steps.some(s => s.chef === 'A' || s.chef === 'B'); }
   function autoSplit(r) { r.steps.forEach(s => delete s.chef); save(r); }
 
-  function newStep(r) {
-    const prev = r.steps[r.steps.length - 1];
-    const s = { id: U.uid('s'), verb: 'add', uses: [], after: prev ? [prev.id] : [] };
-    if (isCustomSplit(r)) s.chef = 'A';
-    r.steps.push(s); save(r);
-    return s.id;
-  }
-  function newIngredient(r) {
-    const ing = { id: U.uid('i'), qty: null, unit: '', name: '' };
-    const firstTop = r.ingredients.findIndex(i => i.group);
-    if (firstTop < 0) r.ingredients.push(ing); else r.ingredients.splice(firstTop, 0, ing);
-    return ing.id;
-  }
-
-  return { stepSheet, ingredientSheet, pasteSheet, swapChef, autoSplit, isCustomSplit, newStep, newIngredient };
+  return { autosizeAll, stepHtml, ingRowHtml, bind, newStep, swapChef, autoSplit, isCustomSplit };
 })();

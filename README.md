@@ -18,7 +18,7 @@ Simple, symbol-based recipes with co-op cooking, a shopping list, and a cook log
 - `js/store.js` — saving (browser localStorage for now)
 - `js/importer.js` — turns a recipe from a link or pasted text into symbol steps
 - `js/ui.js` — timers, bottom sheets, step rendering, notes
-- `js/edit.js` — edit panels (step, ingredient, paste list) and co-op swapping
+- `js/edit.js` — inline edit mode (tap-to-change words, drag ingredients) and co-op swapping
 - `js/views/` — one file per screen (library, recipe, shopping, log)
 - `js/app.js` — router
 
@@ -28,11 +28,13 @@ edit mode. Link import tries, in order: the local server (`serve.js`, uses curl)
 Jina Reader (r.jina.ai) so it also works on the public site. Some sites block both — then paste the text.
 
 ## Editing
-✏️ turns the recipe page into edit mode: tap a step or ingredient to change it, ▲▼ to reorder,
-"Merge with next" to combine steps. In co-op, tap a step number to swap chefs; ↺ Auto-split resets.
+✏️ turns the recipe page into edit mode — no pop-ups. Tap the action word to pick another, tap a step
+number to move the step, tap an amount/name/note/time to type, tap heat to cycle. Drag an ingredient by
+its icon onto another step (or onto + Add step). The tapped step shows ✕ and + ingredient.
+In co-op (normal view), tap a step number to swap chefs; ↺ Auto-split resets.
 
 ## How co-op works
-Each step can say which earlier steps it needs ("Waits for", under More in a step's edit panel).
+Each step can say which earlier steps it needs (kept automatically when steps move).
 The app tries splitting the steps between Chef A and Chef B and keeps the split that:
 1. finishes the meal soonest,
 2. gives both chefs a similar amount of hands-on work,
