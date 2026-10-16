@@ -226,22 +226,43 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .sheet h3 { margin: 0 0 14px; }
 .sheet .row { display: flex; gap: 8px; }
 
-/* ============ Editor ============ */
-.ed-ing { display: grid; grid-template-columns: 64px 76px 1fr 36px; gap: 6px; margin-bottom: 6px; align-items: center; }
-.ed-ing .input { padding: 9px 8px; }
-.ed-ing .rm, .ed-step .rm { border: none; background: none; color: var(--muted); font-size: 1.2rem; }
-.ed-group { font-size: .8rem; color: var(--muted); margin: 10px 0 4px; }
-.ed-step { padding: 12px; margin-bottom: 10px; }
-.ed-step-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.ed-step-head .num { font-weight: 800; color: var(--muted); }
-.ed-step-head select { flex: 1; }
-.ed-step .mini { font-size: .75rem; color: var(--muted); font-weight: 600; margin: 8px 0 4px; text-transform: uppercase; letter-spacing: .04em; }
-.ed-step .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.ed-step .chips .chip { border: none; }
-.ed-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.portion { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-.portion label { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: .85rem; background: var(--surface-2); border-radius: 8px; padding: 2px 4px 2px 8px; }
-.portion input { width: 72px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); }
+/* ============ Edit mode (on the recipe page) ============ */
+.muted { color: var(--muted); font-size: .9rem; }
+.mini { font-size: .72rem; color: var(--muted); font-weight: 700; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .05em; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips .chip { border: none; }
+.row-btns { display: inline-flex; gap: 6px; }
+.link { border: none; background: none; color: var(--accent); font-weight: 600; padding: 0; margin-left: 6px; font-size: inherit; }
+
+.hero .emoji-input { width: 60px; height: 60px; font-size: 2.2rem; text-align: center; border: 1px dashed var(--line); border-radius: 14px; background: var(--surface); flex: none; }
+.hero .title-input { flex: 1; min-width: 0; font-size: 1.4rem; font-weight: 700; border: none; border-bottom: 2px dashed var(--line); background: transparent; padding: 6px 2px; }
+.hero .title-input:focus, .hero .emoji-input:focus { outline: none; border-color: var(--accent); }
+
+.coop-line { color: var(--muted); font-size: .88rem; margin-top: 10px; }
+.coop-line .a { color: var(--chef-a); font-weight: 700; }
+.coop-line .b { color: var(--chef-b); font-weight: 700; }
+button.num { border: none; cursor: pointer; padding: 0; color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.08); }
+
+.tap { cursor: pointer; }
+.step.tap:hover, .ing-list li.tap:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+.ing-list .chev, .step .chev { color: var(--muted); margin-left: auto; font-size: 1.2rem; }
+.reorder { display: flex; flex-direction: column; gap: 4px; margin-left: 4px; }
+.reorder button { width: 30px; height: 26px; border: none; border-radius: 7px; background: var(--surface-2); color: var(--muted); font-size: .7rem; }
+.reorder button:disabled { opacity: .3; }
+
+/* edit panels */
+.sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sheet-head h3 { margin: 0; }
+.verb-select { font-size: 1.15rem; font-weight: 700; padding: 12px; }
+.use-row { display: grid; grid-template-columns: 1fr 90px 1fr; gap: 6px; align-items: center; margin-top: 6px; font-size: .9rem; }
+.use-row input { padding: 7px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.es-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.es-more { margin-top: 14px; }
+.es-more summary { color: var(--muted); font-weight: 600; cursor: pointer; }
+.es-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 20px; }
+.es-ing { display: grid; grid-template-columns: 70px 80px 1fr; gap: 6px; }
+.toggle { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-weight: 600; }
+.toggle input { width: 20px; height: 20px; accent-color: var(--accent); }
 
 /* ============ Shopping ============ */
 .shop-recipes { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -297,3 +318,4 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .paste-box summary::-webkit-details-marker { display: none; }
 .paste-box[open] summary { margin-bottom: 8px; }
 .hint { color: var(--muted); font-size: .85rem; margin: 0 0 8px; }
+.new-ing { margin-top: 8px; padding: 9px 12px; font-size: .9rem; }

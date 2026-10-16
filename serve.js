@@ -1,10 +1,8 @@
 // Tiny local web server (no installs needed): `node serve.js`, then open http://localhost:5173
 // Your phone on the same Wi-Fi can open http://<this-computer's-IP>:5173 too.
 //
-// Also provides /api/import?url=... which fetches a recipe page and returns the structured
-// recipe data most recipe sites embed (schema.org "Recipe" JSON-LD). Browsers can't fetch
-// other sites directly, so this has to happen on a server. When the app is hosted later,
-// this same function moves to a serverless function.
+// Also provides /api/page?url=... which downloads a web page for recipe import (browsers can't
+// fetch other sites directly). The online version uses a public page reader instead.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -14,31 +12,7 @@ const PORT = process.env.PORT || 5173;
 const ROOT = __dirname;
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon' };
 
-// ---------- Recipe import ----------
-const decode = s => String(s ?? '')
-  .replace(/<[^>]+>/g, ' ')
-  .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;|&apos;|&#8217;|&rsquo;/g, "'")
-  .replace(/&#8220;|&#8221;|&ldquo;|&rdquo;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&frac12;/g, '½').replace(/&frac14;/g, '¼').replace(/&frac34;/g, '¾')
-  .replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n))
-  .replace(/\s+/g, ' ').trim();
-
-function findRecipe(node) {
-  if (!node || typeof node !== 'object') return null;
-  if (Array.isArray(node)) { for (const n of node) { const r = findRecipe(n); if (r) return r; } return null; }
-  const type = node['@type'];
-  if (type === 'Recipe' || (Array.isArray(type) && type.includes('Recipe'))) return node;
-  return findRecipe(node['@graph']) || findRecipe(node.mainEntity) || null;
-}
-
-// Instructions come as strings, HowToStep objects, or HowToSection groups — flatten to strings.
-function flattenSteps(ins) {
-  if (!ins) return [];
-  if (typeof ins === 'string') return ins.split(/\n+|(?<=\.)\s+(?=\d+\.\s)/).map(decode).filter(Boolean);
-  if (Array.isArray(ins)) return ins.flatMap(flattenSteps);
-  if (ins.itemListElement) return flattenSteps(ins.itemListElement);
-  return [decode(ins.text || ins.name || '')].filter(Boolean);
-}
-
+// ---------- Page fetch for recipe import ----------
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36';
 
 // Many recipe sites (behind Cloudflare) refuse Node's built-in fetch but accept curl,
@@ -64,7 +38,7 @@ async function fetchGet(url) {
   } finally { clearTimeout(timer); }
 }
 
-async function importRecipe(url) {
+async function getPage(url) {
   if (!/^https?:\/\//i.test(url)) throw new Error('That doesn’t look like a web link.');
   let page;
   try { page = await curlGet(url); } catch (e) { page = null; }
@@ -72,34 +46,18 @@ async function importRecipe(url) {
     try { page = await fetchGet(url); }
     catch (e) { throw new Error(e.name === 'AbortError' ? 'The site took too long to respond.' : 'Couldn’t reach that site.'); }
   }
-  if (page.status >= 400) throw new Error(`The site blocked the request (error ${page.status}). Try “Paste list” in the editor instead.`);
-  const html = page.html;
-
-  let recipe = null;
-  for (const m of html.matchAll(/<script[^>]*type=["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script>/gi)) {
-    try { recipe = findRecipe(JSON.parse(m[1].trim())); } catch (e) { /* skip broken blocks */ }
-    if (recipe) break;
-  }
-  if (!recipe) throw new Error('Couldn’t find recipe info on that page. Try the site’s main recipe page, or use “Paste list” in the editor.');
-
-  const yieldVal = [].concat(recipe.recipeYield || []).map(String).find(y => /\d/.test(y));
-  return {
-    name: decode(recipe.name),
-    servings: yieldVal ? parseInt(yieldVal.match(/\d+/)[0], 10) : null,
-    ingredients: [].concat(recipe.recipeIngredient || recipe.ingredients || []).map(decode).filter(Boolean),
-    steps: flattenSteps(recipe.recipeInstructions),
-    source: url,
-  };
+  if (page.status >= 400) throw new Error(`The site blocked the request (error ${page.status}).`);
+  return { html: page.html };
 }
 
 // ---------- Server ----------
 http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
 
-  if (u.pathname === '/api/import') {
+  if (u.pathname === '/api/page') {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     try {
-      const data = await importRecipe(u.searchParams.get('url') || '');
+      const data = await getPage(u.searchParams.get('url') || '');
       res.end(JSON.stringify(data));
     } catch (e) {
       res.statusCode = 400;

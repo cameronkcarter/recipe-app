@@ -18,17 +18,21 @@ Simple, symbol-based recipes with co-op cooking, a shopping list, and a cook log
 - `js/store.js` — saving (browser localStorage for now)
 - `js/importer.js` — turns a recipe from a link or pasted text into symbol steps
 - `js/ui.js` — timers, bottom sheets, step rendering, notes
-- `js/views/` — one file per screen (library, recipe, editor, shopping, log)
+- `js/edit.js` — edit panels (step, ingredient, paste list) and co-op swapping
+- `js/views/` — one file per screen (library, recipe, shopping, log)
 - `js/app.js` — router
 
-## Adding recipes from a link
-Tap **+** → paste a link. The local server (`serve.js`) downloads the page with `curl` and reads the
-recipe data most sites embed; `js/importer.js` converts it into steps, and it opens in the editor to check.
-Needs `node serve.js` running (not double-clicking index.html). Some sites block automated downloads —
-then use **Paste recipe text** instead (also works with text copied from a photo of a printed recipe).
+## Adding recipes
+Tap **+** → paste a link, paste recipe text, or start blank. Imports save right away and open in
+edit mode. Link import tries, in order: the local server (`serve.js`, uses curl), then the free
+Jina Reader (r.jina.ai) so it also works on the public site. Some sites block both — then paste the text.
+
+## Editing
+✏️ turns the recipe page into edit mode: tap a step or ingredient to change it, ▲▼ to reorder,
+"Merge with next" to combine steps. In co-op, tap a step number to swap chefs; ↺ Auto-split resets.
 
 ## How co-op works
-Each step can say which earlier steps it needs ("Must happen after" in the editor).
+Each step can say which earlier steps it needs ("Waits for", under More in a step's edit panel).
 The app tries splitting the steps between Chef A and Chef B and keeps the split that:
 1. finishes the meal soonest,
 2. gives both chefs a similar amount of hands-on work,

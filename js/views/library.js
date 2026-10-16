@@ -32,43 +32,39 @@ App.views.library = root => {
   root.onclick = e => { if (e.target.closest('[data-act=add]')) addSheet(); };
 
   function addSheet() {
-    App.ui.sheet(`<h3>Add a recipe</h3>
-      <form data-form="import">
-        <label class="field"><span>🔗 Paste a recipe link</span>
-          <input class="input" name="url" type="url" inputmode="url" placeholder="https://..." autocomplete="off" required></label>
-        <button class="btn primary block" data-import>Import</button>
+    // Imported recipes are saved right away and open in edit mode to check.
+    const open = draft => {
+      const id = App.store.addRecipe(draft);
+      App.session.justImported = id;
+      location.hash = '#/edit/' + encodeURIComponent(id);
+    };
+    App.ui.sheet(`
+      <div class="sheet-head"><h3>Add a recipe</h3><button class="btn small" data-close>Cancel</button></div>
+      <form>
+        <input class="input" name="url" type="url" inputmode="url" placeholder="🔗 Paste a recipe link" autocomplete="off" required aria-label="Recipe link">
+        <button class="btn primary block" data-import style="margin-top:8px">Import</button>
         <div class="import-msg" role="status"></div>
       </form>
-      <div class="or">or</div>
       <details class="paste-box"><summary class="btn block">📋 Paste recipe text</summary>
-        <p class="hint">Select the whole recipe on the page (or copy text from a photo), copy, and paste it here.</p>
-        <textarea class="input" rows="8" name="text" placeholder="Title&#10;Ingredients&#10;2 tbsp olive oil&#10;1 onion, diced&#10;Instructions&#10;Heat the oil over medium heat…"></textarea>
+        <textarea class="input" rows="8" name="text" placeholder="Copy the whole recipe from a page or photo and paste it here"></textarea>
         <button class="btn primary block" data-paste style="margin-top:8px">Convert</button>
         <div class="import-msg paste-msg" role="status"></div>
       </details>
-      <button class="btn block" data-blank style="margin-top:10px">✏️ Start from scratch</button>`,
+      <button class="btn block" data-blank style="margin-top:8px">✏️ Blank recipe</button>`,
       (el, close) => {
         const input = el.querySelector('[name=url]'), msg = el.querySelector('.import-msg'), btn = el.querySelector('[data-import]');
         input.focus();
         el.querySelector('[data-blank]').onclick = () => { close(); location.hash = '#/new'; };
         el.querySelector('[data-paste]').onclick = () => {
           const pm = el.querySelector('.paste-msg');
-          try {
-            App.session = App.session || {};
-            App.session.importDraft = App.importer.fromText(el.querySelector('[name=text]').value);
-            close();
-            location.hash = '#/new';
-          } catch (err) { pm.textContent = err.message; pm.classList.add('err'); }
+          try { const draft = App.importer.fromText(el.querySelector('[name=text]').value); close(); open(draft); }
+          catch (err) { pm.textContent = err.message; pm.classList.add('err'); }
         };
         el.querySelector('form').onsubmit = async ev => {
           ev.preventDefault();
-          btn.disabled = true; btn.textContent = 'Reading recipe…'; msg.textContent = ''; msg.classList.remove('err');
-          try {
-            App.session = App.session || {};
-            App.session.importDraft = await App.importer.fromUrl(input.value.trim());
-            close();
-            location.hash = '#/new';
-          } catch (err) {
+          btn.disabled = true; btn.textContent = 'Reading…'; msg.textContent = ''; msg.classList.remove('err');
+          try { const draft = await App.importer.fromUrl(input.value.trim()); close(); open(draft); }
+          catch (err) {
             msg.textContent = err.message; msg.classList.add('err');
             btn.disabled = false; btn.textContent = 'Import';
           }

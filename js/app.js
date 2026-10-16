@@ -6,8 +6,8 @@
   const routes = [
     [/^#?\/?$/,                 () => App.views.library(root),          'recipes'],
     [/^#\/r\/([^/]+)$/,         m => App.views.recipe(root, { id: m[1] }), 'recipes'],
-    [/^#\/new$/,                () => App.views.editor(root, {}),        'recipes'],
-    [/^#\/edit\/([^/]+)$/,      m => App.views.editor(root, { id: m[1] }), 'recipes'],
+    [/^#\/new$/,                () => { location.replace('#/edit/' + encodeURIComponent(App.store.addRecipe({}))); }, 'recipes'],
+    [/^#\/edit\/([^/]+)$/,      m => App.views.recipe(root, { id: m[1], edit: true }), 'recipes'],
     [/^#\/list$/,               () => App.views.shopping(root),         'list'],
     [/^#\/log$/,                () => App.views.log(root),              'log'],
   ];

@@ -50,6 +50,16 @@ App.store = (() => {
       if (i > -1) state.recipes[i] = r; else state.recipes.unshift(r);
       save();
     },
+    // Saves a new recipe (blank or imported) and returns its id.
+    addRecipe(data) {
+      const U = App.util;
+      const base = U.slug(data.title || 'recipe');
+      let id = base, n = 2;
+      while (state.recipes.some(r => r.id === id)) id = base + '-' + n++;
+      state.recipes.unshift({ title: '', emoji: '🍽️', servings: 4, source: '', tags: [], ingredients: [], steps: [], notes: [], ...data, id });
+      save();
+      return id;
+    },
     deleteRecipe(id) {
       state.recipes = state.recipes.filter(r => r.id !== id);
       state.list.recipes = state.list.recipes.filter(x => x.id !== id);

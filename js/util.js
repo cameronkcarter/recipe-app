@@ -146,12 +146,14 @@ U.parseIngredientLine = line => {
     if (/^\d+$/.test(inner.trim())) return inner; // "(2) cans" → "2 cans"
     note = note ? note + ', ' + inner : inner; return ' ';
   }).replace(/\s+/g, ' ').trim();
-  const m = s.match(/^((?:\d+\s+)?\d+\/\d+|\d*\.?\d+(?:\s*[½⅓⅔¼¾⅛⅜⅝⅞])?|[½⅓⅔¼¾⅛⅜⅝⅞])(?:\s*[-–]\s*[\d./½¼¾]+)?\s*(.*)$/);
+  const m = s.match(/^((?:\d+\s+)?\d+\/\d+|\d*\.?\d+(?:\s*[½⅓⅔¼¾⅛⅜⅝⅞])?|[½⅓⅔¼¾⅛⅜⅝⅞])(?:\s*(?:[-–]|to)\s*[\d./½¼¾]+)?\s*(.*)$/);
   let qty = null, rest = s;
   if (m) { qty = U.parseQty(m[1]); rest = m[2]; }
   // size words like "15-ounce" before the unit
   const size = rest.match(/^(\d+[- ]?(?:ounce|oz|g|gram)s?)\s+/i);
   if (size) { note = note ? size[1] + ', ' + note : size[1]; rest = rest.slice(size[0].length); }
+  const sizeWord = rest.match(/^(large|small|medium|big)\s+(?=\S)/i);
+  if (sizeWord && ALIAS[rest.slice(sizeWord[0].length).split(' ')[0].replace(/[.,]$/, '').toLowerCase()]) { note = note ? sizeWord[1] + ', ' + note : sizeWord[1]; rest = rest.slice(sizeWord[0].length); }
   let unit = '';
   const words = rest.split(' ');
   for (const len of [2, 1]) {

@@ -33,7 +33,7 @@ App.importer = (() => {
     return lines.map(line => {
       const p = U.parseIngredientLine(line);
       if (!p) return null;
-      p.name = p.name.replace(/\*/g, '').replace(/\s*\/.*$/, '').replace(/\s+(or|from|for)\s+.*$/i, '').trim().toLowerCase();
+      p.name = p.name.replace(/\*/g, '').replace(/\s+or\s+[a-z]+(?=\s+[a-z])/i, '').replace(/\s*\/.*$/, '').replace(/\s+(or|from|for)\s+.*$/i, '').trim().toLowerCase();
       // Split the note into "how to prep it" (→ prep step) and everything else (stays on the ingredient)
       const parts = (p.note || '').split(/,\s*/).filter(Boolean);
       const prepParts = [], keep = [];
@@ -46,7 +46,7 @@ App.importer = (() => {
       const prepText = prepParts.join(', ');
       p._prep = Object.entries(PREP).filter(([w]) => new RegExp('\\b' + w + '\\b').test(prepText)).map(([, v]) => v);
       p._prepText = prepText;
-      p._rinse = /\b(drained|rinsed)\b/.test(prepText);
+      p._rinse = /\brinsed\b/.test(prepText) || (/\bdrained\b/.test(prepText) && /bean|chickpea|lentil|corn/.test(p.name));
       p._drained = /\bdrained\b/.test(prepText);
       return p;
     }).filter(Boolean);
@@ -103,7 +103,8 @@ App.importer = (() => {
   function findVerb(text) {
     const cleaned = text.toLowerCase()
       .replace(/\b(low|medium|med|high|medium[- ]high|medium[- ]low)\s+heat\b/g, ' ')
-      .replace(/\b(the|from|off)\s+heat\b/g, ' ')
+      .replace(/\b(the|from|off|raise|reduce|lower|increase|up|down)\s+(?:the\s+)?heat\b/g, ' ')
+      .replace(/\bsteam (?:to )?escape\b|\blet (?:the )?steam\b/g, ' ')
       .replace(/\bon top\b|\bthe rest\b|\bgolden brown\b|\bcut side\b/g, ' ');
     const words = cleaned.match(/[a-zé]+/g) || [];
     for (const w of words) if (SYN[w]) return SYN[w];
@@ -124,7 +125,7 @@ App.importer = (() => {
     const bits = [];
     if (/\buncovered\b/i.test(text)) bits.push('uncovered');
     else if (/\bcovered\b|\bcover\b/i.test(text)) bits.push('covered');
-    const until = text.match(/\buntil ([^,.;]+)/i);
+    const until = text.match(/\buntil ([^,.;–—(]+)/i);
     if (until) {
       // keep it short: "until no longer pink in the center" → "until no longer pink"
       let words = until[1].trim().split(/\s+/).slice(0, 4);
@@ -139,7 +140,7 @@ App.importer = (() => {
   // For steps with no ingredients: a few words after the verb, e.g. "bring a large pot of salted
   // water to a boil" → "large pot of salted water".
   function objectOf(text, verbId) {
-    const words = text.replace(/[.,;:!]/g, ' ').split(/\s+/).filter(Boolean);
+    const words = text.replace(/[.,;:!()"]/g, ' ').split(/\s+/).filter(Boolean);
     const at = words.findIndex(w => SYN[w.toLowerCase()] === verbId);
     if (at < 0) return undefined;
     const out = [];
@@ -303,40 +304,123 @@ App.importer = (() => {
     return U.ingIcon(t) || (ings[0] && U.ingIcon(ings[0].name)) || '🍽️';
   }
 
+  // ---------- Reading a web page ----------
+  const decode = s => {
+    const el = document.createElement('textarea');
+    el.innerHTML = String(s ?? '').replace(/<[^>]+>/g, ' ');
+    return el.value.replace(/\s+/g, ' ').trim();
+  };
+  function findRecipe(node) {
+    if (!node || typeof node !== 'object') return null;
+    if (Array.isArray(node)) { for (const n of node) { const r = findRecipe(n); if (r) return r; } return null; }
+    const type = node['@type'];
+    if (type === 'Recipe' || (Array.isArray(type) && type.includes('Recipe'))) return node;
+    return findRecipe(node['@graph']) || findRecipe(node.mainEntity) || null;
+  }
+  // Instructions come as strings, HowToStep objects, or HowToSection groups — flatten to strings.
+  function flattenSteps(ins) {
+    if (!ins) return [];
+    if (typeof ins === 'string') return ins.split(/\n+|(?<=\.)\s+(?=\d+\.\s)/).map(decode).filter(Boolean);
+    if (Array.isArray(ins)) return ins.flatMap(flattenSteps);
+    if (ins.itemListElement) return flattenSteps(ins.itemListElement);
+    return [decode(ins.text || ins.name || '')].filter(Boolean);
+  }
+  // Most recipe sites embed the recipe as structured data (schema.org "Recipe" JSON-LD).
+  function recipeFromHtml(html, url) {
+    for (const m of html.matchAll(/<script[^>]*type=["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script>/gi)) {
+      let r = null;
+      try { r = findRecipe(JSON.parse(m[1].trim())); } catch (e) { /* skip broken blocks */ }
+      if (!r) continue;
+      const yieldVal = [].concat(r.recipeYield || []).map(String).find(y => /\d/.test(y));
+      return {
+        name: decode(r.name),
+        servings: yieldVal ? parseInt(yieldVal.match(/\d+/)[0], 10) : null,
+        ingredients: [].concat(r.recipeIngredient || r.ingredients || []).map(decode).filter(Boolean),
+        steps: flattenSteps(r.recipeInstructions),
+        source: url,
+      };
+    }
+    return null;
+  }
+
+  const isLocal = () => /^(localhost|127\.0\.0\.1|\[::1\]|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)$/.test(location.hostname);
+  const READER = 'https://r.jina.ai/';
+  const blocked = html => /<title>(just a moment|attention required|access denied)/i.test(html) || /performing security verification/i.test(html);
+
+  // Tries, in order: this computer's server (when running locally), a public page reader
+  // returning the page, then the same reader returning plain text for the paste converter.
   async function fromUrl(url) {
-    if (location.protocol === 'file:') throw new Error('Link import needs the app to be started with “Start Recipe App” (in the Recipe App folder), not by opening index.html.');
-    let res;
-    try { res = await fetch('api/import?url=' + encodeURIComponent(url)); }
-    catch (e) { throw new Error('Couldn’t reach the import server. Is “node serve.js” running?'); }
-    // The public (GitHub Pages) site has no server, so there's no /api/import there.
-    if (res.status === 404 || res.status === 405) throw new Error('Link import only works on the computer version for now. Use “Paste recipe text” below.');
-    const data = await res.json().catch(() => ({ error: 'Unexpected response from the import server.' }));
-    if (!res.ok || data.error) throw new Error(data.error || 'Import failed.');
-    return convert(data);
+    url = url.trim();
+    if (!/^https?:\/\/\S+\.\S+/i.test(url)) throw new Error('That doesn’t look like a web link.');
+    if (/^https?:\/\/[^/]+\/?$/.test(url)) throw new Error('That’s a whole website. Open one recipe and copy its link.');
+
+    if (location.protocol !== 'file:' && isLocal()) {
+      try {
+        const res = await fetch('api/page?url=' + encodeURIComponent(url));
+        const data = await res.json();
+        const found = data.html && recipeFromHtml(data.html, url);
+        if (found && found.ingredients.length) return convert(found);
+      } catch (e) { /* fall through to the reader */ }
+    }
+
+    try {
+      const res = await fetch(READER + url, { headers: { 'X-Return-Format': 'html' } });
+      if (res.ok) {
+        const html = await res.text();
+        const found = !blocked(html) && recipeFromHtml(html, url);
+        if (found && found.ingredients.length) return convert(found);
+      }
+    } catch (e) { /* try plain text */ }
+
+    try {
+      const res = await fetch(READER + url);
+      if (res.ok) {
+        const md = await res.text();
+        if (!blocked(md)) {
+          const title = (md.match(/^Title:\s*(.+)$/m) || [])[1];
+          const r = fromText(md.replace(/^(Title|URL Source|Published Time|Markdown Content):.*$/gm, ''), { title, source: url });
+          if (r.ingredients.length >= 2 && r.steps.length) return r;
+        }
+      }
+    } catch (e) { /* give up below */ }
+
+    throw new Error('That site blocks importing. Copy the recipe and use “Paste recipe text” instead.');
   }
 
   // Pasted recipe text (copied from a page, or from a photo with the phone's "copy text").
   // Uses "Ingredients" / "Instructions" headings when present, otherwise guesses line by line.
-  function fromText(text) {
-    const lines = text.split(/\r?\n/).map(l => l.replace(/^\s*(?:[-•*▢□✓]|\d+[.)])\s+(?=\D)/, '').trim()).filter(Boolean);
+  function fromText(text, meta = {}) {
+    let lines = text.split(/\r?\n/)
+      .map(l => l
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, '')            // markdown images
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')         // markdown links → text
+        .replace(/^#+\s*/, '').replace(/[*_]{2,}/g, '')  // headings, bold
+        .replace(/^\s*(?:[-•*▢□✓]|\d+[.)])\s+(?=\D)/, '')
+        .trim())
+      .filter(Boolean);
     const isIngHead = l => /^ingredients?\s*:?$/i.test(l);
     const isStepHead = l => /^(instructions?|directions?|method|steps?|preparation|how to make it)\s*:?$/i.test(l);
+    // A full web page mentions "Ingredients" more than once — use the last heading that's
+    // followed by an Instructions heading (that's the recipe card).
+    let start = -1;
+    lines.forEach((l, i) => { if (isIngHead(l) && lines.slice(i + 1).some(isStepHead)) start = i; });
+    if (start > 0) lines = lines.slice(start);
     const looksIng = l => /^([\d½¼¾⅓⅔⅛]|a pinch|pinch)/i.test(l) && l.length < 90;
-    let title = '', servings = null, mode = null;
+    let title = meta.title || '', servings = null, mode = null;
     const ingredients = [], steps = [];
     lines.forEach((l, i) => {
       const serv = l.match(/(?:serves|servings|yield)\s*:?\s*(\d+)/i);
       if (serv && l.length < 40) { servings = +serv[1]; return; }
       if (isIngHead(l)) { mode = 'ing'; return; }
       if (isStepHead(l)) { mode = 'step'; return; }
-      if (/^(notes?|nutrition)\b/i.test(l)) { mode = 'skip'; return; }
+      if (/^(notes?|nutrition|video|equipment)\b/i.test(l)) { mode = 'skip'; return; }
       if (/^for the\b/i.test(l) || mode === 'skip') return;
       if (!title && i === 0 && !looksIng(l) && l.length < 80) { title = l; return; }
       if (mode === 'ing' || (!mode && looksIng(l))) ingredients.push(l);
       else if (mode === 'step' || l.split(' ').length > 4) steps.push(l);
     });
     if (!ingredients.length && !steps.length) throw new Error('Couldn’t find ingredients or steps in that text.');
-    return convert({ name: title || 'Pasted recipe', servings, ingredients, steps, source: '' });
+    return convert({ name: title || 'Pasted recipe', servings, ingredients, steps, source: meta.source || '' });
   }
 
   return { convert, fromUrl, fromText };

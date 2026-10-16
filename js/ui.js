@@ -5,11 +5,12 @@ App.ui = {};
   const U = App.util;
 
   // ---------- Bottom sheet ----------
-  App.ui.sheet = (html, onMount) => {
+  App.ui.sheet = (html, onMount, onClose) => {
     const back = document.createElement('div');
     back.className = 'sheet-back';
     back.innerHTML = `<div class="sheet" role="dialog">${html}</div>`;
-    const close = () => back.remove();
+    let closed = false;
+    const close = () => { if (closed) return; closed = true; back.remove(); onClose && onClose(); };
     back.addEventListener('click', e => { if (e.target === back || e.target.closest('[data-close]')) close(); });
     document.body.appendChild(back);
     onMount && onMount(back.querySelector('.sheet'), close);
