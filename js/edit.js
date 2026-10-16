@@ -16,7 +16,7 @@ App.edit = (() => {
     ctx.font = getComputedStyle(el).font;
     el.style.width = Math.ceil(ctx.measureText(el.value || el.placeholder).width + 8) + 'px';
   }
-  const autosizeAll = root => root.querySelectorAll('.inl').forEach(autosize);
+  const autosizeAll = root => root.querySelectorAll('input.inl').forEach(autosize);
   const inl = (attrs, value, ph, cls = '') =>
     `<input class="inl ${cls}" ${attrs} value="${U.esc(value ?? '')}" placeholder="${U.esc(ph)}" autocomplete="off">`;
 
@@ -25,7 +25,8 @@ App.edit = (() => {
       .map(v => `<option value="${v.id}" ${v.id === sel ? 'selected' : ''}>${v.label}</option>`).join('')}</optgroup>`).join('');
 
   // ---------- Rendering ----------
-  function stepHtml(r, s, i, chefCls) {
+  // chef: "A"/"B" when co-op is on, so the step shows a tag you can tap to switch chefs.
+  function stepHtml(r, s, i, chefCls, chef) {
     const v = App.verb(s.verb);
     const usedBefore = new Set(r.steps.slice(0, i).flatMap(x => (x.uses || []).map(u => u.ing)));
     const bubbles = (s.uses || []).map((u, k) => {
@@ -37,12 +38,13 @@ App.edit = (() => {
         ${U.ingIconHtml(g)}
         ${first ? inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt' + (amt ? '' : ' empty')) : ''}
         ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
-        ${inl(`data-unote="${g.id}" aria-label="Note"`, u.note, '+ note', 'un' + (u.note ? '' : ' empty'))}
+        <span class="inl un ${u.note ? '' : 'empty'}" contenteditable="true" role="textbox" data-unote="${g.id}" data-ph="+ note" aria-label="Note">${U.esc(u.note || '')}</span>
         <button class="x" data-rm-use="${g.id}" aria-label="Remove ${U.esc(g.name)}">✕</button>
       </li>`;
     }).join('');
     return `<div class="card step edit ${chefCls} ${s.id === active ? 'active' : ''}" data-step="${s.id}">
       <div class="num step-handle ${chefCls}" title="Drag to move">${i + 1}</div>
+      ${chef ? `<button class="chef-pill pill-${chef}" data-chef-swap="${s.id}" aria-label="Chef ${chef} — tap to switch">${chef}</button>` : ''}
       <div class="body">
         <div class="s-grid">
           <label class="s-verb verb-pick ${v.label.length > 7 ? 'long' : ''}"><span class="vi">${v.icon}</span><span class="vl">${U.esc(v.label)}</span>
@@ -139,7 +141,20 @@ App.edit = (() => {
     const handlers = [];
     const on = (target, type, fn, opts) => { target.addEventListener(type, fn, opts); handlers.push([target, type, fn, opts]); };
 
-    on(root, 'input', e => { if (e.target.classList.contains('inl')) autosize(e.target); });
+    // notes are editable text (they wrap); kept on the working copy as you type
+    const setNote = t => {
+      const st = r.steps.find(s => s.id === t.closest('[data-step]').dataset.step);
+      st.uses.find(u => u.ing === t.dataset.unote).note = t.textContent.trim() || undefined;
+    };
+    on(root, 'input', e => {
+      if (e.target.matches('input.inl')) autosize(e.target);
+      else if (e.target.dataset?.unote != null) setNote(e.target);
+    });
+    on(root, 'focusout', e => {
+      if (e.target.dataset?.unote == null) return;
+      setNote(e.target);
+      e.target.classList.toggle('empty', !e.target.textContent.trim());
+    });
     on(root, 'change', e => {
       const t = e.target, d = t.dataset;
       if (d.verb) { r.steps.find(s => s.id === d.verb).verb = t.value; commit(true); }
@@ -178,6 +193,7 @@ App.edit = (() => {
       const d = t.dataset;
       if (d.heat) { const s = r.steps.find(x => x.id === d.heat); s.heat = ((s.heat || 0) + 1) % 4 || undefined; commit(true); }
       else if (d.rmUse) { removeUse(r, t.closest('[data-step]').dataset.step, d.rmUse); commit(true); }
+      else if (d.chefSwap) { swapChef(r, d.chefSwap, false); commit(true); }
       else if (d.rmIng) { removeIngredient(r, d.rmIng); commit(true); }
       else if (d.rmStep) {
         const s = r.steps.find(x => x.id === d.rmStep);
@@ -271,6 +287,10 @@ App.edit = (() => {
       if (!drag) {
         // a tap on a bubble's word → start typing in it
         if (p?.kind === 'ing' && p.tapTarget.matches('input')) { p.tapTarget.focus(); p.tapTarget.select(); }
+        else if (p?.kind === 'ing' && p.tapTarget.isContentEditable) {
+          p.tapTarget.focus();
+          const sel = getSelection(); sel.selectAllChildren(p.tapTarget); sel.collapseToEnd(); // cursor at the end
+        }
         return;
       }
       const d = drag; drag = null;
@@ -296,17 +316,18 @@ App.edit = (() => {
 
   // ---------- Co-op ----------
   // First manual change freezes the current split, so only the tapped step moves.
-  function swapChef(r, stepId) {
+  // persist=false in edit mode: the change stays on the working copy until Done.
+  function swapChef(r, stepId, persist = true) {
     if (!isCustomSplit(r)) {
       const duo = U.schedule(r, 2);
       r.steps.forEach(s => { s.chef = duo.byId[s.id].chef; });
     }
     const s = r.steps.find(x => x.id === stepId);
     s.chef = s.chef === 'A' ? 'B' : 'A';
-    save(r);
+    if (persist) save(r);
   }
   function isCustomSplit(r) { return r.steps.some(s => s.chef === 'A' || s.chef === 'B'); }
-  function autoSplit(r) { r.steps.forEach(s => delete s.chef); save(r); }
+  function autoSplit(r, persist = true) { r.steps.forEach(s => delete s.chef); if (persist) save(r); }
 
   return { autosizeAll, stepHtml, ingRowHtml, bind, newStep, swapChef, autoSplit, isCustomSplit };
 })();

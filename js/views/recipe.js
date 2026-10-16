@@ -43,7 +43,7 @@ App.views.recipe = (root, { id, edit = false }) => {
     const stepHtml = r.steps.map((s, i) => {
       const chef = duo.byId[s.id].chef;
       const chefCls = coop ? 'chef-' + chef : '';
-      if (edit) return E.stepHtml(r, s, i, chefCls);
+      if (edit) return E.stepHtml(r, s, i, chefCls, coop ? chef : null);
       const isDone = done.has(s.id), label = isDone ? '✓' : i + 1;
       const num = coop
         ? `<button class="num ${chefCls}" data-swap="${s.id}" aria-label="Step ${i + 1}: Chef ${chef}. Tap to switch chef">${label}</button>`
@@ -84,7 +84,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       </div>
       <div class="coop-line">
         ${coop
-          ? `<span class="a">● A</span> <span class="b">● B</span> · ~${U.fmtMins(duo.total)}${edit ? '' : ' <span class="muted">· tap a number to swap</span>'}
+          ? `<span class="a">● A</span> <span class="b">● B</span> · ~${U.fmtMins(duo.total)}<span class="muted"> · ${edit ? 'tap A / B to swap' : 'tap a number to swap'}</span>
              ${E.isCustomSplit(r) ? `<button class="link" data-act="auto">↺ Auto-split</button>` : ''}`
           : `⏱ ~${U.fmtMins(solo.total)}`}
       </div>
@@ -132,7 +132,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       render();
     }
     else if (d.swap) { E.swapChef(r, d.swap); render(); }
-    else if (d.act === 'auto') { E.autoSplit(r); render(); }
+    else if (d.act === 'auto') { E.autoSplit(r, !edit); render(); }
     else if (d.act === 'add-step') { E.newStep(r); render(); root.querySelector('.step.edit:last-child [data-add-ing]')?.focus(); }
     else if (d.act === 'delete') {
       if (confirm(`Delete “${r.title || 'this recipe'}”?`)) { S.deleteRecipe(r.id); location.hash = '#/'; }

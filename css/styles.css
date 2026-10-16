@@ -414,3 +414,15 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .s-verb .vl { min-width: 0; overflow-wrap: normal; }
 .step.edit .s-verb { gap: 4px; }
 .step.edit .s-verb .vl { font-size: .92rem; }
+
+/* co-op in edit mode: tap the A / B tag under a step's number to switch chefs */
+.chef-pill { position: absolute; left: 10px; top: 44px; width: 26px; height: 20px; border: none; border-radius: 6px;
+  font-size: .7rem; font-weight: 800; color: #fff; cursor: pointer; padding: 0; }
+.chef-pill.pill-A { background: var(--chef-a); }
+.chef-pill.pill-B { background: var(--chef-b); }
+.step.edit:has(.chef-pill) { min-height: 74px; }
+
+/* notes in edit bubbles wrap instead of being cut off */
+.bubble [data-unote] { display: inline-block; max-width: 100%; white-space: normal; min-width: 3em; outline: none; cursor: text; }
+.bubble [data-unote]:empty::before { content: attr(data-ph); color: var(--muted); opacity: .7; }
+.bubble [data-unote]:focus { background: var(--surface); border-bottom: 2px solid var(--accent); border-radius: 4px 4px 0 0; }
