@@ -80,11 +80,12 @@ App.store = (() => {
   };
   // Recipes and log entries from before profiles get their author once the shared copy has arrived
   // (only then, so an old offline copy never overwrites newer entries).
-  function fillInAuthors() {
-    for (const r of state.recipes) {
+  function fillInAuthors(patch) {
+    if (patch.recipes) for (const r of state.recipes) {
       const who = App.SEED_AUTHORS[r.id];
       if (who && !r.author) { r.author = who; syncRecipe(r); }
     }
+    if (!patch.log) return;
     let changed = false;
     for (const l of state.log) if (!l.by) { l.by = App.SEED_COOKS[l.recipeId] || 'cameron'; changed = true; }
     if (changed) save();
@@ -150,10 +151,10 @@ App.store = (() => {
         state[k] = v; changed = true;
         if (k !== 'recipes') sent[k] = json;
       }
+      fillInAuthors(patch); // also when the shared copy didn't change
       if (!changed) return;
       saveLocal();
       App.onRemoteChange?.();
-      if (patch.recipes || patch.log) fillInAuthors();
     },
     reset() { state = fresh(); save(); },
   };

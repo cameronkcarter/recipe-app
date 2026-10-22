@@ -42,8 +42,11 @@ App.sync = (() => {
   // ---------- everyone → this device ----------
   // The first time a device connects, recipes it saved before syncing existed get added.
   const MERGED = 'recipeapp.merged';
+  // includeMetadataChanges: when the server copy matches the cached one, the only signal that the real
+  // data has arrived is fromCache turning false — without it the first-connect setup below never runs.
+  const live = { includeMetadataChanges: true };
   let first = true;
-  recipesRef.onSnapshot(snap => {
+  recipesRef.onSnapshot(live, snap => {
     if (first && snap.metadata.fromCache) return; // wait for the real list before merging
     const remote = snap.docs.map(d => d.data()).sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
     if (first) {
@@ -60,7 +63,7 @@ App.sync = (() => {
     S.applyRemote({ recipes: remote });
   }, warn);
   let firstMeta = true;
-  metaRef.onSnapshot(snap => {
+  metaRef.onSnapshot(live, snap => {
     if (firstMeta && snap.metadata.fromCache) return;
     if (firstMeta) {
       firstMeta = false;
