@@ -130,10 +130,34 @@ U.ingIcon = name => {
   for (const [k, ico] of App.ING_ICONS) if (n.includes(k)) return ico;
   return null;
 };
+// Icon names (js/icons.js); older saved data may still hold an emoji.
+U.iconName = v => !v ? null : App.ICONS[v] ? v : App.EMOJI_ICONS[String(v).replace(/️/g, '')] || null;
 U.ingIconHtml = ing => {
-  const ico = ing.icon || U.ingIcon(ing.name);
-  if (ico) return `<span class="ing-ico">${ico}</span>`;
+  const ico = U.iconName(ing.icon) || U.ingIcon(ing.name);
+  if (ico) return `<span class="ing-ico">${App.icon(ico)}</span>`;
   return `<span class="ing-ico letter">${U.esc((ing.name || '?')[0].toUpperCase())}</span>`;
+};
+
+// ---------- Recipe icon & tags ----------
+// The icon the app would pick: a dish word in the title, else a key ingredient.
+U.suggestIcon = r => {
+  const t = String(r.title || '').toLowerCase();
+  for (const [k, ico] of App.DISH_ICONS) if (t.includes(k)) return ico;
+  return U.ingIcon(t) || (r.ingredients?.[0] && U.ingIcon(r.ingredients[0].name)) || 'cloche';
+};
+// The icon you picked, else an old emoji, else the suggestion.
+U.recipeIcon = r => U.iconName(r.icon) || U.iconName(r.emoji) || U.suggestIcon(r);
+U.recipeIconHtml = (r, cls = '') => {
+  const ico = U.recipeIcon(r);
+  return `<span class="r-ico ${cls}" style="--blob:${App.iconColor(ico)}">${App.icon(ico)}</span>`;
+};
+// Tags that get an icon: vegan (leaf) and Instant Pot (also spotted from a pressure-cook step or the title).
+U.tagIcons = r => {
+  const words = [r.title, ...(r.tags || [])].join(' ').toLowerCase();
+  const out = [];
+  if (/\bvegan\b/.test(words)) out.push({ icon: 'leaf', label: 'Vegan' });
+  if (/instant ?pot|insta ?pot|pressure cook/.test(words) || (r.steps || []).some(s => s.verb === 'pressure')) out.push({ icon: 'ip', label: 'Instant Pot' });
+  return out;
 };
 U.category = ing => {
   if (ing.cat) return ing.cat;

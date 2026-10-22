@@ -32,30 +32,30 @@ App.views.shopping = root => {
 
     root.innerHTML = `
       <header class="topbar"><h1>Shopping</h1>
-        ${total ? `<button class="icon-btn" data-act="copy" aria-label="Copy list">📋</button>` : ''}</header>
+        ${total ? `<button class="icon-btn" data-act="copy" aria-label="Copy list">${App.glyph('copy')}</button>` : ''}</header>
 
-      <div class="section-label">Recipes <button class="btn small" data-act="pick">+ Add recipes</button></div>
+      <div class="section-label">Recipes <button class="btn small" data-act="pick">${App.glyph('plus')}Add recipes</button></div>
       ${L.recipes.length ? `<div class="shop-recipes">${L.recipes.map(e => {
         const r = S.recipe(e.id);
         if (!r) return '';
-        return `<span class="shop-recipe">${U.esc(r.emoji || '')} ${U.esc(r.title)}
-          <span class="stepper"><button data-act="serv" data-id="${U.esc(e.id)}" data-d="-1" aria-label="Fewer servings">−</button><span class="val">🍽${e.servings}</span><button data-act="serv" data-id="${U.esc(e.id)}" data-d="1" aria-label="More servings">+</button></span>
-          <button class="rm" data-act="rm-recipe" data-id="${U.esc(e.id)}" aria-label="Remove recipe">✕</button></span>`;
+        return `<span class="shop-recipe">${App.icon(U.recipeIcon(r))}${U.esc(r.title)}
+          <span class="stepper"><button data-act="serv" data-id="${U.esc(e.id)}" data-d="-1" aria-label="Fewer servings">${App.glyph('minus')}</button><span class="val">${App.icon('cloche')}${e.servings}</span><button data-act="serv" data-id="${U.esc(e.id)}" data-d="1" aria-label="More servings">${App.glyph('plus')}</button></span>
+          <button class="rm" data-act="rm-recipe" data-id="${U.esc(e.id)}" aria-label="Remove recipe">${App.glyph('x')}</button></span>`;
       }).join('')}</div>` : `<div style="color:var(--muted);font-size:.9rem">Pick a few recipes and their ingredients get combined here.</div>`}
 
-      ${byCat.map(c => `<div class="section-label">${c.label}</div>
+      ${byCat.map(c => `<div class="section-label"><span class="lab">${App.icon(c.icon)}${c.label}</span></div>
         <ul class="card check-list">${c.rows.map(r => {
           const amt = U.mergeAmounts(r.items);
           return `<li class="${L.checked[r.key] ? 'done' : ''}" data-check="${U.esc(r.key)}">
-            <span class="box">${L.checked[r.key] ? '✓' : ''}</span>${r.icon}
+            <span class="box">${L.checked[r.key] ? App.glyph('check') : ''}</span>${r.icon}
             <span class="lbl">${amt ? `<span class="amt">${U.esc(amt)}</span> ` : ''}${U.esc(r.name)}
               ${r.from.size > 1 ? `<div class="from">${[...r.from].map(U.esc).join(' · ')}</div>` : ''}</span></li>`;
         }).join('')}</ul>`).join('')}
 
       <div class="section-label">Extras</div>
       ${L.extras.length ? `<ul class="card check-list" style="margin-bottom:10px">${L.extras.map(x => `
-        <li class="${x.checked ? 'done' : ''}" data-extra="${x.id}"><span class="box">${x.checked ? '✓' : ''}</span>
-        <span class="lbl">${U.esc(x.name)}</span><button class="rm" style="border:none;background:none;color:var(--muted)" data-act="rm-extra" data-id="${x.id}" aria-label="Remove">✕</button></li>`).join('')}</ul>` : ''}
+        <li class="${x.checked ? 'done' : ''}" data-extra="${x.id}"><span class="box">${x.checked ? App.glyph('check') : ''}</span>
+        <span class="lbl">${U.esc(x.name)}</span><button class="rm-x" data-act="rm-extra" data-id="${x.id}" aria-label="Remove">${App.glyph('x')}</button></li>`).join('')}</ul>` : ''}
       <form data-form="extra" style="display:flex;gap:8px">
         <input class="input" name="extra" placeholder="Add an item (paper towels, coffee…)">
         <button class="btn">Add</button>
@@ -109,13 +109,13 @@ App.views.shopping = root => {
     for (const c of App.CATEGORIES) {
       const rs = rows.filter(r => r.cat === c.id && !L.checked[r.key]);
       if (!rs.length) continue;
-      lines.push(c.label.replace(/^\S+\s/, '').toUpperCase());
+      lines.push(c.label.toUpperCase());
       for (const r of rs) lines.push('☐ ' + [U.mergeAmounts(r.items), r.name].filter(Boolean).join(' '));
       lines.push('');
     }
     const extras = L.extras.filter(x => !x.checked);
     if (extras.length) { lines.push('EXTRAS'); extras.forEach(x => lines.push('☐ ' + x.name)); }
-    navigator.clipboard?.writeText(lines.join('\n').trim()).then(() => { btn.textContent = '✓'; setTimeout(() => btn.textContent = '📋', 1200); },
+    navigator.clipboard?.writeText(lines.join('\n').trim()).then(() => { btn.innerHTML = App.glyph('check'); setTimeout(() => btn.innerHTML = App.glyph('copy'), 1200); },
       () => alert(lines.join('\n')));
   }
 
@@ -123,7 +123,7 @@ App.views.shopping = root => {
     const picked = new Set(L.recipes.map(x => x.id));
     ui.sheet(`<h3>Add recipes to the list</h3>
       <div class="pick-list">${S.recipes().map(r => `<label><input type="checkbox" value="${U.esc(r.id)}" ${picked.has(r.id) ? 'checked' : ''}>
-        <span style="font-size:1.3rem">${U.esc(r.emoji || '')}</span> ${U.esc(r.title)}</label>`).join('') || '<p>No recipes yet.</p>'}</div>
+        ${App.icon(U.recipeIcon(r))}${U.esc(r.title)}</label>`).join('') || '<p>No recipes yet.</p>'}</div>
       <button class="btn primary block" data-done style="margin-top:14px">Done</button>`,
       (el, close) => {
         el.querySelector('[data-done]').onclick = () => {

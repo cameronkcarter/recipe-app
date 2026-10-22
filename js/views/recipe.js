@@ -1,4 +1,4 @@
-// Recipe page. Same screen for cooking and editing: ✏️ switches to edit mode, where the
+// Recipe page. Same screen for cooking and editing: the pencil switches to edit mode, where the
 // words on each step can be tapped and changed in place (see js/edit.js).
 App.views = App.views || {};
 App.session = App.session || { servings: {}, mode: 'solo', ingOpen: false };
@@ -14,11 +14,12 @@ App.views.recipe = (root, { id, edit = false }) => {
   // "Cooked it" logs today once; after that it shows as done with an Undo.
   const todaysCook = () => S.cooksFor(r.id).find(l => l.date === U.todayStr());
   const cookedHtml = () => todaysCook()
-    ? `<div class="cooked done-state"><span>✓ Cooked today</span><button class="link" data-act="unlog">Undo</button></div>`
-    : `<div class="cooked"><button class="cook-btn" data-act="log">✅ Cooked it</button></div>`;
+    ? `<div class="cooked done-state">${App.seal(S.cooksFor(r.id).length)}<span>Cooked today</span><button class="link" data-act="unlog">Undo</button></div>`
+    : `<div class="cooked"><button class="cook-btn" data-act="log">${App.icon('pot')}Cooked it</button></div>`;
 
   // Steps swiped off as done while cooking. Lives only while the recipe is open.
   const done = new Set();
+  let picking = false; // edit mode: the icon picker is open
   const servings = () => edit ? (r.servings || 1) : (App.session.servings[r.id] || r.servings || 1);
   const scale = () => servings() / (r.servings || 1);
 
@@ -44,7 +45,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       const chef = duo.byId[s.id].chef;
       const chefCls = coop ? 'chef-' + chef : '';
       if (edit) return E.stepHtml(r, s, i, chefCls, coop ? chef : null);
-      const isDone = done.has(s.id), label = isDone ? '✓' : i + 1;
+      const isDone = done.has(s.id), label = isDone ? App.glyph('check') : i + 1;
       const num = coop
         ? `<button class="num ${chefCls}" data-swap="${s.id}" aria-label="Step ${i + 1}: Chef ${chef}. Tap to switch chef">${label}</button>`
         : `<div class="num">${label}</div>`;
@@ -58,40 +59,42 @@ App.views.recipe = (root, { id, edit = false }) => {
 
     root.innerHTML = `
       <header class="topbar">
-        ${edit ? `<a class="btn small" href="#/r/${enc}" data-cancel>Cancel</a>` : `<a class="icon-btn" href="#/" aria-label="Back">←</a>`}
+        ${edit ? `<a class="btn small" href="#/r/${enc}" data-cancel>Cancel</a>` : `<a class="icon-btn" href="#/" aria-label="Back">${App.glyph('back')}</a>`}
         <span class="title-sm"></span>
         ${edit ? `<a class="btn primary small" href="#/r/${enc}" data-done>Done</a>`
-               : `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">✏️</a>`}
+               : `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">${App.glyph('pencil')}</a>`}
       </header>
-      ${imported ? `<div class="import-banner">Imported. Tap any word to fix it.</div>` : ''}
+      ${imported ? `<div class="import-banner">${App.icon('sparkle')}Imported. Tap any word to fix it.</div>` : ''}
       <div class="hero">
         ${edit
-          ? `<input class="emoji-input" data-f="emoji" value="${U.esc(r.emoji || '🍽️')}" aria-label="Icon">
+          ? `<button class="r-ico pick" data-act="pick-icon" style="--blob:${App.iconColor(U.recipeIcon(r))}" aria-label="Change icon" aria-expanded="${picking}">${App.icon(U.recipeIcon(r))}<span class="badge">${App.glyph('pencil')}</span></button>
              <input class="title-input" data-f="title" value="${U.esc(r.title)}" placeholder="Recipe name" aria-label="Recipe name">`
-          : `<div class="emoji">${U.esc(r.emoji || '🍽️')}</div><h2>${U.esc(r.title || 'Untitled')}</h2>`}
+          : `${U.recipeIconHtml(r)}<h2>${U.esc(r.title || 'Untitled')}</h2>`}
       </div>
+      ${edit && picking ? iconPickerHtml() : ''}
+      ${edit ? '' : tagRowHtml()}
 
       <div class="meta-row">
         <div class="seg">
-          <button data-mode="solo" class="${coop ? '' : 'on'}">👤 Solo</button>
-          <button data-mode="coop" class="${coop ? 'on' : ''}">👥 Co-op</button>
+          <button data-mode="solo" class="${coop ? '' : 'on'}">${App.icon('person')}Solo</button>
+          <button data-mode="coop" class="${coop ? 'on' : ''}">${App.icon('people')}Co-op</button>
         </div>
         <div class="stepper" aria-label="Servings">
-          <button data-serv="-1" aria-label="Fewer servings">−</button>
-          <span class="val">🍽 ${servings()}</span>
-          <button data-serv="1" aria-label="More servings">+</button>
+          <button data-serv="-1" aria-label="Fewer servings">${App.glyph('minus')}</button>
+          <span class="val">${App.icon('cloche')}${servings()}</span>
+          <button data-serv="1" aria-label="More servings">${App.glyph('plus')}</button>
         </div>
       </div>
       <div class="coop-line">
         ${coop
           ? `<span class="a">● A</span> <span class="b">● B</span> · ~${U.fmtMins(duo.total)}<span class="muted"> · ${edit ? 'tap A / B to swap' : 'tap a number to swap'}</span>
-             ${E.isCustomSplit(r) ? `<button class="link" data-act="auto">↺ Auto-split</button>` : ''}`
-          : `⏱ ~${U.fmtMins(solo.total)}`}
+             ${E.isCustomSplit(r) ? `<button class="link" data-act="auto">${App.glyph('undo')}Auto-split</button>` : ''}`
+          : `<span class="time">${App.icon('clock')}~${U.fmtMins(solo.total)}</span>`}
       </div>
 
       <div class="section-label">
-        <button class="ing-toggle" data-act="toggle-ings" aria-expanded="${ingOpen}">${ingOpen ? '▾' : '▸'} Ingredients <span class="count">${r.ingredients.length}</span></button>
-        ${edit ? '' : `<button class="btn small" data-act="to-list">🛒 Add to list</button>`}
+        <button class="ing-toggle" data-act="toggle-ings" aria-expanded="${ingOpen}">${App.glyph('chevron')} Ingredients <span class="count">${r.ingredients.length}</span></button>
+        ${edit ? '' : `<button class="btn small" data-act="to-list">${App.icon('basket')}Add to list</button>`}
       </div>
       ${ingOpen ? (r.ingredients.length ? `<ul class="card ing-list ${edit ? 'edit' : ''}">${ingHtml}</ul>` : `<div class="muted">No ingredients yet.</div>`) : ''}
 
@@ -107,6 +110,21 @@ App.views.recipe = (root, { id, edit = false }) => {
       : cookedHtml()}`;
     if (edit) E.autosizeAll(root);
     window.scrollTo(0, y);
+  }
+
+  // Vegan / Instant Pot tags, and how many times you've made it.
+  function tagRowHtml() {
+    const n = S.cooksFor(r.id).length;
+    const chips = U.tagIcons(r).map(t => `<span class="chip">${App.icon(t.icon)}${t.label}</span>`);
+    if (n) chips.push(`<span class="chip">${App.seal(n)}Made ${n}×</span>`);
+    return chips.length ? `<div class="tag-row">${chips.join('')}</div>` : '';
+  }
+
+  // Edit mode: tap the icon to choose another. The suggested one is first (marked with a dot).
+  function iconPickerHtml() {
+    const sugg = U.suggestIcon(r), cur = U.recipeIcon(r);
+    const list = [sugg, ...App.RECIPE_ICON_CHOICES.filter(x => x !== sugg)];
+    return `<div class="card icon-picker">${list.map(ic => `<button data-icon="${ic}" class="${ic === cur ? 'on' : ''} ${ic === sugg ? 'sugg' : ''}" aria-label="${ic}">${App.icon(ic)}</button>`).join('')}</div>`;
   }
 
   // Title, icon, source, tags
@@ -126,6 +144,8 @@ App.views.recipe = (root, { id, edit = false }) => {
     if (!t) return;
     const d = t.dataset;
     if (d.mode) { App.session.mode = d.mode; render(); }
+    else if (d.act === 'pick-icon') { picking = !picking; render(); }
+    else if (d.icon) { r.icon = d.icon; picking = false; render(); }
     else if (d.serv) {
       if (edit) r.servings = Math.max(1, (r.servings || 1) + +d.serv);
       else App.session.servings[r.id] = Math.max(1, servings() + +d.serv);
@@ -145,8 +165,8 @@ App.views.recipe = (root, { id, edit = false }) => {
       const ex = list.recipes.find(x => x.id === r.id);
       if (ex) ex.servings = servings(); else list.recipes.push({ id: r.id, servings: servings() });
       S.save();
-      t.textContent = '✓ Added';
-      setTimeout(() => { t.textContent = '🛒 Add to list'; }, 1400);
+      t.innerHTML = App.glyph('check') + 'Added';
+      setTimeout(() => { t.innerHTML = App.icon('basket') + 'Add to list'; }, 1400);
     }
   };
 

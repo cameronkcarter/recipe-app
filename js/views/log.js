@@ -29,10 +29,10 @@ App.views.log = root => {
 
     const row = l => {
       const r = S.recipe(l.recipeId);
-      return `<li><span class="e">${U.esc(r?.emoji || '🍽️')}</span>
+      return `<li><span class="e">${App.icon(r ? U.recipeIcon(r) : 'cloche')}</span>
         <span class="t">${r ? `<a href="#/r/${encodeURIComponent(r.id)}">${U.esc(r.title)}</a>` : '<i>Deleted recipe</i>'}
-        <div class="d">${U.fmtDate(l.date)}${l.mode === 'coop' ? ' · 👥 co-op' : ''}</div></span>
-        <button class="x" data-del="${l.id}" aria-label="Remove entry">✕</button></li>`;
+        <div class="d">${U.fmtDate(l.date)}${l.mode === 'coop' ? ` · ${App.icon('people')}co-op` : ''}</div></span>
+        <button class="x" data-del="${l.id}" aria-label="Remove entry">${App.glyph('x')}</button></li>`;
     };
 
     root.innerHTML = `
@@ -49,12 +49,12 @@ App.views.log = root => {
       ${top.length ? `<div class="section-label">Most cooked</div>
         <ul class="card log-list">${top.map(([id, n]) => {
           const r = S.recipe(id);
-          return `<li><span class="e">${U.esc(r?.emoji || '🍽️')}</span><span class="t">${r ? `<a href="#/r/${encodeURIComponent(id)}">${U.esc(r.title)}</a>` : '<i>Deleted recipe</i>'}</span><b>${n}×</b></li>`;
+          return `<li><span class="e">${App.icon(r ? U.recipeIcon(r) : 'cloche')}</span><span class="t">${r ? `<a href="#/r/${encodeURIComponent(id)}">${U.esc(r.title)}</a>` : '<i>Deleted recipe</i>'}</span><b>${n}×</b></li>`;
         }).join('')}</ul>` : ''}
 
       <div class="section-label">History</div>
       ${log.length ? `<ul class="card log-list">${log.map(row).join('')}</ul>`
-        : `<div class="empty"><div class="big">📅</div><p>Nothing yet. Tap “Cooked it” on a recipe.</p></div>`}`;
+        : `<div class="empty"><div class="big">${App.icon('cal')}</div><p>Nothing yet. Tap “Cooked it” on a recipe.</p></div>`}`;
   }
 
   root.onclick = e => {

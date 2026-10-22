@@ -39,7 +39,7 @@ App.edit = (() => {
         ${first ? inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt' + (amt ? '' : ' empty')) : ''}
         ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
         <span class="inl un ${u.note ? '' : 'empty'}" contenteditable="true" role="textbox" data-unote="${g.id}" data-ph="+ note" aria-label="Note">${U.esc(u.note || '')}</span>
-        <button class="x" data-rm-use="${g.id}" aria-label="Remove ${U.esc(g.name)}">✕</button>
+        <button class="x" data-rm-use="${g.id}" aria-label="Remove ${U.esc(g.name)}">${App.glyph('x')}</button>
       </li>`;
     }).join('');
     return `<div class="card step edit ${chefCls} ${s.id === active ? 'active' : ''}" data-step="${s.id}">
@@ -47,20 +47,20 @@ App.edit = (() => {
       ${chef ? `<button class="chef-pill pill-${chef}" data-chef-swap="${s.id}" aria-label="Chef ${chef} — tap to switch">${chef}</button>` : ''}
       <div class="body">
         <div class="s-grid">
-          <label class="s-verb verb-pick ${v.label.length > 7 ? 'long' : ''}"><span class="vi">${v.icon}</span><span class="vl">${U.esc(v.label)}</span>
+          <label class="s-verb verb-pick ${v.label.length > 7 ? 'long' : ''}"><span class="vi">${App.icon(v.icon)}</span><span class="vl">${U.esc(v.label)}</span>
             <select data-verb="${s.id}" aria-label="Action">${verbOptions(s.verb)}</select></label>
           <div class="s-what">
             ${bubbles ? `<ul class="s-ings">${bubbles}</ul>` : ''}
             ${inl(`data-add-ing="${s.id}" aria-label="Add ingredient" enterkeyhint="done"`, '', '+ ingredient', 'add-ing')}
             <div class="s-meta">
-              ${inl(`data-time="${s.id}" inputmode="numeric" aria-label="Minutes"`, s.time ? '⏲ ' + s.time + ' min' : '', '⏲ + time', 'time' + (s.time ? '' : ' empty'))}
+              <span class="time-field ${s.time ? '' : 'empty'}">${App.icon('clock')}${inl(`data-time="${s.id}" inputmode="numeric" aria-label="Minutes"`, s.time ? s.time + ' min' : '', '+ time', 'time' + (s.time ? '' : ' empty'))}</span>
               ${inl(`data-text="${s.id}" aria-label="Note"`, s.text, '+ note', 'note' + (s.text ? '' : ' empty'))}
-              <button class="heat-btn ${s.heat ? '' : 'off empty'}" data-heat="${s.id}">🔥 ${s.heat ? U.HEAT[s.heat].toLowerCase() : 'no'} heat</button>
+              <button class="heat-btn ${s.heat ? '' : 'off empty'}" data-heat="${s.id}">${App.icon('flame')}${s.heat ? U.HEAT[s.heat].toLowerCase() : 'no'} heat</button>
             </div>
           </div>
         </div>
       </div>
-      <button class="step-x" data-rm-step="${s.id}" aria-label="Delete step">✕</button>
+      <button class="step-x" data-rm-step="${s.id}" aria-label="Delete step">${App.glyph('x')}</button>
     </div>`;
   }
 
@@ -69,7 +69,7 @@ App.edit = (() => {
     return `<li class="ing-item">${U.ingIconHtml(g)}
       ${inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt')}
       ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
-      <button class="x" data-rm-ing="${g.id}" aria-label="Delete ${U.esc(g.name)}">✕</button></li>`;
+      <button class="x" data-rm-ing="${g.id}" aria-label="Delete ${U.esc(g.name)}">${App.glyph('x')}</button></li>`;
   }
 
   // ---------- Changes ----------
@@ -174,7 +174,7 @@ App.edit = (() => {
       else if (d.time) {
         const n = parseFloat(t.value.replace(/[^\d.]/g, ''));
         r.steps.find(s => s.id === d.time).time = n > 0 ? n : undefined;
-        t.value = n > 0 ? '⏲ ' + n + ' min' : ''; autosize(t); commit();
+        t.value = n > 0 ? n + ' min' : ''; autosize(t); commit();
       }
       else if (d.addIng && t.value.trim()) { addIngredientToStep(r, d.addIng, t.value); commit(true); }
     });

@@ -39,22 +39,22 @@ App.ui = {};
       return `<li>${U.ingIconHtml(ing)}<span>${amt ? `<b>${U.esc(amt)}</b> ` : ''}${U.esc(ing.name)}${use.note ? ` <span class="un">· ${U.esc(use.note)}</span>` : ''}</span></li>`;
     }).join('');
     return `<div class="s-grid">
-      <div class="s-verb ${v.label.length > 7 ? 'long' : ''}"><span class="vi">${v.icon}</span><span class="vl">${U.esc(v.label)}</span></div>
+      <div class="s-verb ${v.label.length > 7 ? 'long' : ''}"><span class="vi">${App.icon(v.icon)}</span><span class="vl">${U.esc(v.label)}</span></div>
       <div class="s-what">${items ? `<ul class="s-ings">${items}</ul>` : ''}${App.ui.stepMeta(step, recipe, { ...opts, solo: !items })}</div>
     </div>`;
   };
 
   // One line under the ingredients: time first, then its cue, then heat —
-  // "⏲ 5 min · until softened · 🔥 medium heat".
+  // "5 min · until softened · medium heat", each with its little icon.
   App.ui.stepMeta = (step, recipe, opts = {}) => {
     const out = [];
     if (step.time) {
       const v = App.verb(step.verb);
-      out.push(`<button class="s-timer" data-action="timer" data-mins="${+step.time}" data-label="${U.esc(v.label + (recipe ? ' · ' + recipe.title : ''))}" title="Start a timer">⏲ ${U.esc(U.fmtMins(+step.time))}</button>`);
+      out.push(`<button class="s-timer" data-action="timer" data-mins="${+step.time}" data-label="${U.esc(v.label + (recipe ? ' · ' + recipe.title : ''))}" title="Start a timer">${App.icon('clock')}${U.esc(U.fmtMins(+step.time))}</button>`);
     }
     if (step.text) out.push(`<span class="s-text">${U.esc(step.text)}</span>`);
-    if (step.heat) out.push(`<span>🔥 ${U.HEAT[step.heat].toLowerCase()} heat</span>`);
-    if (step.temp) out.push(`<span>🌡 ${U.esc(step.temp)}</span>`);
+    if (step.heat) out.push(`<span class="m">${App.icon('flame')}${U.HEAT[step.heat].toLowerCase()} heat</span>`);
+    if (step.temp) out.push(`<span class="m">${App.icon('thermo')}${U.esc(step.temp)}</span>`);
     if (opts.extra) out.push(opts.extra);
     return out.length ? `<div class="s-meta ${opts.solo ? 'solo' : ''}">${out.join('<span class="dot">·</span>')}</div>` : '';
   };
@@ -81,10 +81,10 @@ App.ui = {};
   const render = () => {
     host().innerHTML = timers.map(t => {
       const left = (t.end - Date.now()) / 1000;
-      return `<div class="timer-pill ${left <= 0 ? 'ring' : ''}" data-id="${t.id}">⏲️ ${U.esc(t.label)}
+      return `<div class="timer-pill ${left <= 0 ? 'ring' : ''}" data-id="${t.id}">${App.icon('clock')}${U.esc(t.label)}
         <span class="t">${left <= 0 ? 'Done!' : fmt(left)}</span>
         ${left > 0 ? `<button data-timer="add" data-id="${t.id}">+1</button>` : ''}
-        <button data-timer="stop" data-id="${t.id}">${left <= 0 ? 'OK' : '✕'}</button></div>`;
+        <button data-timer="stop" data-id="${t.id}">${left <= 0 ? 'OK' : App.glyph('x')}</button></div>`;
     }).join('');
   };
   const tick = () => {

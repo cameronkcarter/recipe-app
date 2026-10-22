@@ -376,7 +376,7 @@ App.importer = (() => {
     steps.forEach(s => Object.keys(s).forEach(k => s[k] === undefined && delete s[k]));
     return {
       title: data.name || 'Imported recipe',
-      emoji: guessEmoji(data.name || '', ordered),
+      icon: U.suggestIcon({ title: data.name || '', ingredients: ordered }),
       servings: data.servings || 4,
       source: data.source || '',
       tags: [],
@@ -384,15 +384,6 @@ App.importer = (() => {
       steps,
       notes: [],
     };
-  }
-
-  const DISH = [['soup', '🍲'], ['stew', '🍲'], ['chili', '🌶️'], ['curry', '🍛'], ['salad', '🥗'], ['pasta', '🍝'], ['spaghetti', '🍝'], ['noodle', '🍜'], ['ramen', '🍜'],
-    ['pizza', '🍕'], ['taco', '🌮'], ['burrito', '🌯'], ['burger', '🍔'], ['sandwich', '🥪'], ['cake', '🍰'], ['cookie', '🍪'], ['brownie', '🍫'], ['pie', '🥧'],
-    ['bread', '🍞'], ['muffin', '🧁'], ['pancake', '🥞'], ['waffle', '🧇'], ['rice', '🍚'], ['egg', '🍳'], ['chicken', '🍗'], ['salmon', '🐟'], ['shrimp', '🍤'], ['smoothie', '🥤']];
-  function guessEmoji(title, ings) {
-    const t = title.toLowerCase();
-    for (const [k, e] of DISH) if (t.includes(k)) return e;
-    return U.ingIcon(t) || (ings[0] && U.ingIcon(ings[0].name)) || '🍽️';
   }
 
   // ---------- Reading a web page ----------

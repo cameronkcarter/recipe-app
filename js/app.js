@@ -3,6 +3,25 @@
   const root = document.getElementById('app');
   let cleanup = null;
 
+  // Nav icons and the browser-tab icon come from the app's own icon set.
+  document.querySelectorAll('.nav [data-ic]').forEach(el => { el.innerHTML = App.icon(el.dataset.ic); });
+  document.querySelector('link[rel=icon]').href = 'data:image/svg+xml,' + encodeURIComponent(App.icon('pot').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
+
+  // Night mode: the toggle saves a choice on this device; until then the app follows the phone's setting.
+  const themeColor = () => document.querySelector('meta[name=theme-color]').content = getComputedStyle(document.body).getPropertyValue('--bg').trim();
+  App.toggleTheme = () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('recipeapp.theme', next); } catch (e) { /* private mode: still switches for now */ }
+    themeColor();
+    return next;
+  };
+  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', e => {
+    let saved = null;
+    try { saved = localStorage.getItem('recipeapp.theme'); } catch (err) {}
+    if (!saved) { document.documentElement.dataset.theme = e.matches ? 'dark' : 'light'; themeColor(); }
+  });
+
   const routes = [
     [/^#?\/?$/,                 () => App.views.library(root),          'recipes'],
     [/^#\/r\/([^/]+)$/,         m => App.views.recipe(root, { id: m[1] }), 'recipes'],
@@ -25,6 +44,8 @@
       if (m[1]) m[1] = decodeURIComponent(m[1]);
       cleanup = view(m);
       document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
+      document.body.dataset.tab = tab; // each tab has its own page color
+      themeColor();
       return;
     }
     location.hash = '#/';

@@ -85,7 +85,7 @@ App.store = (() => {
       const base = U.slug(data.title || 'recipe');
       let id = base, n = 2;
       while (state.recipes.some(r => r.id === id)) id = base + '-' + n++;
-      state.recipes.unshift({ title: '', emoji: '🍽️', servings: 4, source: '', tags: [], ingredients: [], steps: [], notes: [], ...data, id, addedAt: Date.now() });
+      state.recipes.unshift({ title: '', servings: 4, source: '', tags: [], ingredients: [], steps: [], notes: [], ...data, id, addedAt: Date.now() });
       save(); syncRecipe(state.recipes[0]);
       return id;
     },

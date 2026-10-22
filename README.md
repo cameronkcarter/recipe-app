@@ -12,8 +12,9 @@ Simple, symbol-based recipes with co-op cooking, a shopping list, and a cook log
 
 ## Files
 - `index.html` — page shell + bottom nav
-- `css/styles.css` — all styling (light + dark mode)
-- `js/data.js` — verb icons, ingredient icons, store sections, starter recipe
+- `css/styles.css` — all styling: kawaii theme (Fredoka + Nunito), night mode, a page tint per tab
+- `js/icons.js` — the app's own kawaii icon set (SVG), the made-it seal, and small button glyphs
+- `js/data.js` — which icon each verb / ingredient / dish uses, store sections, starter recipe
 - `js/util.js` — amounts/units, ingredient-line parser, co-op scheduler
 - `js/store.js` — app data (with an offline copy in the browser)
 - `js/sync.js` — shares data across devices through Firebase
@@ -35,7 +36,7 @@ edit mode. Link import tries, in order: the local server (`serve.js`, uses curl)
 Jina Reader (r.jina.ai) so it also works on the public site. Some sites block both — then paste the text.
 
 ## Editing
-✏️ turns the recipe page into edit mode — no pop-ups. Ingredients become bubbles (they wiggle so it's
+The pencil turns the recipe page into edit mode — no pop-ups. Ingredients become bubbles (they wiggle so it's
 clear they move): drag one onto another step or onto + Add step; tap its words to type. Drag a step by its
 number (or press-and-hold anywhere on it) to move it up or down. Tap the action word to pick another, tap
 note/time to type, tap heat to cycle. The tapped step shows ✕, + note and + ingredient. Changes save on Done; Cancel discards them.
