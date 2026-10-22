@@ -4,7 +4,11 @@
   let cleanup = null;
 
   // Nav icons and the browser-tab icon come from the app's own icon set.
-  document.querySelectorAll('.nav [data-ic]').forEach(el => { el.innerHTML = App.icon(el.dataset.ic); });
+  // The Profile tab shows your own picture.
+  App.refreshNav = () => document.querySelectorAll('.nav [data-ic]').forEach(el => {
+    el.innerHTML = el.dataset.ic === 'me' ? App.util.avatarHtml(App.store.me(), 'nav-av') : App.icon(el.dataset.ic);
+  });
+  App.refreshNav();
   document.querySelector('link[rel=icon]').href = 'data:image/svg+xml,' + encodeURIComponent(App.icon('pot').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
 
   // Night mode: the toggle saves a choice on this device; until then the app follows the phone's setting.
@@ -28,7 +32,9 @@
     [/^#\/new$/,                () => { location.replace('#/edit/' + encodeURIComponent(App.store.addRecipe({}))); }, 'recipes'],
     [/^#\/edit\/([^/]+)$/,      m => App.views.recipe(root, { id: m[1], edit: true }), 'recipes'],
     [/^#\/list$/,               () => App.views.shopping(root),         'list'],
-    [/^#\/log$/,                () => App.views.log(root),              'log'],
+    [/^#\/me$/,                 () => App.views.profile(root),          'me'],
+    [/^#\/u\/([^/]+)$/,         m => App.views.profile(root, { id: m[1] }), 'me'],
+    [/^#\/log$/,                () => location.replace('#/me'),         'me'], // old link
   ];
 
   function render() {
@@ -58,6 +64,7 @@
       (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
     if (busy) { pending = true; return; }
     pending = false;
+    App.refreshNav(); // a profile picture may have changed on another device
     const y = window.scrollY;
     render();
     window.scrollTo(0, y);

@@ -99,6 +99,18 @@ App.EMOJI_ICONS = { '🎃': 'squash', '🌰': 'seeds', '🍠': 'spud', '🌱': '
   '🍛': 'curry', '🥗': 'salad', '🍕': 'pizza', '🌮': 'taco', '🌯': 'taco', '🍔': 'burger', '🥪': 'toast', '🍰': 'cake', '🍪': 'cookie', '🥧': 'pie', '🧁': 'muffin',
   '🥞': 'pancake', '🧇': 'pancake', '🍳': 'friedegg', '🥤': 'smoothie' };
 
+// Colors for the blob behind a recipe's icon (and behind profile pictures).
+App.BLOB_COLORS = ['#F27B5B', '#F2A33A', '#F6C945', '#82C25E', '#3BAA9C', '#5AAADB', '#9B7BD4', '#E88AA8', '#A8683A'];
+
+// Profiles (no real log-in yet: each device picks who it is). Shared by everyone, like recipes.
+App.SEED_PROFILES = [
+  { id: 'cameron', name: 'Cameron Carter', avatar: 'avo', color: '#82C25E' },
+  { id: 'ellen', name: 'Ellen Moffatt', avatar: 'squash', color: '#F2A33A' },
+];
+// Who added the recipes that existed before profiles, and who cooked the early log entries.
+App.SEED_AUTHORS = { 'sweet-potato-chili': 'cameron', 'instant-pot-butternut-squash-soup': 'cameron', 'pasted-recipe': 'ellen' };
+App.SEED_COOKS = { 'pasted-recipe': 'ellen' }; // any other early entry was Cameron's
+
 // Store sections for the shopping list (in walking order).
 App.CATEGORIES = [
   { id: 'produce', icon: 'greens', label: 'Produce' },

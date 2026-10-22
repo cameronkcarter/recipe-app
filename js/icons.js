@@ -218,6 +218,7 @@ window.App = window.App || {};
     paste: 'M9 4.5h6v3H9zM8 6H6.5A1.5 1.5 0 0 0 5 7.5v12A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 17.5 6H16M8.5 12h7M8.5 15.5h5',
     chevron: 'M9 6l6 6-6 6',
     undo: 'M9 14L4.5 9.5 9 5M5 9.5h9a5.5 5.5 0 0 1 0 11h-3',
+    logout: 'M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14M9.5 16.5L5 12l4.5-4.5M5 12h10',
   };
   App.glyph = (name, cls = '') => `<svg class="gl ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${G2[name]}"/></svg>`;
 })();

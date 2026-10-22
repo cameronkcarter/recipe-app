@@ -67,9 +67,9 @@ App.views.recipe = (root, { id, edit = false }) => {
       ${imported ? `<div class="import-banner">${App.icon('sparkle')}Imported. Tap any word to fix it.</div>` : ''}
       <div class="hero">
         ${edit
-          ? `<button class="r-ico pick" data-act="pick-icon" style="--blob:${App.iconColor(U.recipeIcon(r))}" aria-label="Change icon" aria-expanded="${picking}">${App.icon(U.recipeIcon(r))}<span class="badge">${App.glyph('pencil')}</span></button>
+          ? `<button class="r-ico pick" data-act="pick-icon" style="--blob:${U.esc(U.recipeBlob(r))}" aria-label="Change icon" aria-expanded="${picking}">${App.icon(U.recipeIcon(r))}<span class="badge">${App.glyph('pencil')}</span></button>
              <input class="title-input" data-f="title" value="${U.esc(r.title)}" placeholder="Recipe name" aria-label="Recipe name">`
-          : `${U.recipeIconHtml(r)}<h2>${U.esc(r.title || 'Untitled')}</h2>`}
+          : `${U.recipeIconHtml(r)}<div><h2>${U.esc(r.title || 'Untitled')}</h2>${authorHtml()}</div>`}
       </div>
       ${edit && picking ? iconPickerHtml() : ''}
       ${edit ? '' : tagRowHtml()}
@@ -124,7 +124,16 @@ App.views.recipe = (root, { id, edit = false }) => {
   function iconPickerHtml() {
     const sugg = U.suggestIcon(r), cur = U.recipeIcon(r);
     const list = [sugg, ...App.RECIPE_ICON_CHOICES.filter(x => x !== sugg)];
-    return `<div class="card icon-picker">${list.map(ic => `<button data-icon="${ic}" class="${ic === cur ? 'on' : ''} ${ic === sugg ? 'sugg' : ''}" aria-label="${ic}">${App.icon(ic)}</button>`).join('')}</div>`;
+    const bg = U.recipeBlob(r);
+    return `<div class="card icon-picker">
+      <div class="swatches">${App.BLOB_COLORS.map(c => `<button class="sw ${c === bg ? 'on' : ''}" data-bg="${c}" style="--sw:${c}" aria-label="Background color"></button>`).join('')}</div>
+      ${list.map(ic => `<button data-icon="${ic}" class="${ic === cur ? 'on' : ''} ${ic === sugg ? 'sugg' : ''}" style="--blob:${bg}" aria-label="${ic}">${App.icon(ic)}</button>`).join('')}</div>`;
+  }
+
+  // "by Ellen Moffatt" under the title, linking to their profile.
+  function authorHtml() {
+    const p = S.profile(r.author);
+    return p ? `<a class="by" href="#/u/${encodeURIComponent(p.id)}">${U.avatarHtml(p)}by ${U.esc(p.name)}</a>` : '';
   }
 
   // Title, icon, source, tags
@@ -146,6 +155,7 @@ App.views.recipe = (root, { id, edit = false }) => {
     if (d.mode) { App.session.mode = d.mode; render(); }
     else if (d.act === 'pick-icon') { picking = !picking; render(); }
     else if (d.icon) { r.icon = d.icon; picking = false; render(); }
+    else if (d.bg) { r.iconBg = d.bg; render(); }
     else if (d.serv) {
       if (edit) r.servings = Math.max(1, (r.servings || 1) + +d.serv);
       else App.session.servings[r.id] = Math.max(1, servings() + +d.serv);

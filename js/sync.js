@@ -5,6 +5,7 @@
 //   kitchens/main-shared-recipe-collection/recipes/{recipeId}   one doc per recipe
 //   kitchens/main-shared-recipe-collection/meta/log             { items: [...] }
 //   kitchens/main-shared-recipe-collection/meta/list            shopping list
+//   kitchens/main-shared-recipe-collection/meta/profiles        { items: [...] } people (no sign-in yet)
 window.App = window.App || {};
 App.sync = (() => {
   const off = { enabled: false, recipe() {}, removeRecipe() {}, meta() {} };
@@ -31,7 +32,7 @@ App.sync = (() => {
     enabled: true,
     recipe(r) { recipesRef.doc(r.id).set(clean({ ...r, addedAt: r.addedAt || Date.now() })).catch(warn); },
     removeRecipe(id) { recipesRef.doc(id).delete().catch(warn); },
-    meta(name, value) { metaRef.doc(name).set(clean(name === 'log' ? { items: value } : value)).catch(warn); },
+    meta(name, value) { metaRef.doc(name).set(clean(Array.isArray(value) ? { items: value } : value)).catch(warn); },
   };
   const pushAll = recipes => {
     const now = Date.now();
@@ -66,9 +67,10 @@ App.sync = (() => {
       const ids = new Set(snap.docs.map(d => d.id));
       if (!ids.has('log') && S.state.log.length) api.meta('log', S.state.log);
       if (!ids.has('list')) api.meta('list', S.state.list);
+      if (!ids.has('profiles')) api.meta('profiles', S.state.profiles);
     }
     const patch = {};
-    snap.docs.forEach(d => { if (d.id === 'log') patch.log = d.data().items || []; if (d.id === 'list') patch.list = d.data(); });
+    snap.docs.forEach(d => { if (d.id === 'log') patch.log = d.data().items || []; if (d.id === 'list') patch.list = d.data(); if (d.id === 'profiles') patch.profiles = d.data().items || []; });
     if (Object.keys(patch).length) S.applyRemote(patch);
   }, warn);
 

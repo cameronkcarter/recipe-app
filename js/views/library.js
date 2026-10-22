@@ -12,17 +12,7 @@ App.views.library = root => {
       r.ingredients.some(i => i.name.toLowerCase().includes(q)));
     if (!S.recipes().length) return `<div class="empty"><div class="big">${App.icon('pot')}</div><p>No recipes yet.<br>Tap <b>+</b> to add your first one.</p></div>`;
     if (!list.length) return `<div class="empty">No recipes match “${U.esc(query)}”.</div>`;
-    return `<div class="recipe-grid">${list.map(r => {
-      const cooks = S.cooksFor(r.id);
-      const time = U.schedule(r, 1).total;
-      const tags = U.tagIcons(r);
-      // Time, and a "made it" seal with how many times you've cooked it.
-      return `<a class="card recipe-card" href="#/r/${encodeURIComponent(r.id)}">
-        ${tags.length ? `<div class="tags">${tags.map(t => `<span class="tag-ico" title="${t.label}">${App.icon(t.icon)}</span>`).join('')}</div>` : ''}
-        ${U.recipeIconHtml(r)}
-        <div class="name">${U.esc(r.title)}</div>
-        <div class="meta"><span class="time">${App.icon('clock')}${U.fmtMins(time)}</span>${cooks.length ? App.seal(cooks.length) : ''}</div></a>`;
-    }).join('')}</div>`;
+    return `<div class="recipe-grid">${list.map(App.ui.recipeCard).join('')}</div>`;
   };
 
   root.innerHTML = `

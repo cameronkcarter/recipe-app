@@ -1,6 +1,6 @@
 # Recipe App (no name yet)
 
-Simple, symbol-based recipes with co-op cooking, a shopping list, and a cook log.
+Simple, symbol-based recipes with co-op cooking, a shopping list, and profiles with a cook log.
 
 ## Run it
 - Recommended: run the local server (needed for importing from links, "keep screen awake", and testing on your phone):
@@ -21,7 +21,12 @@ Simple, symbol-based recipes with co-op cooking, a shopping list, and a cook log
 - `js/importer.js` — turns a recipe from a link or pasted text into symbol steps
 - `js/ui.js` — timers, bottom sheets, step rendering, notes
 - `js/edit.js` — inline edit mode (tap-to-change words, drag ingredients) and co-op swapping
-- `js/views/` — one file per screen (library, recipe, shopping, log)
+- `js/views/` — one file per screen (library, recipe, shopping, profile)
+
+## Profiles
+No real accounts yet. Profiles (name, food picture, color) are shared like recipes; each device picks who it is
+with **Log out → Log in as** on the Profile tab, or makes a **New profile**. New recipes and "Cooked it" entries
+are credited to whoever is logged in on that device. The cook log is a stamp calendar (scroll left for older weeks).
 - `js/app.js` — router
 
 ## Style rules (the whole point of the app)

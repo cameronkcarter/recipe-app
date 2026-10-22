@@ -1,6 +1,6 @@
 /* ============ Tokens ============ */
 /* Kawaii theme: cream + coral, rounded Fredoka headings, Nunito text, "puffy" cards.
-   Each tab tints the page (Recipes = cream, Shopping = mint, Cook log = lilac).
+   Each tab tints the page (Recipes = cream, Shopping = mint, Profile = lilac).
    Night mode: <html data-theme="dark">, set in index.html from the saved choice or the system. */
 :root {
   --bg: #fff7ec;
@@ -31,7 +31,7 @@ body[data-tab="list"] {
   --bg: #eef6ea; --surface-2: #e0eed9; --line: #dcebd5; --line-strong: #c7ddbd;
   --accent: #5fae57; --accent-deep: #46903f; --accent-soft: #dcf0d6;
 }
-body[data-tab="log"] {
+body[data-tab="me"] {
   --bg: #f7f0fb; --surface-2: #ece1f5; --line: #e8ddf1; --line-strong: #d6c6e7;
   --accent: #9b7bd4; --accent-deep: #7c5db8; --accent-soft: #ece3f8;
 }
@@ -55,7 +55,7 @@ body[data-tab="log"] {
   --bg: #19211a; --surface: #233025; --surface-2: #2d3c2f; --line: #304132; --line-strong: #121a13;
   --accent: #78c26f; --accent-deep: #4c8a45; --accent-soft: #2b462b;
 }
-:root[data-theme="dark"] body[data-tab="log"] {
+:root[data-theme="dark"] body[data-tab="me"] {
   --bg: #211b27; --surface: #2c2433; --surface-2: #382e41; --line: #3b3145; --line-strong: #16111b;
   --accent: #b497e6; --accent-deep: #8062bc; --accent-soft: #3d3150;
 }
@@ -525,3 +525,68 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .cooked.done-state { font: 600 1.1rem var(--font-head); color: var(--good); gap: 10px; }
 .cooked.done-state .seal { width: 36px; height: 36px; }
 .cooked.done-state .link { font-size: .95rem; color: var(--muted); text-decoration: underline; font-family: var(--font-body); }
+
+/* ============ Profile ============ */
+.avatar {
+  --blob: #f9a27e;
+  width: 22px; height: 22px; flex: none; border-radius: 50%; display: inline-grid; place-items: center;
+  background: color-mix(in srgb, var(--blob) 30%, var(--surface));
+}
+.avatar .ic { width: 80%; height: 80%; }
+.avatar.xl { width: 104px; height: 104px; border: 4px solid var(--surface); box-shadow: 0 0 0 2px var(--line); }
+.avatar.nav-av { width: 30px; height: 30px; }
+.avatar.plus { background: var(--surface-2); color: var(--muted); }
+.avatar.plus .gl { width: 16px; height: 16px; stroke-width: 3; }
+.prof-head { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: -6px 0 18px; text-align: center; }
+.prof-head h1 { margin: 0; font-size: 1.7rem; line-height: 1.1; }
+.avatar-btn { position: relative; border: none; background: none; padding: 0; border-radius: 50%; }
+.avatar-btn .badge { position: absolute; right: 2px; bottom: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff;
+  display: grid; place-items: center; border: 3px solid var(--bg); }
+.avatar-btn .badge .gl { width: 14px; height: 14px; stroke-width: 3; }
+.prof-edit .input { grid-column: 1 / -1; }
+
+/* "Log out" → log in as someone else */
+.who-menu { position: relative; }
+.who-list { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; width: 250px; padding: 6px; display: flex; flex-direction: column; gap: 2px;
+  box-shadow: 0 12px 30px rgba(40, 25, 15, .18); }
+.who-title { font: 500 .75rem var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: .07em; padding: 6px 10px 4px; }
+.who { display: flex; align-items: center; gap: 10px; border: none; background: none; padding: 7px 10px; border-radius: 14px; text-align: left; font-weight: 700; width: 100%; }
+.who:hover, .who.on { background: var(--surface-2); }
+.who .avatar { width: 32px; height: 32px; }
+.who span:not(.avatar) { flex: 1; }
+.who > .gl { color: var(--accent); width: 18px; height: 18px; stroke-width: 3; }
+.who-new { display: flex; gap: 6px; padding: 6px; }
+.who-new .input { padding: 8px 12px; }
+
+/* "by Ellen" on cards and recipe pages */
+.by { display: inline-flex; align-items: center; gap: 5px; font-size: .82rem; font-weight: 700; color: var(--muted); text-decoration: none; }
+.recipe-card .by { margin-top: -3px; }
+.hero .by { margin-top: 5px; }
+.hero .by .avatar { width: 24px; height: 24px; }
+
+/* Stamp calendar: weeks as columns, every day numbered, cooked days stamped with the recipe icon */
+.stamp-wrap { padding: 10px 6px 10px 0; }
+.stamp-cal { display: flex; gap: 3px; overflow-x: auto; scrollbar-width: thin; padding: 0 8px 4px 0; overscroll-behavior-x: contain; }
+.stamp-cal .wk { display: flex; flex-direction: column; gap: 3px; flex: none; }
+.stamp-cal .wk.dow { position: sticky; left: 0; z-index: 2; background: var(--surface); padding: 0 4px 0 8px; }
+.stamp-cal .wk.dow .day { background: none; color: var(--muted); font: 500 .68rem var(--font-head); width: 14px; }
+.stamp-cal .mo { height: 16px; font: 500 .72rem/16px var(--font-head); color: var(--muted); white-space: nowrap; width: 34px; }
+.stamp-cal .day { width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; position: relative; text-decoration: none; }
+.stamp-cal .day.alt { background: color-mix(in srgb, var(--surface-2) 55%, var(--surface)); }
+.stamp-cal .day span { font-size: .66rem; font-weight: 700; color: color-mix(in srgb, var(--muted) 75%, transparent); }
+.stamp-cal .day.future { background: none; }
+.stamp-cal .day.today { box-shadow: inset 0 0 0 2px var(--accent); }
+.stamp-cal .day.stamped { background: none; }
+.stamp-cal .stamp { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--blob) 32%, var(--surface)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--blob) 60%, transparent); }
+.stamp-cal .stamp .ic { width: 78%; height: 78%; }
+.stamp-cal .day b { position: absolute; right: -3px; top: -3px; min-width: 16px; height: 16px; border-radius: 999px; background: var(--accent); color: #fff;
+  font: 600 .62rem/16px var(--font-head); text-align: center; padding: 0 3px; }
+
+/* recipe icon picker: background colors */
+.swatches { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 2px 6px; }
+.icon-picker .sw { aspect-ratio: auto; width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--surface); background: var(--sw);
+  box-shadow: 0 0 0 1.5px var(--line); padding: 0; }
+.icon-picker .sw.on { box-shadow: 0 0 0 2.5px var(--text); }
+.icon-picker button[data-icon], .icon-picker button[data-avatar] { background: color-mix(in srgb, var(--blob, #f9a27e) 22%, var(--surface)); }
+.icon-picker button[data-icon].on, .icon-picker button[data-avatar].on { border-color: var(--accent); }

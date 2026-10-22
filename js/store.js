@@ -10,6 +10,7 @@ App.store = (() => {
     recipes: JSON.parse(JSON.stringify(App.SEED_RECIPES)),
     log: [],                                  // [{id, recipeId, date, mode}]
     list: { recipes: [], checked: {}, extras: [] }, // shopping list
+    profiles: JSON.parse(JSON.stringify(App.SEED_PROFILES)), // [{id, name, avatar, color}]
     seedVersion: App.SEED_VERSION,
   });
 
@@ -21,7 +22,7 @@ App.store = (() => {
     } catch (e) {
       state = fresh();
     }
-    state.recipes ||= []; state.log ||= []; state.list ||= { recipes: [], checked: {}, extras: [] };
+    state.recipes ||= []; state.log ||= []; state.profiles ||= JSON.parse(JSON.stringify(App.SEED_PROFILES)); state.list ||= { recipes: [], checked: {}, extras: [] };
     // The old example friend notes ("Sam (example)") are gone from the app; drop them from saved data.
     state.recipes.forEach(r => { if (r.notes) r.notes = r.notes.filter(n => !/\(example\)/.test(n.author || '')); });
     // Steps don't carry "more" paragraphs any more — the app is meant to be read at a glance.
@@ -60,7 +61,7 @@ App.store = (() => {
     if (!App.sync?.enabled) return;
     clearTimeout(metaTimer);
     metaTimer = setTimeout(() => {
-      for (const name of ['log', 'list']) {
+      for (const name of ['log', 'list', 'profiles']) {
         const json = JSON.stringify(state[name]);
         if (sent[name] !== json) { sent[name] = json; App.sync.meta(name, state[name]); }
       }
@@ -68,6 +69,28 @@ App.store = (() => {
   }
   const syncRecipe = r => App.sync?.enabled && App.sync.recipe(r);
   load();
+
+  // ---------- Profiles ----------
+  // Who this device is "logged in" as. Saved per device until there are real accounts.
+  const ME = 'recipeapp.me';
+  const meId = () => {
+    let id = null;
+    try { id = localStorage.getItem(ME); } catch (e) {}
+    return state.profiles.some(p => p.id === id) ? id : state.profiles[0]?.id;
+  };
+  // Recipes and log entries from before profiles get their author once the shared copy has arrived
+  // (only then, so an old offline copy never overwrites newer entries).
+  function fillInAuthors() {
+    for (const r of state.recipes) {
+      const who = App.SEED_AUTHORS[r.id];
+      if (who && !r.author) { r.author = who; syncRecipe(r); }
+    }
+    let changed = false;
+    for (const l of state.log) if (!l.by) { l.by = App.SEED_COOKS[l.recipeId] || 'cameron'; changed = true; }
+    if (changed) save();
+  }
+  fillInAuthors.local = () => state.recipes.forEach(r => { r.author ||= App.SEED_AUTHORS[r.id]; });
+  fillInAuthors.local();
 
   return {
     get state() { return state; },
@@ -85,7 +108,7 @@ App.store = (() => {
       const base = U.slug(data.title || 'recipe');
       let id = base, n = 2;
       while (state.recipes.some(r => r.id === id)) id = base + '-' + n++;
-      state.recipes.unshift({ title: '', servings: 4, source: '', tags: [], ingredients: [], steps: [], notes: [], ...data, id, addedAt: Date.now() });
+      state.recipes.unshift({ title: '', author: meId(), servings: 4, source: '', tags: [], ingredients: [], steps: [], notes: [], ...data, id, addedAt: Date.now() });
       save(); syncRecipe(state.recipes[0]);
       return id;
     },
@@ -96,11 +119,27 @@ App.store = (() => {
       if (App.sync?.enabled) App.sync.removeRecipe(id);
     },
     logCook(recipeId, mode) {
-      state.log.unshift({ id: App.util.uid('l'), recipeId, date: App.util.todayStr(), mode });
+      state.log.unshift({ id: App.util.uid('l'), recipeId, date: App.util.todayStr(), mode, by: meId() });
       save();
     },
     deleteLog(id) { state.log = state.log.filter(l => l.id !== id); save(); },
-    cooksFor: id => state.log.filter(l => l.recipeId === id),
+    // Times a recipe was cooked — by one person (default: you), or by anyone with by = null.
+    cooksFor: (id, by = meId()) => state.log.filter(l => l.recipeId === id && (!by || (l.by || 'cameron') === by)),
+    cooksBy: by => state.log.filter(l => (l.by || 'cameron') === by),
+    profiles: () => state.profiles,
+    profile: id => state.profiles.find(p => p.id === id),
+    me: () => state.profiles.find(p => p.id === meId()),
+    setMe(id) { try { localStorage.setItem(ME, id); } catch (e) {} },
+    addProfile(name) {
+      const base = App.util.slug(name);
+      let id = base, n = 2;
+      while (state.profiles.some(p => p.id === id)) id = base + '-' + n++;
+      const pick = a => a[Math.floor(Math.random() * a.length)];
+      state.profiles.push({ id, name, avatar: pick(['onion', 'garlic', 'tomato', 'lemon', 'apple', 'carrot', 'mushroom', 'egg', 'avo', 'berries']), color: pick(App.BLOB_COLORS) });
+      save();
+      return id;
+    },
+    updateProfile(id, patch) { Object.assign(state.profiles.find(p => p.id === id), patch); save(); },
     // Changes arriving from another device. Saved locally only (no echo back), then the
     // current screen redraws.
     applyRemote(patch) {
@@ -114,6 +153,7 @@ App.store = (() => {
       if (!changed) return;
       saveLocal();
       App.onRemoteChange?.();
+      if (patch.recipes || patch.log) fillInAuthors();
     },
     reset() { state = fresh(); save(); },
   };

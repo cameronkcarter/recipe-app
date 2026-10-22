@@ -147,10 +147,14 @@ U.suggestIcon = r => {
 };
 // The icon you picked, else an old emoji, else the suggestion.
 U.recipeIcon = r => U.iconName(r.icon) || U.iconName(r.emoji) || U.suggestIcon(r);
-U.recipeIconHtml = (r, cls = '') => {
-  const ico = U.recipeIcon(r);
-  return `<span class="r-ico ${cls}" style="--blob:${App.iconColor(ico)}">${App.icon(ico)}</span>`;
-};
+// Blob color behind the icon: the one you picked, else the icon's own main color.
+U.recipeBlob = r => r.iconBg || App.iconColor(U.recipeIcon(r));
+U.recipeIconHtml = (r, cls = '') =>
+  `<span class="r-ico ${cls}" style="--blob:${U.esc(U.recipeBlob(r))}">${App.icon(U.recipeIcon(r))}</span>`;
+// A profile picture: one of the food icons in a round colored blob.
+U.avatarHtml = (p, cls = '') =>
+  `<span class="avatar ${cls}" style="--blob:${U.esc(p?.color || '#F9A27E')}">${App.icon(p?.avatar || 'cloche')}</span>`;
+U.firstName = p => String(p?.name || '').split(' ')[0];
 // Tags that get an icon: vegan (leaf) and Instant Pot (also spotted from a pressure-cook step or the title).
 U.tagIcons = r => {
   const words = [r.title, ...(r.tags || [])].join(' ').toLowerCase();

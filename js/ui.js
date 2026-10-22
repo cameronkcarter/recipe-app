@@ -17,6 +17,19 @@ App.ui = {};
     return close;
   };
 
+  // ---------- Recipe card (home and profiles) ----------
+  // Icon, name, who added it (when it isn't you), time, and a "made it" seal with how many times you've cooked it.
+  App.ui.recipeCard = r => {
+    const S = App.store, cooks = S.cooksFor(r.id), tags = U.tagIcons(r);
+    const by = r.author && r.author !== S.me()?.id ? S.profile(r.author) : null;
+    return `<a class="card recipe-card" href="#/r/${encodeURIComponent(r.id)}">
+      ${tags.length ? `<div class="tags">${tags.map(t => `<span class="tag-ico" title="${t.label}">${App.icon(t.icon)}</span>`).join('')}</div>` : ''}
+      ${U.recipeIconHtml(r)}
+      <div class="name">${U.esc(r.title)}</div>
+      ${by ? `<div class="by">${U.avatarHtml(by)}${U.esc(U.firstName(by))}</div>` : ''}
+      <div class="meta"><span class="time">${App.icon('clock')}${U.fmtMins(U.schedule(r, 1).total)}</span>${cooks.length ? App.seal(cooks.length) : ''}</div></a>`;
+  };
+
   // ---------- Step rendering ----------
   // Amount shown for an ingredient inside a step: the step's portion if set, else the full amount.
   App.ui.useAmount = (use, ing, scale) => {
