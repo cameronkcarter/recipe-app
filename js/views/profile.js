@@ -1,103 +1,93 @@
 // Profile: picture, name, stats, their recipes, and a History calendar of what they cooked.
-// #/me is you — or, when logged out, the Log in screen ("Who's cooking?") with New profile sign-up.
-// #/u/<id> is anyone's profile. No passwords yet: logging in means picking your profile.
+// #/me is you. Logged out, it's the same page left blank, with Log in (pick your profile) and
+// Make a profile (fill in the blank page). #/u/<id> is anyone's profile. No passwords yet.
 App.views = App.views || {};
 App.views.profile = (root, { id } = {}) => {
   const U = App.util, S = App.store;
   const FOODS = ['avo', 'squash', 'onion', 'garlic', 'tomato', 'lemon', 'lime', 'orange', 'apple', 'banana', 'berries', 'carrot', 'mushroom', 'broccoli', 'corn',
     'eggplant', 'bellpep', 'chili', 'spud', 'potato', 'pumpkin', 'egg', 'cheese', 'bread', 'toast', 'cookie', 'cake', 'muffin', 'pancake', 'friedegg', 'pot', 'ip', 'noodle', 'rice', 'tofu', 'dough'];
   const pick = a => a[Math.floor(Math.random() * a.length)];
-  let draft = null;   // picture being edited (or the new profile being made): Save / Create keeps it
-  let join = 0;       // sign-up step: 0 = not signing up, 1 = name, 2 = picture
-  let page = 0;       // History: 0 = the latest weeks, 1 = the weeks before…
-  let sel = null;     // History: the day you tapped
+  let draft = null;     // picture being edited, or the new profile being made: Save / Create keeps it
+  let joining = false;  // logged out: filling in the blank profile
+  let picking = false;  // logged out: the "Log in as" list is open
+  let page = 0;         // History: 0 = the latest weeks, 1 = the weeks before…
+  let sel = null;       // History: the day you tapped
 
   function render() {
     const me = S.me();
-    if (!id && !me) { root.innerHTML = join ? joinHtml() : loginHtml(); return; }
-    const saved = id ? S.profile(id) : me;
-    if (!saved) { root.innerHTML = `<div class="empty"><p>Profile not found.</p><a href="#/me">Back to your profile</a></div>`; return; }
-    const mine = saved.id === me?.id;
-    const p = mine && draft ? draft : saved;
-    const log = S.cooksBy(p.id);
+    const guest = !id && !me;
+    const saved = guest ? null : id ? S.profile(id) : me;
+    if (!guest && !saved) { root.innerHTML = `<div class="empty"><p>Profile not found.</p><a href="#/me">Back to your profile</a></div>`; return; }
+    const mine = !guest && saved.id === me?.id;
+    const p = draft || saved;
+    const log = guest ? [] : S.cooksBy(p.id);
     const month = U.todayStr().slice(0, 7);
-    const recipes = S.recipes().filter(r => r.author === p.id);
-    if (!sel) sel = log.length ? log[0].date : mine ? U.todayStr() : null;
+    const recipes = guest ? [] : S.recipes().filter(r => r.author === p.id);
+    if (!sel && !guest) sel = log.length ? log[0].date : mine ? U.todayStr() : null;
+    const dash = n => guest ? '–' : n;
 
     root.innerHTML = `
       <header class="topbar">
-        ${mine ? '<span class="title-sm"></span>' : `<a class="icon-btn" href="#/me" aria-label="Back">${App.glyph('back')}</a><span class="title-sm"></span>`}
+        ${mine || guest ? '<span class="title-sm"></span>' : `<a class="icon-btn" href="#/me" aria-label="Back">${App.glyph('back')}</a><span class="title-sm"></span>`}
         ${mine ? `<button class="btn small" data-act="logout">${App.glyph('logout')}Log out</button>` : ''}
+        ${guest && !joining ? `<button class="btn small primary" data-act="login" aria-expanded="${picking}">Log in</button>` : ''}
       </header>
 
       <div class="prof-head">
-        ${mine ? `<button class="avatar-btn" data-act="edit" aria-label="Change picture">${U.avatarHtml(p, 'xl')}<span class="badge">${App.glyph('pencil')}</span></button>` : U.avatarHtml(p, 'xl')}
-        <h1>${U.esc(p.name)}</h1>
+        ${mine ? `<button class="avatar-btn" data-act="edit" aria-label="Change picture">${U.avatarHtml(p, 'xl')}<span class="badge">${App.glyph('pencil')}</span></button>`
+          : p ? U.avatarHtml(p, 'xl') : `<span class="avatar xl ghost">${App.icon('person')}</span>`}
+        <h1 class="${p?.name ? '' : 'blank'}">${p?.name ? U.esc(p.name) : guest ? 'Not logged in' : ''}</h1>
+        ${guest && !joining && !picking ? `<p class="muted">Log in to keep track of what you cook.</p>
+          <button class="btn primary" data-act="join">${App.glyph('plus')}Make a profile</button>` : ''}
       </div>
+      ${guest && picking ? loginListHtml() : ''}
+      ${guest && joining ? `<form class="card icon-picker prof-edit" data-form="join">
+        <input class="input" data-pf="name" value="${U.esc(draft.name)}" placeholder="Your name" aria-label="Your name" autocomplete="name">
+        <div class="join-err" role="alert"></div>
+        ${pictureHtml(draft)}
+        <div class="edit-actions"><button type="button" class="btn small" data-act="cancel-join">Cancel</button><button class="btn primary small">Create profile</button></div>
+      </form>` : ''}
       ${mine && draft ? `<div class="card icon-picker prof-edit">
         <input class="input" data-pf="name" value="${U.esc(draft.name)}" aria-label="Name" autocomplete="off">
         ${pictureHtml(draft)}
         <div class="edit-actions"><button class="btn small" data-act="cancel-edit">Cancel</button><button class="btn primary small" data-act="save-edit">Save</button></div>
       </div>` : ''}
 
-      <div class="stats two">
-        <div class="card stat"><div class="n">${log.length}</div><div class="l">meals cooked</div></div>
-        <div class="card stat"><div class="n">${log.filter(l => l.date.startsWith(month)).length}</div><div class="l">this month</div></div>
+      <div class="stats two ${guest ? 'blank' : ''}">
+        <div class="card stat"><div class="n">${dash(log.length)}</div><div class="l">meals cooked</div></div>
+        <div class="card stat"><div class="n">${dash(log.filter(l => l.date.startsWith(month)).length)}</div><div class="l">this month</div></div>
       </div>
 
-      <div class="section-label"><span class="lab">${App.icon('book')}${mine ? 'Your recipes' : `${U.esc(U.firstName(p))}'s recipes`}<span class="count">${recipes.length}</span></span></div>
+      <div class="section-label"><span class="lab">${App.icon('book')}${mine || guest ? 'Your recipes' : `${U.esc(U.firstName(p))}'s recipes`}${guest ? '' : `<span class="count">${recipes.length}</span>`}</span></div>
       ${recipes.length ? `<div class="recipe-grid">${recipes.map(App.ui.recipeCard).join('')}</div>`
-        : `<div class="muted">No recipes yet.</div>`}
+        : `<div class="muted">${guest ? 'Your recipes will show up here.' : 'No recipes yet.'}</div>`}
 
       <div class="section-label"><span class="lab">${App.icon('cal')}History</span></div>
-      <div class="card history">${historyHtml(log, mine)}</div>`;
+      <div class="card history ${guest ? 'blank' : ''}">${historyHtml(log, mine)}</div>`;
   }
 
-  // Logged out: pick your profile to log in, or make a new one.
-  function loginHtml() {
-    return `<header class="topbar"><h1>Log in</h1></header>
-      <div class="card login">
-        <div class="login-hero">${App.icon('pot')}</div>
-        <h2>Who's cooking?</h2>
-        <div class="who-grid">
-          ${S.profiles().map(q => `<button class="who-tile" data-login="${U.esc(q.id)}">${U.avatarHtml(q, 'lg')}<span>${U.esc(q.name)}</span></button>`).join('')}
-          <button class="who-tile new" data-act="join"><span class="avatar lg plus">${App.glyph('plus')}</span><span>New profile</span></button>
-        </div>
-      </div>`;
-  }
-
-  // New profile, two quick steps: your name, then your picture.
-  function joinHtml() {
-    const dots = `<div class="steps-dots"><i class="${join === 1 ? 'on' : ''}"></i><i class="${join === 2 ? 'on' : ''}"></i></div>`;
-    return `<header class="topbar"><button class="icon-btn" data-act="join-back" aria-label="Back">${App.glyph('back')}</button><span class="title-sm">New profile</span></header>
-      <div class="card login join">
-        ${dots}
-        ${U.avatarHtml(draft, 'xl')}
-        ${join === 1 ? `<h2>What's your name?</h2>
-          <form class="join-form" data-form="join-name">
-            <input class="input" name="name" value="${U.esc(draft.name)}" placeholder="Your name" autocomplete="name" aria-label="Your name" enterkeyhint="next">
-            <div class="join-err" role="alert"></div>
-            <button class="btn primary block">Next</button>
-          </form>`
-        : `<h2>Hi, ${U.esc(U.firstName(draft))}! Pick your picture</h2>
-          <div class="icon-picker">${pictureHtml(draft)}</div>
-          <button class="btn primary block" data-act="create">Create profile</button>`}
-      </div>`;
+  // Logged out → Log in: pick your profile (or make one).
+  function loginListHtml() {
+    return `<div class="card who-list">
+      <div class="who-title">Log in as</div>
+      ${S.profiles().map(q => `<button class="who" data-login="${U.esc(q.id)}">${U.avatarHtml(q)}<span>${U.esc(q.name)}</span></button>`).join('')}
+      <button class="who" data-act="join"><span class="avatar plus">${App.glyph('plus')}</span><span>Make a profile</span></button>
+    </div>`;
   }
 
   // Food and color choices for a profile picture.
   const pictureHtml = p => `
-    <div class="swatches">${App.BLOB_COLORS.map(c => `<button class="sw ${c === p.color ? 'on' : ''}" data-color="${c}" style="--sw:${c}" aria-label="Color"></button>`).join('')}</div>
-    ${FOODS.map(f => `<button data-avatar="${f}" class="${f === p.avatar ? 'on' : ''}" style="--blob:${p.color}" aria-label="${f}">${App.icon(f)}</button>`).join('')}`;
+    <div class="swatches">${App.BLOB_COLORS.map(c => `<button type="button" class="sw ${c === p.color ? 'on' : ''}" data-color="${c}" style="--sw:${c}" aria-label="Color"></button>`).join('')}</div>
+    ${FOODS.map(f => `<button type="button" data-avatar="${f}" class="${f === p.avatar ? 'on' : ''}" style="--blob:${p.color}" aria-label="${f}">${App.icon(f)}</button>`).join('')}`;
 
   // After logging in (or signing up), go back to what you were doing, if something sent you here.
   function loggedIn(pid) {
     S.setMe(pid);
-    draft = null; join = 0; sel = null; page = 0;
+    draft = null; joining = picking = false; sel = null; page = 0;
     App.refreshNav?.();
     const back = App.session.afterLogin;
     delete App.session.afterLogin;
-    if (back && back !== location.hash) location.hash = back; else render();
+    if (back && back !== location.hash) location.hash = back; else { render(); window.scrollTo(0, 0); }
   }
 
   // History: a few weeks of days (as many as fit the screen), every day numbered.
@@ -178,10 +168,10 @@ App.views.profile = (root, { id } = {}) => {
     if (!t) return;
     const d = t.dataset;
     if (d.login) loggedIn(d.login);
+    else if (d.act === 'login') { picking = !picking; render(); }
     else if (d.act === 'logout') { S.setMe(null); draft = null; sel = null; page = 0; App.refreshNav?.(); render(); window.scrollTo(0, 0); }
-    else if (d.act === 'join') { draft = { name: '', avatar: pick(FOODS.slice(0, 15)), color: pick(App.BLOB_COLORS) }; join = 1; render(); root.querySelector('[name=name]')?.focus(); }
-    else if (d.act === 'join-back') { if (join === 2) join = 1; else { join = 0; draft = null; } render(); }
-    else if (d.act === 'create') loggedIn(S.addProfile(draft.name.trim(), draft.avatar, draft.color));
+    else if (d.act === 'join') { draft = { name: '', avatar: pick(FOODS.slice(0, 15)), color: pick(App.BLOB_COLORS) }; joining = true; picking = false; render(); root.querySelector('[data-pf=name]')?.focus(); }
+    else if (d.act === 'cancel-join') { draft = null; joining = false; render(); }
     else if (d.act === 'edit') { draft = draft ? null : { ...S.me() }; render(); }
     else if (d.act === 'cancel-edit') { draft = null; render(); }
     else if (d.act === 'save-edit') {
@@ -202,17 +192,22 @@ App.views.profile = (root, { id } = {}) => {
     if (form === 'log') {
       const rid = e.target.querySelector('[name=recipe]').value;
       if (rid) { S.logCook(rid, 'solo', sel); navigator.vibrate?.(15); render(); }
-    } else if (form === 'join-name') {
-      const name = e.target.querySelector('[name=name]').value.trim();
+    } else if (form === 'join') {
+      const name = draft.name.trim();
       const taken = S.profiles().some(q => q.name.toLowerCase() === name.toLowerCase());
       const err = !name ? 'Type your name first.' : taken ? 'That name is taken. Log in instead, or add your last name.' : '';
-      if (err) { e.target.querySelector('.join-err').textContent = err; return; }
-      draft.name = name; join = 2; render();
+      if (err) { e.target.querySelector('.join-err').textContent = err; e.target.querySelector('[data-pf=name]').focus(); return; }
+      loggedIn(S.addProfile(name, draft.avatar, draft.color));
     }
   };
+  // Typing a name fills it in on the profile right away.
   root.oninput = e => {
-    if (e.target.dataset.pf === 'name' && draft) draft.name = e.target.value;
-    if (e.target.name === 'name' && join === 1) { draft.name = e.target.value; e.target.form.querySelector('.join-err').textContent = ''; }
+    if (e.target.dataset.pf !== 'name' || !draft) return;
+    draft.name = e.target.value;
+    const h = root.querySelector('.prof-head h1');
+    if (joining && h) { h.textContent = draft.name.trim() || 'Not logged in'; h.classList.toggle('blank', !draft.name.trim()); }
+    const err = root.querySelector('.join-err');
+    if (err) err.textContent = '';
   };
 
   render();
