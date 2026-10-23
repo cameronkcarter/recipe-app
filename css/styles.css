@@ -561,10 +561,9 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .stamp-cal .wk { display: flex; flex-direction: column; gap: 3px; flex: none; }
 .stamp-cal .wk.dow { padding-right: 3px; }
 .stamp-cal .wk.dow .day { background: none; color: var(--muted); font: 500 .68rem var(--font-head); width: 14px; }
-.stamp-cal .mo { height: 16px; font: 500 .72rem/16px var(--font-head); color: var(--muted); white-space: nowrap; width: 34px; }
-.stamp-cal .day { width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; position: relative; text-decoration: none; }
-.stamp-cal .day.alt { background: color-mix(in srgb, var(--surface-2) 55%, var(--surface)); }
-.stamp-cal .day span { font-size: .66rem; font-weight: 700; color: color-mix(in srgb, var(--muted) 75%, transparent); }
+.stamp-cal .mo { height: 16px; font: 600 .74rem/16px var(--font-head); color: color-mix(in srgb, var(--mc) 75%, var(--text)); white-space: nowrap; width: 34px; }
+.stamp-cal .day { width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--mc, var(--surface-2)) 24%, var(--surface)); display: grid; place-items: center; position: relative; text-decoration: none; }
+.stamp-cal .day span { font-size: .66rem; font-weight: 700; color: color-mix(in srgb, var(--mc, var(--muted)) 55%, var(--text)); opacity: .8; }
 .stamp-cal .day.future { background: none; }
 .stamp-cal .day.today { box-shadow: inset 0 0 0 2px var(--accent); }
 .stamp-cal .day.stamped { background: none; border: none; padding: 0; cursor: pointer; }

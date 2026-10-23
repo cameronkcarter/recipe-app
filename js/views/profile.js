@@ -115,6 +115,8 @@ App.views.profile = (root, { id } = {}) => {
     const first = log.length ? U.parseDate(log[log.length - 1].date) : today;
     const oldest = mine && yearAgo < first ? yearAgo : first;
     const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    // Each month gets its own soft color (neighbors always differ) so you can tell where one ends.
+    const MC = ['#5AAADB', '#E88AA8', '#82C25E', '#9B7BD4', '#F6C945', '#3BAA9C', '#F27B5B', '#5AAADB', '#F2A33A', '#9B7BD4', '#82C25E', '#E88AA8'];
     const lastDay = end > today ? today : end;
     const range = start.getMonth() === lastDay.getMonth() ? `${MON[start.getMonth()]} ${start.getFullYear()}`
       : `${MON[start.getMonth()]} – ${MON[lastDay.getMonth()]} ${lastDay.getFullYear()}`;
@@ -122,22 +124,22 @@ App.views.profile = (root, { id } = {}) => {
     const cols = [];
     for (let w = 0; w < weeks; w++) {
       const days = [];
-      let label = '';
+      let label = '', labelColor = '';
       for (let d = 0; d < 7; d++) {
         const day = new Date(start); day.setDate(start.getDate() + w * 7 + d);
         const k = U.dateStr(day), n = day.getDate();
-        if (n === 1 || (w === 0 && d === 0)) label = MON[day.getMonth()];
+        if (n === 1 || (w === 0 && d === 0)) { label = MON[day.getMonth()]; labelColor = MC[day.getMonth()]; }
         if (day > today) { days.push('<div class="day future"></div>'); continue; }
         const cooked = byDay[k];
-        const cls = `day ${k === U.todayStr() ? 'today' : ''} ${day.getMonth() % 2 ? 'alt' : ''} ${k === sel ? 'sel' : ''}`;
-        if (!cooked) { days.push(mine ? `<button class="${cls} open" data-day="${k}" aria-label="${U.fmtDate(k)}"><span>${n}</span></button>` : `<div class="${cls}"><span>${n}</span></div>`); continue; }
+        const cls = `day ${k === U.todayStr() ? 'today' : ''} ${k === sel ? 'sel' : ''}`, mc = `style="--mc:${MC[day.getMonth()]}"`;
+        if (!cooked) { days.push(mine ? `<button class="${cls} open" ${mc} data-day="${k}" aria-label="${U.fmtDate(k)}"><span>${n}</span></button>` : `<div class="${cls}" ${mc}><span>${n}</span></div>`); continue; }
         const r = S.recipe(cooked[0].recipeId);
         const tilt = ((n * 37) % 17) - 8; // each stamp lands a little crooked
-        days.push(`<button class="${cls} stamped" data-day="${k}" aria-label="${U.fmtDate(k)}">
+        days.push(`<button class="${cls} stamped" ${mc} data-day="${k}" aria-label="${U.fmtDate(k)}">
           <span class="stamp" style="--blob:${U.esc(r ? U.recipeBlob(r) : '#ccc')};rotate:${tilt}deg">${App.icon(r ? U.recipeIcon(r) : 'cloche')}</span>
           ${cooked.length > 1 ? `<b>${cooked.length}</b>` : ''}</button>`);
       }
-      cols.push(`<div class="wk"><div class="mo">${label}</div>${days.join('')}</div>`);
+      cols.push(`<div class="wk"><div class="mo" style="--mc:${labelColor || 'transparent'}">${label}</div>${days.join('')}</div>`);
     }
 
     const picked = (sel && byDay[sel]) || [];
