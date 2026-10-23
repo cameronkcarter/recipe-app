@@ -23,11 +23,11 @@ Simple, symbol-based recipes with co-op cooking, a shopping list, and profiles w
 - `js/edit.js` — inline edit mode (tap-to-change words, drag ingredients) and co-op swapping
 - `js/views/` — one file per screen (library, recipe, shopping, profile)
 
-## Profiles
-No real accounts yet. Profiles (name, food picture, color) are shared like recipes; each device picks who it is
-with **Log out → Log in as** on the Profile tab, or makes a **New profile**. New recipes and "Cooked it" entries
-are credited to whoever is logged in on that device. The cook log is a stamp calendar (scroll left for older weeks).
-- `js/app.js` — router
+## Profiles and logging in
+No passwords yet: logging in means picking your profile on the Log in screen ("Who's cooking?"), or making a
+**New profile** (name, then picture). A new visitor starts logged out and can browse and cook; logging a cook or
+adding a recipe asks them to log in first. New recipes and cooks are credited to whoever is logged in on that
+device. The Profile tab's History calendar is where you add or remove past cooks.
 
 ## Style rules (the whole point of the app)
 - Few words: no "more" paragraphs; steps read at a glance.

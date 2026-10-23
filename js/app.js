@@ -4,10 +4,22 @@
   let cleanup = null;
 
   // Nav icons and the browser-tab icon come from the app's own icon set.
-  // The Profile tab shows your own picture.
+  // The Profile tab shows your own picture — or "Log in" when nobody is logged in on this device.
   App.refreshNav = () => document.querySelectorAll('.nav [data-ic]').forEach(el => {
-    el.innerHTML = el.dataset.ic === 'me' ? App.util.avatarHtml(App.store.me(), 'nav-av') : App.icon(el.dataset.ic);
+    const me = App.store.me();
+    if (el.dataset.ic !== 'me') { el.innerHTML = App.icon(el.dataset.ic); return; }
+    el.innerHTML = me ? App.util.avatarHtml(me, 'nav-av') : App.icon('person');
+    el.nextSibling.textContent = me ? 'Profile' : 'Log in';
   });
+
+  // Things that need to know who you are (logging a cook, adding a recipe) send you to Log in first,
+  // then back here. Returns true when it did.
+  App.needLogin = () => {
+    if (App.store.me()) return false;
+    App.session.afterLogin = location.hash || '#/';
+    location.hash = '#/me';
+    return true;
+  };
   App.refreshNav();
   document.querySelector('link[rel=icon]').href = 'data:image/svg+xml,' + encodeURIComponent(App.icon('pot').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
 

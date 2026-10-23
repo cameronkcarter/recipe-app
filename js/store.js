@@ -71,12 +71,12 @@ App.store = (() => {
   load();
 
   // ---------- Profiles ----------
-  // Who this device is "logged in" as. Saved per device until there are real accounts.
+  // Who's logged in on this device (no passwords yet). null = logged out, which is how a new visitor starts.
   const ME = 'recipeapp.me';
   const meId = () => {
     let id = null;
     try { id = localStorage.getItem(ME); } catch (e) {}
-    return state.profiles.some(p => p.id === id) ? id : state.profiles[0]?.id;
+    return state.profiles.some(p => p.id === id) ? id : null;
   };
   // Recipes and log entries from before profiles get their author once the shared copy has arrived
   // (only then, so an old offline copy never overwrites newer entries).
@@ -119,24 +119,26 @@ App.store = (() => {
       save();
       if (App.sync?.enabled) App.sync.removeRecipe(id);
     },
-    logCook(recipeId, mode) {
-      state.log.unshift({ id: App.util.uid('l'), recipeId, date: App.util.todayStr(), mode, by: meId() });
+    // A past day can be logged too (from the profile's History calendar); the log stays newest first.
+    logCook(recipeId, mode, date = App.util.todayStr()) {
+      state.log.unshift({ id: App.util.uid('l'), recipeId, date, mode, by: meId() });
+      state.log.sort((a, b) => b.date.localeCompare(a.date));
       save();
     },
     deleteLog(id) { state.log = state.log.filter(l => l.id !== id); save(); },
-    // Times a recipe was cooked — by one person (default: you), or by anyone with by = null.
-    cooksFor: (id, by = meId()) => state.log.filter(l => l.recipeId === id && (!by || (l.by || 'cameron') === by)),
+    // Times a recipe was cooked by one person (default: you; none when logged out).
+    cooksFor: (id, by = meId()) => by ? state.log.filter(l => l.recipeId === id && (l.by || 'cameron') === by) : [],
     cooksBy: by => state.log.filter(l => (l.by || 'cameron') === by),
     profiles: () => state.profiles,
     profile: id => state.profiles.find(p => p.id === id),
     me: () => state.profiles.find(p => p.id === meId()),
-    setMe(id) { try { localStorage.setItem(ME, id); } catch (e) {} },
-    addProfile(name) {
+    // Log in (an id) or log out (null).
+    setMe(id) { try { if (id) localStorage.setItem(ME, id); else localStorage.removeItem(ME); } catch (e) {} },
+    addProfile(name, avatar, color) {
       const base = App.util.slug(name);
       let id = base, n = 2;
       while (state.profiles.some(p => p.id === id)) id = base + '-' + n++;
-      const pick = a => a[Math.floor(Math.random() * a.length)];
-      state.profiles.push({ id, name, avatar: pick(['onion', 'garlic', 'tomato', 'lemon', 'apple', 'carrot', 'mushroom', 'egg', 'avo', 'berries']), color: pick(App.BLOB_COLORS) });
+      state.profiles.push({ id, name, avatar, color });
       save();
       return id;
     },

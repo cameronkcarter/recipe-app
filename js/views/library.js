@@ -16,13 +16,13 @@ App.views.library = root => {
   };
 
   root.innerHTML = `
-    <header class="topbar"><h1>Recipes</h1>${themeBtn()}</header>
+    <header class="topbar"><h1>Recipes</h1>${S.me() ? '' : `<a class="btn small primary" href="#/me">Log in</a>`}${themeBtn()}</header>
     <div class="search-wrap">${App.glyph('search')}<input class="input search" type="search" placeholder="Search recipes, tags, ingredients" value="${U.esc(query)}"></div>
     <div id="cards">${cardsHtml()}</div>
     <button class="fab" aria-label="Add recipe" data-act="add">${App.glyph('plus')}</button>`;
 
   root.onclick = e => {
-    if (e.target.closest('[data-act=add]')) addSheet();
+    if (e.target.closest('[data-act=add]') && !App.needLogin()) addSheet();
     const t = e.target.closest('[data-act=theme]');
     if (t) { App.toggleTheme(); t.outerHTML = themeBtn(); }
   };

@@ -20,6 +20,7 @@ App.views.recipe = (root, { id, edit = false }) => {
   // Steps swiped off as done while cooking. Lives only while the recipe is open.
   const done = new Set();
   let picking = false; // edit mode: the icon picker is open
+  let tagsOpen = false; // cooking view: the extra tags are shown
   const servings = () => edit ? (r.servings || 1) : (App.session.servings[r.id] || r.servings || 1);
   const scale = () => servings() / (r.servings || 1);
 
@@ -61,7 +62,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       <header class="topbar">
         ${edit ? `<a class="btn small" href="#/r/${enc}" data-cancel>Cancel</a>` : `<a class="icon-btn" href="#/" aria-label="Back">${App.glyph('back')}</a>`}
         <span class="title-sm"></span>
-        ${edit ? `<a class="btn primary small" href="#/r/${enc}" data-done>Done</a>`
+        ${edit ? `<a class="btn primary small" href="#/r/${enc}" data-done>Save</a>`
                : `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">${App.glyph('pencil')}</a>`}
       </header>
       ${imported ? `<div class="import-banner">${App.icon('sparkle')}Imported. Tap any word to fix it.</div>` : ''}
@@ -72,7 +73,7 @@ App.views.recipe = (root, { id, edit = false }) => {
           : `${U.recipeIconHtml(r)}<div><h2>${U.esc(r.title || 'Untitled')}</h2>${authorHtml()}</div>`}
       </div>
       ${edit && picking ? iconPickerHtml() : ''}
-      ${edit ? '' : tagRowHtml()}
+      ${tagRowHtml()}
 
       <div class="meta-row">
         <div class="seg">
@@ -105,7 +106,6 @@ App.views.recipe = (root, { id, edit = false }) => {
       ${edit ? `
         <div class="section-label">More</div>
         <label class="field"><span>Source link</span><input class="input" data-f="source" value="${U.esc(r.source || '')}" placeholder="https://"></label>
-        <label class="field"><span>Tags</span><input class="input" data-f="tags" value="${U.esc((r.tags || []).join(', '))}" placeholder="vegan, quick"></label>
         <button class="btn danger block" data-act="delete" style="margin-top:20px">Delete recipe</button>`
       : cookedHtml()}`;
     if (edit) E.autosizeAll(root);
@@ -113,10 +113,19 @@ App.views.recipe = (root, { id, edit = false }) => {
   }
 
   // Vegan / Instant Pot tags, and how many times you've made it.
+  // Tags under the title. Cooking view: vegan / Instant Pot with their icons and how many times you've
+  // made it; any other tags sit behind a "+2" chip. Edit mode: every tag, tap ✕ to remove, type to add.
   function tagRowHtml() {
+    const tags = r.tags || [];
+    const iconFor = t => /^vegan$/i.test(t) ? 'leaf' : /instant ?pot|insta ?pot|pressure/i.test(t) ? 'ip' : null;
+    if (edit) return `<div class="tag-row edit">${tags.map((t, i) => `<span class="chip tag">${iconFor(t) ? App.icon(iconFor(t)) : ''}${U.esc(t)}<button data-rm-tag="${i}" aria-label="Remove ${U.esc(t)}">${App.glyph('x')}</button></span>`).join('')}
+      <input class="inl tag-add" data-add-tag placeholder="+ tag" aria-label="Add a tag" enterkeyhint="done" autocomplete="off"></div>`;
     const n = S.cooksFor(r.id).length;
-    const chips = U.tagIcons(r).map(t => `<span class="chip">${App.icon(t.icon)}${t.label}</span>`);
-    if (n) chips.push(`<span class="chip">${App.seal(n)}Made ${n}×</span>`);
+    const chips = U.tagIcons(r).map(t => `<span class="chip good">${App.icon(t.icon)}${t.label}</span>`);
+    if (n) chips.push(`<span class="chip good">${App.seal(n)}Made ${n}×</span>`);
+    const rest = tags.filter(t => !iconFor(t));
+    if (rest.length) chips.push(tagsOpen ? rest.map(t => `<span class="chip">${U.esc(t)}</span>`).join('')
+      : `<button class="chip more" data-act="tags" aria-label="Show tags">+${rest.length}</button>`);
     return chips.length ? `<div class="tag-row">${chips.join('')}</div>` : '';
   }
 
@@ -140,8 +149,7 @@ App.views.recipe = (root, { id, edit = false }) => {
   root.oninput = e => {
     const f = e.target.dataset.f;
     if (!f) return;
-    if (f === 'tags') r.tags = e.target.value.split(',').map(x => x.trim()).filter(Boolean);
-    else r[f] = e.target.value;
+    r[f] = e.target.value;
     if (!edit) S.upsertRecipe(r);
   };
 
@@ -156,6 +164,8 @@ App.views.recipe = (root, { id, edit = false }) => {
     else if (d.act === 'pick-icon') { picking = !picking; render(); }
     else if (d.icon) { r.icon = d.icon; picking = false; render(); }
     else if (d.bg) { r.iconBg = d.bg; render(); }
+    else if (d.rmTag) { r.tags.splice(+d.rmTag, 1); render(); }
+    else if (d.act === 'tags') { tagsOpen = true; render(); }
     else if (d.serv) {
       if (edit) r.servings = Math.max(1, (r.servings || 1) + +d.serv);
       else App.session.servings[r.id] = Math.max(1, servings() + +d.serv);
@@ -168,7 +178,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       if (confirm(`Delete “${r.title || 'this recipe'}”?`)) { S.deleteRecipe(r.id); location.hash = '#/'; }
     }
     else if (d.act === 'toggle-ings') { App.session.ingOpen = !App.session.ingOpen; render(); }
-    else if (d.act === 'log') { if (!todaysCook()) { S.logCook(r.id, App.session.mode); navigator.vibrate?.(15); } render(); }
+    else if (d.act === 'log') { if (App.needLogin()) return; if (!todaysCook()) { S.logCook(r.id, App.session.mode); navigator.vibrate?.(15); } render(); }
     else if (d.act === 'unlog') { const c = todaysCook(); if (c) S.deleteLog(c.id); render(); }
     else if (d.act === 'to-list') {
       const list = S.state.list;
@@ -178,6 +188,15 @@ App.views.recipe = (root, { id, edit = false }) => {
       t.innerHTML = App.glyph('check') + 'Added';
       setTimeout(() => { t.innerHTML = App.icon('basket') + 'Add to list'; }, 1400);
     }
+  };
+
+  // Edit mode: a typed tag is added when you press enter or tap away ("quick, soup" adds two).
+  root.onchange = e => {
+    if (!('addTag' in e.target.dataset)) return;
+    const add = e.target.value.split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+    r.tags = [...new Set([...(r.tags || []), ...add])];
+    render();
+    if (add.length) root.querySelector('[data-add-tag]')?.focus();
   };
 
   const unbind = edit ? E.bind(root, r, render) : bindSwipe();

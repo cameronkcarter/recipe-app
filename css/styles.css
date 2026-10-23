@@ -230,7 +230,13 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .hero .sub { color: var(--muted); font-size: .88rem; margin-top: 4px; }
 .hero .sub a { color: var(--muted); }
 .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
-.tag-row .chip { background: var(--good-soft); color: var(--good); }
+.tag-row .chip.good { background: var(--good-soft); color: var(--good); }
+.tag-row .chip.more { border: none; color: var(--muted); font-family: var(--font-head); font-weight: 500; padding: 4px 11px; }
+.tag-row.edit { align-items: center; }
+.tag-row .chip.tag { padding-right: 4px; }
+.tag-row .chip.tag button { border: none; background: none; color: var(--muted); padding: 0 3px; display: grid; place-items: center; }
+.tag-row .chip.tag .gl { width: 13px; height: 13px; stroke-width: 3; }
+.tag-row .tag-add { width: 6.5em; font-size: .88rem; font-weight: 700; }
 .tag-row .chip .seal { width: 20px; height: 20px; }
 .tag-row .chip .seal b { display: none; }
 
@@ -545,30 +551,15 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .avatar-btn .badge .gl { width: 14px; height: 14px; stroke-width: 3; }
 .prof-edit .input { grid-column: 1 / -1; }
 
-/* "Log out" → log in as someone else */
-.who-menu { position: relative; }
-.who-list { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; width: 250px; padding: 6px; display: flex; flex-direction: column; gap: 2px;
-  box-shadow: 0 12px 30px rgba(40, 25, 15, .18); }
-.who-title { font: 500 .75rem var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: .07em; padding: 6px 10px 4px; }
-.who { display: flex; align-items: center; gap: 10px; border: none; background: none; padding: 7px 10px; border-radius: 14px; text-align: left; font-weight: 700; width: 100%; }
-.who:hover, .who.on { background: var(--surface-2); }
-.who .avatar { width: 32px; height: 32px; }
-.who span:not(.avatar) { flex: 1; }
-.who > .gl { color: var(--accent); width: 18px; height: 18px; stroke-width: 3; }
-.who-new { display: flex; gap: 6px; padding: 6px; }
-.who-new .input { padding: 8px 12px; }
-
 /* "by Ellen" on cards and recipe pages */
 .by { display: inline-flex; align-items: center; gap: 5px; font-size: .82rem; font-weight: 700; color: var(--muted); text-decoration: none; }
-.recipe-card .by { margin-top: -3px; }
 .hero .by { margin-top: 5px; }
 .hero .by .avatar { width: 24px; height: 24px; }
 
 /* Stamp calendar: weeks as columns, every day numbered, cooked days stamped with the recipe icon */
-.stamp-wrap { padding: 10px 6px 10px 0; }
-.stamp-cal { display: flex; gap: 3px; overflow-x: auto; scrollbar-width: thin; padding: 0 8px 4px 0; overscroll-behavior-x: contain; }
+.stamp-cal { display: flex; gap: 3px; justify-content: center; }
 .stamp-cal .wk { display: flex; flex-direction: column; gap: 3px; flex: none; }
-.stamp-cal .wk.dow { position: sticky; left: 0; z-index: 2; background: var(--surface); padding: 0 4px 0 8px; }
+.stamp-cal .wk.dow { padding-right: 3px; }
 .stamp-cal .wk.dow .day { background: none; color: var(--muted); font: 500 .68rem var(--font-head); width: 14px; }
 .stamp-cal .mo { height: 16px; font: 500 .72rem/16px var(--font-head); color: var(--muted); white-space: nowrap; width: 34px; }
 .stamp-cal .day { width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; position: relative; text-decoration: none; }
@@ -576,7 +567,8 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .stamp-cal .day span { font-size: .66rem; font-weight: 700; color: color-mix(in srgb, var(--muted) 75%, transparent); }
 .stamp-cal .day.future { background: none; }
 .stamp-cal .day.today { box-shadow: inset 0 0 0 2px var(--accent); }
-.stamp-cal .day.stamped { background: none; }
+.stamp-cal .day.stamped { background: none; border: none; padding: 0; cursor: pointer; }
+.stamp-cal .day.sel { box-shadow: 0 0 0 2.5px var(--accent); border-radius: 50%; }
 .stamp-cal .stamp { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
   background: color-mix(in srgb, var(--blob) 32%, var(--surface)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--blob) 60%, transparent); }
 .stamp-cal .stamp .ic { width: 78%; height: 78%; }
@@ -587,6 +579,46 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .swatches { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 2px 6px; }
 .icon-picker .sw { aspect-ratio: auto; width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--surface); background: var(--sw);
   box-shadow: 0 0 0 1.5px var(--line); padding: 0; }
-.icon-picker .sw.on { box-shadow: 0 0 0 2.5px var(--text); }
+.icon-picker .sw.on { background: var(--sw); box-shadow: 0 0 0 2.5px var(--text); }
 .icon-picker button[data-icon], .icon-picker button[data-avatar] { background: color-mix(in srgb, var(--blob, #f9a27e) 22%, var(--surface)); }
 .icon-picker button[data-icon].on, .icon-picker button[data-avatar].on { border-color: var(--accent); }
+
+/* History panel: arrows page through weeks; tap a stamped day to see what was cooked */
+.stats.two { grid-template-columns: repeat(2, 1fr); }
+.section-label .lab .count { background: var(--surface-2); color: var(--muted); border-radius: 999px; padding: 1px 8px; font-size: .75rem; letter-spacing: 0; }
+.history { padding: 10px 12px 12px; }
+.hist-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font: 500 .95rem var(--font-head); }
+.icon-btn.sm { width: 34px; height: 34px; }
+.icon-btn.sm .gl { width: 16px; height: 16px; stroke-width: 3; }
+.icon-btn.flip .gl { transform: scaleX(-1); }
+.icon-btn:disabled { opacity: .35; cursor: default; }
+.day-title { font: 500 .95rem var(--font-head); margin: 12px 4px 2px; }
+.history .log-list li { padding: 8px 4px; }
+.history .day-none { margin: 10px 4px 0; }
+.edit-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+.stamp-cal .day.open { border: none; padding: 0; cursor: pointer; font: inherit; }
+.stamp-cal .day.open.sel { border-radius: 10px; }
+.day-add { display: flex; gap: 8px; margin: 10px 4px 0; }
+.day-add select { flex: 1; min-width: 0; padding: 8px 12px; border-radius: 999px; font-weight: 700; }
+.stamp-cal .day.open.sel { background: var(--accent); }
+.stamp-cal .day.open.sel span { color: var(--accent-ink); }
+
+/* ============ Log in / sign up ============ */
+.avatar.lg { width: 76px; height: 76px; }
+.avatar.lg.plus .gl { width: 28px; height: 28px; }
+.login { padding: 22px 16px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+.login h2 { margin: 4px 0 10px; font-size: 1.35rem; }
+.login-hero { width: 84px; height: 84px; }
+.who-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; width: 100%; }
+.who-tile { border: 2px solid var(--line); border-bottom-width: 4px; background: var(--surface); border-radius: var(--radius); padding: 14px 8px 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px; font: 500 .95rem/1.2 var(--font-head); transition: transform .12s, border-color .12s; }
+.who-tile:hover { border-color: var(--accent); }
+.who-tile:active { transform: scale(.96); }
+.who-tile.new { border-style: dashed; color: var(--muted); }
+.join .avatar.xl { margin: 4px 0; }
+.join .icon-picker { padding: 0; margin: 4px 0 12px; width: 100%; }
+.join-form { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.join-err { color: var(--danger); font-size: .88rem; font-weight: 700; min-height: 1.1em; }
+.steps-dots { display: flex; gap: 6px; margin-bottom: 4px; }
+.steps-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+.steps-dots i.on { background: var(--accent); width: 22px; border-radius: 999px; }
