@@ -24,7 +24,7 @@
   document.querySelector('link[rel=icon]').href = 'data:image/svg+xml,' + encodeURIComponent(App.icon('pot').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
 
   // Night mode: the toggle saves a choice on this device; until then the app follows the phone's setting.
-  const themeColor = () => document.querySelector('meta[name=theme-color]').content = getComputedStyle(document.body).getPropertyValue('--bg').trim();
+  const themeColor = () => document.querySelector('meta[name=theme-color]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   App.toggleTheme = () => {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
@@ -62,7 +62,7 @@
       if (m[1]) m[1] = decodeURIComponent(m[1]);
       cleanup = view(m);
       document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
-      document.body.dataset.tab = tab; // each tab has its own page color
+      document.documentElement.dataset.tab = tab; // each tab has its own page color
       themeColor();
       return;
     }
