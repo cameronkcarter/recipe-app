@@ -9,7 +9,7 @@ App.store = (() => {
   const fresh = () => ({
     recipes: JSON.parse(JSON.stringify(App.SEED_RECIPES)),
     log: [],                                  // [{id, recipeId, date, mode}]
-    list: { recipes: [], checked: {}, extras: [] }, // shopping list
+    lists: {},                                // shopping lists, one per person: { profileId: {recipes, checked, extras} }
     profiles: JSON.parse(JSON.stringify(App.SEED_PROFILES)), // [{id, name, avatar, color}]
     seedVersion: App.SEED_VERSION,
   });
@@ -22,7 +22,7 @@ App.store = (() => {
     } catch (e) {
       state = fresh();
     }
-    state.recipes ||= []; state.log ||= []; state.profiles ||= JSON.parse(JSON.stringify(App.SEED_PROFILES)); state.list ||= { recipes: [], checked: {}, extras: [] };
+    state.recipes ||= []; state.log ||= []; state.profiles ||= JSON.parse(JSON.stringify(App.SEED_PROFILES)); state.lists ||= {}; delete state.list;
     // The old example friend notes ("Sam (example)") are gone from the app; drop them from saved data.
     state.recipes.forEach(r => { if (r.notes) r.notes = r.notes.filter(n => !/\(example\)/.test(n.author || '')); });
     // Steps don't carry "more" paragraphs any more — the app is meant to be read at a glance.
@@ -61,7 +61,7 @@ App.store = (() => {
     if (!App.sync?.enabled) return;
     clearTimeout(metaTimer);
     metaTimer = setTimeout(() => {
-      for (const name of ['log', 'list', 'profiles']) {
+      for (const name of ['log', 'lists', 'profiles']) {
         const json = JSON.stringify(state[name]);
         if (sent[name] !== json) { sent[name] = json; App.sync.meta(name, state[name]); }
       }
@@ -115,7 +115,7 @@ App.store = (() => {
     },
     deleteRecipe(id) {
       state.recipes = state.recipes.filter(r => r.id !== id);
-      state.list.recipes = state.list.recipes.filter(x => x.id !== id);
+      for (const l of Object.values(state.lists)) l.recipes = l.recipes.filter(x => x.id !== id);
       save();
       if (App.sync?.enabled) App.sync.removeRecipe(id);
     },
@@ -129,6 +129,11 @@ App.store = (() => {
     // Times a recipe was cooked by one person (default: you; none when logged out).
     cooksFor: (id, by = meId()) => by ? state.log.filter(l => l.recipeId === id && (l.by || 'cameron') === by) : [],
     cooksBy: by => state.log.filter(l => (l.by || 'cameron') === by),
+    // Your own shopping list (null when logged out).
+    myList() {
+      const id = meId();
+      return id ? (state.lists[id] ||= { recipes: [], checked: {}, extras: [] }) : null;
+    },
     profiles: () => state.profiles,
     profile: id => state.profiles.find(p => p.id === id),
     me: () => state.profiles.find(p => p.id === meId()),

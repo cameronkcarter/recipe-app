@@ -181,7 +181,8 @@ App.views.recipe = (root, { id, edit = false }) => {
     else if (d.act === 'log') { if (App.needLogin()) return; if (!todaysCook()) { S.logCook(r.id, App.session.mode); navigator.vibrate?.(15); } render(); }
     else if (d.act === 'unlog') { const c = todaysCook(); if (c) S.deleteLog(c.id); render(); }
     else if (d.act === 'to-list') {
-      const list = S.state.list;
+      if (App.needLogin()) return;
+      const list = S.myList();
       const ex = list.recipes.find(x => x.id === r.id);
       if (ex) ex.servings = servings(); else list.recipes.push({ id: r.id, servings: servings() });
       S.save();

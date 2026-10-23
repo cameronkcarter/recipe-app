@@ -10,7 +10,7 @@ App.views.profile = (root, { id } = {}) => {
   let draft = null;     // picture being edited, or the new profile being made: Save / Create keeps it
   let joining = false;  // logged out: filling in the blank profile
   let picking = false;  // logged out: the "Log in as" list is open
-  let page = 0;         // History: 0 = the latest weeks, 1 = the weeks before…
+  let shown = 3;        // History: how many months are showing (newest first)
   let sel = null;       // History: the day you tapped
 
   function render() {
@@ -21,7 +21,6 @@ App.views.profile = (root, { id } = {}) => {
     const mine = !guest && saved.id === me?.id;
     const p = draft || saved;
     const log = guest ? [] : S.cooksBy(p.id);
-    const month = U.todayStr().slice(0, 7);
     const recipes = guest ? [] : S.recipes().filter(r => r.author === p.id);
     if (!sel && !guest) sel = log.length ? log[0].date : mine ? U.todayStr() : null;
     const dash = n => guest ? '–' : n;
@@ -55,14 +54,14 @@ App.views.profile = (root, { id } = {}) => {
 
       <div class="stats two ${guest ? 'blank' : ''}">
         <div class="card stat"><div class="n">${dash(log.length)}</div><div class="l">meals cooked</div></div>
-        <div class="card stat"><div class="n">${dash(log.filter(l => l.date.startsWith(month)).length)}</div><div class="l">this month</div></div>
+        <div class="card stat"><div class="n">${dash(recipes.length)}</div><div class="l">recipes</div></div>
       </div>
 
-      <div class="section-label"><span class="lab">${App.icon('book')}${mine || guest ? 'Your recipes' : `${U.esc(U.firstName(p))}'s recipes`}${guest ? '' : `<span class="count">${recipes.length}</span>`}</span></div>
+      <h2 class="sec">${mine || guest ? 'Your recipes' : `${U.esc(U.firstName(p))}'s recipes`}</h2>
       ${recipes.length ? `<div class="recipe-grid">${recipes.map(App.ui.recipeCard).join('')}</div>`
         : `<div class="muted">${guest ? 'Your recipes will show up here.' : 'No recipes yet.'}</div>`}
 
-      <div class="section-label"><span class="lab">${App.icon('cal')}History</span></div>
+      <h2 class="sec">History</h2>
       <div class="card history ${guest ? 'blank' : ''}">${historyHtml(log, mine)}</div>`;
   }
 
@@ -83,67 +82,63 @@ App.views.profile = (root, { id } = {}) => {
   // After logging in (or signing up), go back to what you were doing, if something sent you here.
   function loggedIn(pid) {
     S.setMe(pid);
-    draft = null; joining = picking = false; sel = null; page = 0;
+    draft = null; joining = picking = false; sel = null; shown = 3;
     App.refreshNav?.();
     const back = App.session.afterLogin;
     delete App.session.afterLogin;
     if (back && back !== location.hash) location.hash = back; else { render(); window.scrollTo(0, 0); }
   }
 
-  // History: a few weeks of days (as many as fit the screen), every day numbered.
-  // A day they cooked gets that recipe's icon stamped on it; tap it to see what was cooked. Arrows page back in time.
-  // On your own profile every day can be tapped, so you can log something you cooked then, or remove a wrong entry.
+  // History: an ordinary month calendar, newest month on top; older months continue below
+  // ("Show earlier months" adds more). A day they cooked gets that recipe's icon stamped on it;
+  // tap it to see what was cooked. On your own profile any past day can be tapped, to log something
+  // you cooked then or remove a wrong entry. Each month has its own soft color.
   function historyHtml(log, mine) {
     const byDay = {};
     for (const l of log) (byDay[l.date] ||= []).push(l);
-    const weeks = Math.max(5, Math.floor((Math.min(root.clientWidth || 400, 640) - 32 - 64) / 37));
     const today = U.parseDate(U.todayStr());
-    const start = new Date(today); start.setDate(start.getDate() - start.getDay() - (weeks - 1 + page * weeks) * 7);
-    const end = new Date(start); end.setDate(start.getDate() + weeks * 7 - 1);
-    // You can page back up to a year (or to your first entry, if that's older).
-    const yearAgo = new Date(today); yearAgo.setFullYear(today.getFullYear() - 1);
-    const first = log.length ? U.parseDate(log[log.length - 1].date) : today;
-    const oldest = mine && yearAgo < first ? yearAgo : first;
-    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    // Each month gets its own soft color (neighbors always differ) so you can tell where one ends.
+    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const MC = ['#5AAADB', '#E88AA8', '#82C25E', '#9B7BD4', '#F6C945', '#3BAA9C', '#F27B5B', '#5AAADB', '#F2A33A', '#9B7BD4', '#82C25E', '#E88AA8'];
-    const lastDay = end > today ? today : end;
-    const range = start.getMonth() === lastDay.getMonth() ? `${MON[start.getMonth()]} ${start.getFullYear()}`
-      : `${MON[start.getMonth()]} – ${MON[lastDay.getMonth()]} ${lastDay.getFullYear()}`;
+    // How far back you can go: a year for your own calendar, or to the first cook if that's older.
+    const first = log.length ? U.parseDate(log[log.length - 1].date) : today;
+    const yearAgo = new Date(today); yearAgo.setFullYear(today.getFullYear() - 1);
+    const oldest = mine && yearAgo < first ? yearAgo : first;
+    const total = (today.getFullYear() - oldest.getFullYear()) * 12 + today.getMonth() - oldest.getMonth() + 1;
+    const count = Math.min(shown, total);
 
-    const cols = [];
-    for (let w = 0; w < weeks; w++) {
-      const days = [];
-      let label = '', labelColor = '';
-      for (let d = 0; d < 7; d++) {
-        const day = new Date(start); day.setDate(start.getDate() + w * 7 + d);
-        const k = U.dateStr(day), n = day.getDate();
-        if (n === 1 || (w === 0 && d === 0)) { label = MON[day.getMonth()]; labelColor = MC[day.getMonth()]; }
-        if (day > today) { days.push('<div class="day future"></div>'); continue; }
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      const m = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const mc = MC[m.getMonth()];
+      const cells = [];
+      for (let b = 0; b < m.getDay(); b++) cells.push('<div class="day blank"></div>');
+      const days = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+      for (let n = 1; n <= days; n++) {
+        const day = new Date(m.getFullYear(), m.getMonth(), n), k = U.dateStr(day);
+        if (day > today) { cells.push(`<div class="day future"><span>${n}</span></div>`); continue; }
         const cooked = byDay[k];
-        const cls = `day ${k === U.todayStr() ? 'today' : ''} ${k === sel ? 'sel' : ''}`, mc = `style="--mc:${MC[day.getMonth()]}"`;
-        if (!cooked) { days.push(mine ? `<button class="${cls} open" ${mc} data-day="${k}" aria-label="${U.fmtDate(k)}"><span>${n}</span></button>` : `<div class="${cls}" ${mc}><span>${n}</span></div>`); continue; }
+        const cls = `day ${k === U.todayStr() ? 'today' : ''} ${k === sel ? 'sel' : ''}`;
+        if (!cooked) { cells.push(mine ? `<button class="${cls} open" data-day="${k}" aria-label="${U.fmtDate(k)}"><span>${n}</span></button>` : `<div class="${cls}"><span>${n}</span></div>`); continue; }
         const r = S.recipe(cooked[0].recipeId);
         const tilt = ((n * 37) % 17) - 8; // each stamp lands a little crooked
-        days.push(`<button class="${cls} stamped" ${mc} data-day="${k}" aria-label="${U.fmtDate(k)}">
+        cells.push(`<button class="${cls} stamped" data-day="${k}" aria-label="${U.fmtDate(k)}">
           <span class="stamp" style="--blob:${U.esc(r ? U.recipeBlob(r) : '#ccc')};rotate:${tilt}deg">${App.icon(r ? U.recipeIcon(r) : 'cloche')}</span>
           ${cooked.length > 1 ? `<b>${cooked.length}</b>` : ''}</button>`);
       }
-      cols.push(`<div class="wk"><div class="mo" style="--mc:${labelColor || 'transparent'}">${label}</div>${days.join('')}</div>`);
+      // What was cooked on the tapped day shows right under its month.
+      const picked = sel && sel.startsWith(U.dateStr(m).slice(0, 7)) ? byDay[sel] || [] : null;
+      out.push(`<section class="month" style="--mc:${mc}">
+        <h3>${MONTHS[m.getMonth()]}${m.getFullYear() !== today.getFullYear() ? ' ' + m.getFullYear() : ''}</h3>
+        <div class="cal-grid">${cells.join('')}</div>
+        ${picked && (picked.length || mine) ? `<div class="day-detail">
+          <div class="day-title">${U.fmtDate(sel)}</div>
+          ${picked.length ? `<ul class="log-list">${picked.map(l => historyRow(l, mine)).join('')}</ul>` : `<div class="muted day-none">Nothing cooked this day.</div>`}
+          ${mine ? addHtml() : ''}</div>` : ''}
+      </section>`);
     }
-
-    const picked = (sel && byDay[sel]) || [];
-    return `<div class="hist-nav">
-        <button class="icon-btn sm" data-act="older" aria-label="Earlier weeks" ${start <= oldest ? 'disabled' : ''}>${App.glyph('back')}</button>
-        <span>${range}</span>
-        <button class="icon-btn sm flip" data-act="newer" aria-label="Later weeks" ${page ? '' : 'disabled'}>${App.glyph('back')}</button>
-      </div>
-      <div class="stamp-cal">
-        <div class="wk dow"><div class="mo"></div>${['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => `<div class="day">${d}</div>`).join('')}</div>
-        ${cols.join('')}</div>
-      ${sel && (picked.length || mine) ? `<div class="day-title">${U.fmtDate(sel)}</div>
-        ${picked.length ? `<ul class="log-list">${picked.map(l => historyRow(l, mine)).join('')}</ul>` : `<div class="muted day-none">Nothing cooked this day.</div>`}
-        ${mine ? addHtml() : ''}` : ''}`;
+    return `<div class="cal-dow">${['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => `<span>${d}</span>`).join('')}</div>
+      ${out.join('')}
+      ${count < total ? `<button class="btn small block" data-act="older">Show earlier months</button>` : ''}`;
   }
 
   // Log a recipe on the picked day.
@@ -169,7 +164,7 @@ App.views.profile = (root, { id } = {}) => {
     const d = t.dataset;
     if (d.login) loggedIn(d.login);
     else if (d.act === 'login') { picking = !picking; render(); }
-    else if (d.act === 'logout') { S.setMe(null); draft = null; sel = null; page = 0; App.refreshNav?.(); render(); window.scrollTo(0, 0); }
+    else if (d.act === 'logout') { S.setMe(null); draft = null; sel = null; shown = 3; App.refreshNav?.(); render(); window.scrollTo(0, 0); }
     else if (d.act === 'join') { draft = { name: '', avatar: pick(FOODS.slice(0, 15)), color: pick(App.BLOB_COLORS) }; joining = true; picking = false; render(); root.querySelector('[data-pf=name]')?.focus(); }
     else if (d.act === 'cancel-join') { draft = null; joining = false; render(); }
     else if (d.act === 'edit') { draft = draft ? null : { ...S.me() }; render(); }
@@ -179,8 +174,7 @@ App.views.profile = (root, { id } = {}) => {
       rest.name = rest.name.trim() || S.me().name;
       S.updateProfile(pid, rest); draft = null; App.refreshNav?.(); render();
     }
-    else if (d.act === 'older') { page++; render(); }
-    else if (d.act === 'newer') { page = Math.max(0, page - 1); render(); }
+    else if (d.act === 'older') { shown += 3; render(); }
     else if (d.day) { sel = d.day; render(); }
     else if (d.avatar) { draft.avatar = d.avatar; render(); }
     else if (d.color) { draft.color = d.color; render(); }

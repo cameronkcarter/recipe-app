@@ -556,22 +556,7 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .hero .by { margin-top: 5px; }
 .hero .by .avatar { width: 24px; height: 24px; }
 
-/* Stamp calendar: weeks as columns, every day numbered, cooked days stamped with the recipe icon */
-.stamp-cal { display: flex; gap: 3px; justify-content: center; }
-.stamp-cal .wk { display: flex; flex-direction: column; gap: 3px; flex: none; }
-.stamp-cal .wk.dow { padding-right: 3px; }
-.stamp-cal .wk.dow .day { background: none; color: var(--muted); font: 500 .68rem var(--font-head); width: 14px; }
-.stamp-cal .mo { height: 16px; font: 600 .74rem/16px var(--font-head); color: color-mix(in srgb, var(--mc) 75%, var(--text)); white-space: nowrap; width: 34px; }
-.stamp-cal .day { width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--mc, var(--surface-2)) 24%, var(--surface)); display: grid; place-items: center; position: relative; text-decoration: none; }
-.stamp-cal .day span { font-size: .66rem; font-weight: 700; color: color-mix(in srgb, var(--mc, var(--muted)) 55%, var(--text)); opacity: .8; }
-.stamp-cal .day.future { background: none; }
-.stamp-cal .day.today { box-shadow: inset 0 0 0 2px var(--accent); }
-.stamp-cal .day.stamped { background: none; border: none; padding: 0; cursor: pointer; }
-.stamp-cal .day.sel { box-shadow: 0 0 0 2.5px var(--accent); border-radius: 50%; }
-.stamp-cal .stamp { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
   background: color-mix(in srgb, var(--blob) 32%, var(--surface)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--blob) 60%, transparent); }
-.stamp-cal .stamp .ic { width: 78%; height: 78%; }
-.stamp-cal .day b { position: absolute; right: -3px; top: -3px; min-width: 16px; height: 16px; border-radius: 999px; background: var(--accent); color: #fff;
   font: 600 .62rem/16px var(--font-head); text-align: center; padding: 0 3px; }
 
 /* recipe icon picker: background colors */
@@ -582,25 +567,15 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .icon-picker button[data-icon], .icon-picker button[data-avatar] { background: color-mix(in srgb, var(--blob, #f9a27e) 22%, var(--surface)); }
 .icon-picker button[data-icon].on, .icon-picker button[data-avatar].on { border-color: var(--accent); }
 
-/* History panel: arrows page through weeks; tap a stamped day to see what was cooked */
 .stats.two { grid-template-columns: repeat(2, 1fr); }
 .section-label .lab .count { background: var(--surface-2); color: var(--muted); border-radius: 999px; padding: 1px 8px; font-size: .75rem; letter-spacing: 0; }
-.history { padding: 10px 12px 12px; }
-.hist-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font: 500 .95rem var(--font-head); }
-.icon-btn.sm { width: 34px; height: 34px; }
-.icon-btn.sm .gl { width: 16px; height: 16px; stroke-width: 3; }
-.icon-btn.flip .gl { transform: scaleX(-1); }
 .icon-btn:disabled { opacity: .35; cursor: default; }
 .day-title { font: 500 .95rem var(--font-head); margin: 12px 4px 2px; }
 .history .log-list li { padding: 8px 4px; }
 .history .day-none { margin: 10px 4px 0; }
 .edit-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
-.stamp-cal .day.open { border: none; padding: 0; cursor: pointer; font: inherit; }
-.stamp-cal .day.open.sel { border-radius: 10px; }
 .day-add { display: flex; gap: 8px; margin: 10px 4px 0; }
 .day-add select { flex: 1; min-width: 0; padding: 8px 12px; border-radius: 999px; font-weight: 700; }
-.stamp-cal .day.open.sel { background: var(--accent); }
-.stamp-cal .day.open.sel span { color: var(--accent-ink); }
 
 /* ============ Logged out: a blank profile with Log in / Make a profile ============ */
 .avatar.ghost { background: var(--surface-2); border-style: dashed; border-color: var(--line-strong); box-shadow: none; }
@@ -608,7 +583,6 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .prof-head h1.blank { color: var(--muted); }
 .prof-head p { margin: 0 0 4px; }
 .stats.blank .n { color: var(--muted); }
-.history.blank .stamp-cal { opacity: .55; }
 .who-list { padding: 6px; margin: -6px 0 18px; display: flex; flex-direction: column; gap: 2px; }
 .who-title { font: 500 .75rem var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: .07em; padding: 6px 10px 4px; }
 .who { display: flex; align-items: center; gap: 12px; border: none; background: none; padding: 8px 10px; border-radius: 14px; text-align: left; font: 500 1rem var(--font-head); width: 100%; }
@@ -618,3 +592,44 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .join-err:empty { display: none; }
 .icon-picker .edit-actions .btn { aspect-ratio: auto; display: inline-flex; padding: 8px 16px; border: none; border-radius: 999px; background: var(--surface-2); }
 .icon-picker .edit-actions .btn.primary { background: var(--accent); color: var(--accent-ink); }
+
+/* a tab that needs you to be logged in (Shopping) */
+.logged-out { padding: 28px 20px 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; margin-top: 8px; }
+.logged-out .big { width: 84px; height: 84px; }
+.logged-out h2 { margin: 4px 0 0; font-size: 1.3rem; }
+.logged-out p { margin: 0 0 8px; max-width: 30ch; }
+
+/* ---- profile section headers: plain titles ---- */
+h2.sec { font-size: 1.2rem; margin: 26px 2px 10px; }
+
+/* ---- History: month calendars stacked top to bottom (newest first) ---- */
+.history { padding: 12px 12px 14px; }
+.cal-dow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font: 500 .72rem var(--font-head); color: var(--muted); margin-bottom: 2px; }
+.month + .month { margin-top: 14px; padding-top: 12px; border-top: 2px dashed var(--line); }
+.month h3 { margin: 0 2px 8px; font-size: 1rem; color: color-mix(in srgb, var(--mc) 70%, var(--text)); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-grid .day { aspect-ratio: 1; border-radius: 12px; display: grid; place-items: center; position: relative; padding: 0; border: none; font: inherit; text-decoration: none;
+  background: color-mix(in srgb, var(--mc) 22%, var(--surface)); }
+.cal-grid .day span { font-size: .78rem; font-weight: 700; color: color-mix(in srgb, var(--mc) 50%, var(--text)); opacity: .85; }
+.cal-grid .day.blank { background: none; }
+.cal-grid .day.future { background: color-mix(in srgb, var(--mc) 8%, var(--surface)); }
+.cal-grid .day.future span { opacity: .35; }
+.cal-grid .day.open, .cal-grid .day.stamped { cursor: pointer; }
+.cal-grid .day.today { box-shadow: inset 0 0 0 2px var(--accent); }
+.cal-grid .day.open.sel { background: var(--accent); }
+.cal-grid .day.open.sel span { color: var(--accent-ink); opacity: 1; }
+.cal-grid .day.stamped { background: none; }
+.cal-grid .day.stamped.sel .stamp { box-shadow: 0 0 0 2.5px var(--accent); }
+.cal-grid .stamp { width: 92%; height: 92%; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--blob) 32%, var(--surface)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--blob) 60%, transparent); }
+.cal-grid .stamp .ic { width: 76%; height: 76%; }
+.cal-grid .day b { position: absolute; right: -3px; top: -3px; min-width: 17px; height: 17px; border-radius: 999px; background: var(--accent); color: #fff;
+  font: 600 .64rem/17px var(--font-head); text-align: center; padding: 0 3px; }
+.day-detail { margin-top: 10px; }
+.day-detail .day-title { margin: 0 4px 2px; }
+.history > .btn.block { margin-top: 14px; }
+.history.blank .cal-grid { opacity: .55; }
+/* keep the calendar phone-sized (about 46px days) even on a wide screen */
+.history > .cal-dow, .history > .month { max-width: 360px; margin-left: auto; margin-right: auto; }
+.history > .month + .month { margin-top: 14px; }
+.history > .btn.block { max-width: 360px; margin: 14px auto 0; display: flex; }

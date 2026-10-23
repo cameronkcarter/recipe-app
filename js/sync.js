@@ -4,7 +4,7 @@
 //
 //   kitchens/main-shared-recipe-collection/recipes/{recipeId}   one doc per recipe
 //   kitchens/main-shared-recipe-collection/meta/log             { items: [...] }
-//   kitchens/main-shared-recipe-collection/meta/list            shopping list
+//   kitchens/main-shared-recipe-collection/meta/lists           shopping lists { profileId: list }
 //   kitchens/main-shared-recipe-collection/meta/profiles        { items: [...] } people (no sign-in yet)
 window.App = window.App || {};
 App.sync = (() => {
@@ -69,11 +69,11 @@ App.sync = (() => {
       firstMeta = false;
       const ids = new Set(snap.docs.map(d => d.id));
       if (!ids.has('log') && S.state.log.length) api.meta('log', S.state.log);
-      if (!ids.has('list')) api.meta('list', S.state.list);
+      if (!ids.has('lists')) api.meta('lists', S.state.lists);
       if (!ids.has('profiles')) api.meta('profiles', S.state.profiles);
     }
     const patch = {};
-    snap.docs.forEach(d => { if (d.id === 'log') patch.log = d.data().items || []; if (d.id === 'list') patch.list = d.data(); if (d.id === 'profiles') patch.profiles = d.data().items || []; });
+    snap.docs.forEach(d => { if (d.id === 'log') patch.log = d.data().items || []; if (d.id === 'lists') patch.lists = d.data(); if (d.id === 'profiles') patch.profiles = d.data().items || []; });
     if (Object.keys(patch).length) S.applyRemote(patch);
   }, warn);
 

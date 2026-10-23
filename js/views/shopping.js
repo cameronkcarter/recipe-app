@@ -1,9 +1,20 @@
-// Shopping list: pick recipes, merge their ingredients, check off by store section.
+// Shopping list: pick recipes, merge their ingredients, check off by store section. Everyone has their own.
 App.views = App.views || {};
 
 App.views.shopping = root => {
   const U = App.util, S = App.store, ui = App.ui;
-  const L = S.state.list;
+  const L = S.myList();
+  if (!L) {
+    root.innerHTML = `<header class="topbar"><h1>Shopping</h1></header>
+      <div class="card logged-out">
+        <div class="big">${App.icon('basket')}</div>
+        <h2>Log in to make a shopping list</h2>
+        <p class="muted">Add recipes and their ingredients get combined into one list, sorted by aisle.</p>
+        <button class="btn primary" data-act="login">Log in</button>
+      </div>`;
+    root.onclick = e => { if (e.target.closest('[data-act=login]')) App.needLogin(); };
+    return;
+  }
 
   const keyOf = name => String(name).toLowerCase().trim().replace(/\s+/g, ' ').replace(/(es|s)$/, '');
 
