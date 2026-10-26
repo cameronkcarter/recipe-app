@@ -68,9 +68,10 @@ App.edit = (() => {
 
   function ingRowHtml(r, g) {
     const amt = g.qty != null || g.unit ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
-    return `<li class="ing-item"><button type="button" class="ico-pick" data-ing-icon="${g.id}" aria-label="Change the icon for ${U.esc(g.name)}">${U.ingIconHtml(g)}</button>
+    return `<li class="ing-item" data-ing-row="${g.id}"><button type="button" class="ico-pick" data-ing-icon="${g.id}" aria-label="Change the icon for ${U.esc(g.name)}">${U.ingIconHtml(g)}</button>
       ${inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt')}
       ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
+      <span class="ing-grip" aria-label="Drag to move ${U.esc(g.name)}" title="Drag to move">${App.glyph('grip')}</span>
       <button class="x" data-rm-ing="${g.id}" aria-label="Delete ${U.esc(g.name)}">${App.glyph('x')}</button></li>`;
   }
 
@@ -285,6 +286,39 @@ App.edit = (() => {
       drag.ghost.style.visibility = '';
       return el;
     };
+
+    let ingDrag = null;
+    on(root, 'pointerdown', e => {
+      const grip = e.target.closest('.ing-grip');
+      if (!grip || e.button > 0) return;
+      e.preventDefault(); e.stopPropagation();
+      const row = grip.closest('[data-ing-row]');
+      ingDrag = { row, list: row.parentNode };
+      row.classList.add('lifted');
+      document.body.classList.add('dragging-now');
+    }, true);
+    on(window, 'pointermove', e => {
+      if (!ingDrag) return;
+      const rows = [...ingDrag.list.querySelectorAll('[data-ing-row]')].filter(x => x !== ingDrag.row);
+      const before = rows.find(x => { const b = x.getBoundingClientRect(); return e.clientY < b.top + b.height / 2; });
+      if (before) { if (ingDrag.row.nextElementSibling !== before) ingDrag.list.insertBefore(ingDrag.row, before); }
+      else { const last = rows[rows.length - 1]; if (last && last.nextElementSibling !== ingDrag.row) last.after(ingDrag.row); }
+      const edge = 80;
+      if (e.clientY < edge) window.scrollBy(0, -12); else if (e.clientY > innerHeight - edge) window.scrollBy(0, 12);
+    });
+    const dropIng = () => {
+      if (!ingDrag) return;
+      const order = [...ingDrag.list.querySelectorAll('[data-ing-row]')].map(x => x.dataset.ingRow);
+      ingDrag.row.classList.remove('lifted');
+      document.body.classList.remove('dragging-now');
+      ingDrag = null;
+      const was = r.ingredients.map(g => g.id).join();
+      r.ingredients = [...order.map(id => ing(r, id)).filter(Boolean), ...r.ingredients.filter(g => !order.includes(g.id))];
+      if (r.ingredients.map(g => g.id).join() !== was) r.ingOrder = 'mine';
+      commit(true);
+    };
+    on(window, 'pointerup', dropIng);
+    on(window, 'pointercancel', dropIng);
 
     on(root, 'pointerdown', e => {
       if (e.button > 0 || drag) return;

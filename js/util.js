@@ -203,7 +203,7 @@ U.findIngredient = (list, name) => {
 //    the step; notes about the ingredient itself ("medium", "diced") stay on the ingredient
 //  • misspelled ingredient names get the usual spelling ("tyme" → thyme), and names are lowercase
 //  • amounts use the tidiest unit (6 tsp → 2 tbsp, 8 tbsp → ½ cup); a note like "splash" becomes the amount
-//  • the ingredient list follows the order the steps use them
+//  • the ingredient list follows the order the steps use them (unless you've put it in your own order)
 U.STEP_CUE = /^(?:until|till|then|and then|set aside|remove|scrape|for \d|covered|uncovered|stirring|occasionally|over (?:low|medium|high)|on (?:low|medium|high)|in batches|in the (?:pot|pan)|to taste)\b/i;
 U.splitCue = note => {
   const parts = String(note || '').split(/,\s*/).filter(Boolean);
@@ -253,7 +253,7 @@ U.tidyRecipe = r => {
   const first = new Map();
   r.steps.forEach((s, i) => (s.uses || []).forEach(u => { if (!first.has(u.ing)) first.set(u.ing, i); }));
   const order = g => g.group ? 1e6 : first.has(g.id) ? first.get(g.id) : 1e5;
-  r.ingredients = r.ingredients.map((g, i) => [g, i]).sort((a, b) => order(a[0]) - order(b[0]) || a[1] - b[1]).map(x => x[0]);
+  if (r.ingOrder !== 'mine') r.ingredients = r.ingredients.map((g, i) => [g, i]).sort((a, b) => order(a[0]) - order(b[0]) || a[1] - b[1]).map(x => x[0]);
   return r;
 };
 

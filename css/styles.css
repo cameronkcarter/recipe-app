@@ -729,3 +729,10 @@ body.dragging-now .ins-step { visibility: hidden; }
 .pop .ico { border: 2px solid transparent; background: var(--surface-2); border-radius: 12px; padding: 4px; aspect-ratio: 1; display: grid; place-items: center; }
 .pop .ico .ic { width: 28px; height: 28px; }
 .pop .ico.on, .pop .sug.on { border-color: var(--accent); background: var(--accent-soft); }
+
+/* edit mode: drag an ingredient by its grip to change the list order */
+.ing-grip { margin-left: auto; color: var(--muted); cursor: grab; touch-action: none; display: grid; place-items: center; padding: 4px 2px; opacity: .7; }
+.ing-grip .gl { width: 18px; height: 18px; stroke-width: 3.6; }
+.ing-list.edit .ing-item .x { margin-left: 0; }
+.ing-list.edit .ing-item.lifted { background: var(--surface-2); box-shadow: 0 8px 22px rgba(0,0,0,.25); position: relative; z-index: 2; border-radius: 12px; }
+body.dragging-now .ing-grip { cursor: grabbing; }
