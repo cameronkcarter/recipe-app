@@ -1,37 +1,47 @@
-// Home: list of recipes with search.
+// Recipes tab: your recipe book — recipes you added, and other people's you saved with the heart.
 App.views = App.views || {};
 App.views.library = root => {
   const U = App.util, S = App.store;
   let query = App.views.library.query || '';
 
-  const cardsHtml = () => {
+  const match = r => {
     const q = query.trim().toLowerCase();
-    const list = S.recipes().filter(r => !q ||
-      r.title.toLowerCase().includes(q) ||
+    return !q || r.title.toLowerCase().includes(q) ||
       (r.tags || []).some(t => t.toLowerCase().includes(q)) ||
-      r.ingredients.some(i => i.name.toLowerCase().includes(q)));
-    if (!S.recipes().length) return `<div class="empty"><div class="big">${App.icon('pot')}</div><p>No recipes yet.<br>Tap <b>+</b> to add your first one.</p></div>`;
-    if (!list.length) return `<div class="empty">No recipes match “${U.esc(query)}”.</div>`;
-    return `<div class="recipe-grid">${list.map(App.ui.recipeCard).join('')}</div>`;
+      r.ingredients.some(i => i.name.toLowerCase().includes(q));
+  };
+  const grid = list => `<div class="recipe-grid">${list.map(App.ui.recipeCard).join('')}</div>`;
+
+  const cardsHtml = () => {
+    const mine = S.mine(), saved = S.saved().filter(r => r.author !== S.me()?.id);
+    const m = mine.filter(match), s = saved.filter(match);
+    if (query.trim() && !m.length && !s.length) return `<div class="empty">Nothing in your recipes matches “${U.esc(query)}”.<br><a href="#/search">Search all recipes</a></div>`;
+    return `<h2 class="sec">My recipes <span class="count">${mine.length}</span></h2>
+      ${m.length ? grid(m) : `<div class="muted hint-line">${mine.length ? 'No matches.' : 'Tap + to add your first recipe.'}</div>`}
+      <h2 class="sec">Saved <span class="count">${saved.length}</span></h2>
+      ${s.length ? grid(s) : `<div class="muted hint-line">${saved.length ? 'No matches.' : `Tap ${App.glyph('heart')} on any recipe in <a href="#/search">Search</a> to save it here.`}</div>`}`;
   };
 
+  if (!S.me()) {
+    root.innerHTML = `${App.ui.topbar('<h1>Recipes</h1>')}
+      <div class="card logged-out">
+        <div class="big">${App.icon('book')}</div>
+        <h2>Your recipe book</h2>
+        <p class="muted">Log in to add your own recipes and save other people's.</p>
+        <div class="row-btns"><button class="btn primary" data-acct>Log in</button><a class="btn" href="#/search">${App.glyph('search')}Browse recipes</a></div>
+      </div>`;
+    return;
+  }
+
   root.innerHTML = `
-    <header class="topbar"><h1>Recipes</h1>${S.me() ? '' : `<a class="btn small primary" href="#/me">Log in</a>`}${themeBtn()}</header>
-    <div class="search-wrap">${App.glyph('search')}<input class="input search" type="search" placeholder="Search recipes, tags, ingredients" value="${U.esc(query)}"></div>
+    ${App.ui.topbar('<h1>Recipes</h1>')}
+    <div class="search-wrap">${App.glyph('search')}<input class="input search" type="search" placeholder="Search your recipes" value="${U.esc(query)}"></div>
     <div id="cards">${cardsHtml()}</div>
     <button class="fab" aria-label="Add recipe" data-act="add">${App.glyph('plus')}</button>`;
 
   root.onclick = e => {
     if (e.target.closest('[data-act=add]') && !App.needLogin()) addSheet();
-    const t = e.target.closest('[data-act=theme]');
-    if (t) { App.toggleTheme(); t.outerHTML = themeBtn(); }
   };
-
-  // Night mode switch: a sleepy moon by day, a sun at night.
-  function themeBtn() {
-    const dark = document.documentElement.dataset.theme === 'dark';
-    return `<button class="icon-btn" data-act="theme" aria-label="${dark ? 'Day mode' : 'Night mode'}">${App.icon(dark ? 'sun' : 'moon')}</button>`;
-  }
 
   function addSheet() {
     // Imported recipes are saved right away and open in edit mode to check.

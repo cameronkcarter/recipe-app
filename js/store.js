@@ -78,17 +78,12 @@ App.store = (() => {
     try { id = localStorage.getItem(ME); } catch (e) {}
     return state.profiles.some(p => p.id === id) ? id : null;
   };
-  // Recipes and log entries from before profiles get their author once the shared copy has arrived
-  // (only then, so an old offline copy never overwrites newer entries).
+  // Recipes from before profiles get their author once the shared copy has arrived.
   function fillInAuthors(patch) {
     if (patch.recipes) for (const r of state.recipes) {
       const who = App.SEED_AUTHORS[r.id];
       if (who && !r.author) { r.author = who; syncRecipe(r); }
     }
-    if (!patch.log) return;
-    let changed = false;
-    for (const l of state.log) if (!l.by) { l.by = App.SEED_COOKS[l.recipeId] || 'cameron'; changed = true; }
-    if (changed) save();
   }
   fillInAuthors.local = () => state.recipes.forEach(r => { r.author ||= App.SEED_AUTHORS[r.id]; });
   fillInAuthors.local();
@@ -119,16 +114,16 @@ App.store = (() => {
       save();
       if (App.sync?.enabled) App.sync.removeRecipe(id);
     },
-    // A past day can be logged too (from the profile's History calendar); the log stays newest first.
-    logCook(recipeId, mode, date = App.util.todayStr()) {
-      state.log.unshift({ id: App.util.uid('l'), recipeId, date, mode, by: meId() });
-      state.log.sort((a, b) => b.date.localeCompare(a.date));
+    // Your recipe book: recipes you added, and other people's you saved (the heart).
+    mine: () => { const id = meId(); return id ? state.recipes.filter(r => r.author === id) : []; },
+    saved: () => { const me = state.profiles.find(p => p.id === meId()); return me ? (me.saved || []).map(id => state.recipes.find(r => r.id === id)).filter(Boolean) : []; },
+    isSaved: id => !!state.profiles.find(p => p.id === meId())?.saved?.includes(id),
+    toggleSaved(id) {
+      const me = state.profiles.find(p => p.id === meId());
+      if (!me) return;
+      me.saved = (me.saved || []).includes(id) ? me.saved.filter(x => x !== id) : [id, ...(me.saved || [])];
       save();
     },
-    deleteLog(id) { state.log = state.log.filter(l => l.id !== id); save(); },
-    // Times a recipe was cooked by one person (default: you; none when logged out).
-    cooksFor: (id, by = meId()) => by ? state.log.filter(l => l.recipeId === id && (l.by || 'cameron') === by) : [],
-    cooksBy: by => state.log.filter(l => (l.by || 'cameron') === by),
     // Your own shopping list (null when logged out).
     myList() {
       const id = meId();

@@ -5,7 +5,7 @@ App.views.shopping = root => {
   const U = App.util, S = App.store, ui = App.ui;
   const L = S.myList();
   if (!L) {
-    root.innerHTML = `<header class="topbar"><h1>Shopping</h1></header>
+    root.innerHTML = `${App.ui.topbar('<h1>Shopping</h1>')}
       <div class="card logged-out">
         <div class="big">${App.icon('basket')}</div>
         <h2>Log in to make a shopping list</h2>
@@ -42,8 +42,7 @@ App.views.shopping = root => {
     const doneCount = rows.filter(r => L.checked[r.key]).length + L.extras.filter(x => x.checked).length;
 
     root.innerHTML = `
-      <header class="topbar"><h1>Shopping</h1>
-        ${total ? `<button class="icon-btn" data-act="copy" aria-label="Copy list">${App.glyph('copy')}</button>` : ''}</header>
+      ${App.ui.topbar('<h1>Shopping</h1>', total ? `<button class="icon-btn" data-act="copy" aria-label="Copy list">${App.glyph('copy')}</button>` : '')}
 
       <div class="section-label">Recipes <button class="btn small" data-act="pick">${App.glyph('plus')}Add recipes</button></div>
       ${L.recipes.length ? `<div class="shop-recipes">${L.recipes.map(e => {

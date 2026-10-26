@@ -17,15 +17,100 @@ App.ui = {};
     return close;
   };
 
-  // ---------- Recipe card (home and profiles) ----------
-  // Icon, name, time, and a "made it" seal with how many times you've cooked it.
+  // ---------- Recipe card (recipe book, search, someone's recipes) ----------
+  // Icon, name, time — and a heart to save someone else's recipe to your recipe book.
   App.ui.recipeCard = r => {
-    const S = App.store, cooks = S.cooksFor(r.id), tags = U.tagIcons(r);
+    const S = App.store, tags = U.tagIcons(r);
+    const mine = r.author && r.author === S.me()?.id;
     return `<a class="card recipe-card" href="#/r/${encodeURIComponent(r.id)}">
       ${tags.length ? `<div class="tags">${tags.map(t => `<span class="tag-ico" title="${t.label}">${App.icon(t.icon)}</span>`).join('')}</div>` : ''}
       ${U.recipeIconHtml(r)}
       <div class="name">${U.esc(r.title)}</div>
-      <div class="meta"><span class="time">${App.icon('clock')}${U.fmtMins(U.schedule(r, 1).total)}</span>${cooks.length ? App.seal(cooks.length) : ''}</div></a>`;
+      <div class="meta"><span class="time">${App.icon('clock')}${U.fmtMins(U.schedule(r, 1).total)}</span>${mine ? '' : App.ui.heart(r.id)}</div></a>`;
+  };
+  // Filled when it's in your recipe book. Works inside a card link (see the click handler in app.js).
+  App.ui.heart = id => {
+    const on = App.store.isSaved(id);
+    return `<span class="heart ${on ? 'on' : ''}" role="button" tabindex="0" data-heart="${U.esc(id)}" aria-pressed="${on}" aria-label="${on ? 'Remove from your recipes' : 'Save to your recipes'}">${on ? App.icon('heart') : App.glyph('heart')}</span>`;
+  };
+
+  // ---------- Page header + account ----------
+  // Every page's header ends with the account button: "Log in" when logged out, your picture when logged in.
+  App.ui.topbar = (left, right = '') => {
+    const me = App.store.me();
+    return `<header class="topbar">${left}${right}
+      ${me ? `<button class="acct" data-acct aria-label="Your account">${U.avatarHtml(me)}</button>`
+        : `<button class="btn small primary" data-acct>Log in</button>`}</header>`;
+  };
+
+  // The account panel. Logged in: your name and picture (tap to change), night mode, Log out.
+  // Logged out: Log in (pick your profile — no passwords yet) or Sign up (name + picture).
+  const FOODS = ['avo', 'squash', 'onion', 'garlic', 'tomato', 'lemon', 'lime', 'orange', 'apple', 'banana', 'berries', 'carrot', 'mushroom', 'broccoli', 'corn',
+    'eggplant', 'bellpep', 'chili', 'spud', 'potato', 'pumpkin', 'egg', 'cheese', 'bread', 'toast', 'cookie', 'cake', 'muffin', 'pancake', 'friedegg', 'pot', 'ip', 'noodle', 'rice', 'tofu', 'dough'];
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  App.account = () => {
+    const S = App.store;
+    let mode = S.me() ? 'me' : 'login'; // me | edit | login | signup
+    let draft = null;
+    const pictureHtml = p => `<div class="icon-picker acct-pics">
+      <div class="swatches">${App.BLOB_COLORS.map(c => `<button type="button" class="sw ${c === p.color ? 'on' : ''}" data-color="${c}" style="--sw:${c}" aria-label="Color"></button>`).join('')}</div>
+      ${FOODS.map(f => `<button type="button" data-avatar="${f}" class="${f === p.avatar ? 'on' : ''}" style="--blob:${p.color}" aria-label="${f}">${App.icon(f)}</button>`).join('')}</div>`;
+    const themeRow = () => {
+      const dark = document.documentElement.dataset.theme === 'dark';
+      return `<button class="acct-row" data-theme-toggle>${App.icon(dark ? 'sun' : 'moon')}<span>${dark ? 'Day mode' : 'Night mode'}</span></button>`;
+    };
+    const html = () => {
+      const me = S.me();
+      if (mode === 'me') return `
+        <div class="acct-head">${U.avatarHtml(me, 'lg')}<div><h3>${U.esc(me.name)}</h3><button class="link" data-go="edit">Change name or picture</button></div></div>
+        ${themeRow()}
+        <button class="acct-row" data-go="logout">${App.glyph('logout')}<span>Log out</span></button>`;
+      if (mode === 'edit' || mode === 'signup') return `
+        <div class="sheet-head"><h3>${mode === 'edit' ? 'Your profile' : 'Sign up'}</h3><button class="btn small" data-go="${mode === 'edit' ? 'me' : 'login'}">Cancel</button></div>
+        <form class="acct-form" data-form="${mode}">
+          <div class="acct-head">${U.avatarHtml(draft, 'lg')}<input class="input" name="name" value="${U.esc(draft.name)}" placeholder="Your name" aria-label="Your name" autocomplete="name"></div>
+          <div class="join-err" role="alert"></div>
+          ${pictureHtml(draft)}
+          <button class="btn primary block">${mode === 'edit' ? 'Save' : 'Create account'}</button>
+        </form>`;
+      return `
+        <div class="sheet-head"><h3>Log in</h3><button class="btn small" data-close>Close</button></div>
+        <div class="acct-list">${S.profiles().map(p => `<button class="acct-row" data-login="${U.esc(p.id)}">${U.avatarHtml(p)}<span>${U.esc(p.name)}</span></button>`).join('')}</div>
+        <div class="acct-new"><span class="muted">New here?</span><button class="btn small" data-go="signup">Sign up</button></div>
+        ${themeRow()}`;
+    };
+    const done = () => { App.refreshNav?.(); App.rerender?.(); };
+    App.ui.sheet(`<div class="acct-panel">${html()}</div>`, (el, close) => {
+      const box = el.querySelector('.acct-panel');
+      const paint = () => { box.innerHTML = html(); };
+      el.addEventListener('click', e => {
+        const t = e.target.closest('[data-go], [data-login], [data-avatar], [data-color], [data-theme-toggle]');
+        if (!t) return;
+        const d = t.dataset;
+        if (d.login) { S.setMe(d.login); close(); done(); return; }
+        if (d.go === 'logout') { S.setMe(null); close(); done(); return; }
+        if ('themeToggle' in d) { App.toggleTheme(); paint(); return; }
+        if (d.go) {
+          mode = d.go;
+          draft = mode === 'edit' ? { ...S.me() } : mode === 'signup' ? { name: '', avatar: pick(FOODS.slice(0, 15)), color: pick(App.BLOB_COLORS) } : null;
+          paint(); box.querySelector('[name=name]')?.focus(); return;
+        }
+        draft.name = box.querySelector('[name=name]')?.value ?? draft.name;
+        if (d.avatar) draft.avatar = d.avatar;
+        if (d.color) draft.color = d.color;
+        paint();
+      });
+      el.addEventListener('submit', e => {
+        e.preventDefault();
+        const name = box.querySelector('[name=name]').value.trim();
+        const taken = S.profiles().some(p => p.name.toLowerCase() === name.toLowerCase() && p.id !== S.me()?.id);
+        const err = !name ? 'Type your name first.' : taken ? 'That name is taken. Log in instead, or add your last name.' : '';
+        if (err) { box.querySelector('.join-err').textContent = err; return; }
+        if (mode === 'edit') S.updateProfile(S.me().id, { name, avatar: draft.avatar, color: draft.color });
+        else S.setMe(S.addProfile(name, draft.avatar, draft.color));
+        close(); done();
+      });
+    });
   };
 
   // ---------- Step rendering ----------

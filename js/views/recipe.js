@@ -11,11 +11,10 @@ App.views.recipe = (root, { id, edit = false }) => {
   if (!r) { root.innerHTML = `<div class="empty"><p>Recipe not found.</p><a href="#/">Back to recipes</a></div>`; return; }
   const enc = encodeURIComponent(r.id);
 
-  // "Cooked it" logs today once; after that it shows as done with an Undo.
-  const todaysCook = () => S.cooksFor(r.id).find(l => l.date === U.todayStr());
-  const cookedHtml = () => todaysCook()
-    ? `<div class="cooked done-state">${App.seal(S.cooksFor(r.id).length)}<span>Cooked today</span><button class="link" data-act="unlog">Undo</button></div>`
-    : `<div class="cooked"><button class="cook-btn" data-act="log">${App.icon('pot')}Cooked it</button></div>`;
+  // Only the person who added a recipe can edit it; everyone else can save it (the heart).
+  const mine = r.author && r.author === S.me()?.id;
+  if (edit && !mine) { location.replace('#/r/' + enc); return; }
+  const back = App.session.from || '#/'; // the list you came from
 
   // Steps swiped off as done while cooking. Lives only while the recipe is open.
   const done = new Set();
@@ -59,12 +58,10 @@ App.views.recipe = (root, { id, edit = false }) => {
     }).join('');
 
     root.innerHTML = `
-      <header class="topbar">
-        ${edit ? `<a class="btn small" href="#/r/${enc}" data-cancel>Cancel</a>` : `<a class="icon-btn" href="#/" aria-label="Back">${App.glyph('back')}</a>`}
-        <span class="title-sm"></span>
-        ${edit ? `<a class="btn primary small" href="#/r/${enc}" data-done>Save</a>`
-               : `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">${App.glyph('pencil')}</a>`}
-      </header>
+      ${edit ? `<header class="topbar"><a class="btn small" href="#/r/${enc}" data-cancel>Cancel</a><span class="title-sm"></span>
+          <a class="btn primary small" href="#/r/${enc}" data-done>Save</a></header>`
+        : App.ui.topbar(`<a class="icon-btn" href="${back}" aria-label="Back">${App.glyph('back')}</a><span class="title-sm"></span>`,
+          mine ? `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">${App.glyph('pencil')}</a>` : `<span class="icon-btn heart-btn">${App.ui.heart(r.id)}</span>`)}
       ${imported ? `<div class="import-banner">${App.icon('sparkle')}Imported. Tap any word to fix it.</div>` : ''}
       <div class="hero">
         ${edit
@@ -106,23 +103,19 @@ App.views.recipe = (root, { id, edit = false }) => {
       ${edit ? `
         <div class="section-label">More</div>
         <label class="field"><span>Source link</span><input class="input" data-f="source" value="${U.esc(r.source || '')}" placeholder="https://"></label>
-        <button class="btn danger block" data-act="delete" style="margin-top:20px">Delete recipe</button>`
-      : cookedHtml()}`;
+        <button class="btn danger block" data-act="delete" style="margin-top:20px">Delete recipe</button>` : ''}`;
     if (edit) E.autosizeAll(root);
     window.scrollTo(0, y);
   }
 
-  // Vegan / Instant Pot tags, and how many times you've made it.
-  // Tags under the title. Cooking view: vegan / Instant Pot with their icons and how many times you've
-  // made it; any other tags sit behind a "+2" chip. Edit mode: every tag, tap ✕ to remove, type to add.
+  // Tags under the title. Cooking view: vegan / Instant Pot with their icons; any other tags sit behind
+  // a "+2" chip. Edit mode: every tag, tap ✕ to remove, type to add.
   function tagRowHtml() {
     const tags = r.tags || [];
     const iconFor = t => /^vegan$/i.test(t) ? 'leaf' : /instant ?pot|insta ?pot|pressure/i.test(t) ? 'ip' : null;
     if (edit) return `<div class="tag-row edit">${tags.map((t, i) => `<span class="chip tag">${iconFor(t) ? App.icon(iconFor(t)) : ''}${U.esc(t)}<button data-rm-tag="${i}" aria-label="Remove ${U.esc(t)}">${App.glyph('x')}</button></span>`).join('')}
       <input class="inl tag-add" data-add-tag placeholder="+ tag" aria-label="Add a tag" enterkeyhint="done" autocomplete="off"></div>`;
-    const n = S.cooksFor(r.id).length;
     const chips = U.tagIcons(r).map(t => `<span class="chip good">${App.icon(t.icon)}${t.label}</span>`);
-    if (n) chips.push(`<span class="chip good">${App.seal(n)}Made ${n}×</span>`);
     const rest = tags.filter(t => !iconFor(t));
     if (rest.length) chips.push(tagsOpen ? rest.map(t => `<span class="chip">${U.esc(t)}</span>`).join('')
       : `<button class="chip more" data-act="tags" aria-label="Show tags">+${rest.length}</button>`);
@@ -178,8 +171,6 @@ App.views.recipe = (root, { id, edit = false }) => {
       if (confirm(`Delete “${r.title || 'this recipe'}”?`)) { S.deleteRecipe(r.id); location.hash = '#/'; }
     }
     else if (d.act === 'toggle-ings') { App.session.ingOpen = !App.session.ingOpen; render(); }
-    else if (d.act === 'log') { if (App.needLogin()) return; if (!todaysCook()) { S.logCook(r.id, App.session.mode); navigator.vibrate?.(15); } render(); }
-    else if (d.act === 'unlog') { const c = todaysCook(); if (c) S.deleteLog(c.id); render(); }
     else if (d.act === 'to-list') {
       if (App.needLogin()) return;
       const list = S.myList();

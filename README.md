@@ -1,6 +1,6 @@
 # Recipe App (no name yet)
 
-Simple, symbol-based recipes with co-op cooking, a shopping list, and profiles with a cook log.
+Simple, symbol-based recipes with co-op cooking, your own recipe book, and a shopping list.
 
 ## Run it
 - Recommended: run the local server (needed for importing from links, "keep screen awake", and testing on your phone):
@@ -21,13 +21,16 @@ Simple, symbol-based recipes with co-op cooking, a shopping list, and profiles w
 - `js/importer.js` — turns a recipe from a link or pasted text into symbol steps
 - `js/ui.js` — timers, bottom sheets, step rendering, notes
 - `js/edit.js` — inline edit mode (tap-to-change words, drag ingredients) and co-op swapping
-- `js/views/` — one file per screen (library, recipe, shopping, profile)
+- `js/views/` — one file per screen (library = recipe book, recipe, shopping, search + person)
 
-## Profiles and logging in
-No passwords yet: logging in means picking your profile on the Log in screen ("Who's cooking?"), or making a
-**New profile** (name, then picture). A new visitor starts logged out and can browse and cook; logging a cook or
-adding a recipe asks them to log in first. New recipes and cooks are credited to whoever is logged in on that
-device. The Profile tab's History calendar is where you add or remove past cooks.
+## Tabs and accounts
+- **Search** (left): every recipe on the site, and people. The heart saves a recipe to your recipe book.
+- **Recipes** (middle): your recipe book: **My recipes** (ones you added) and **Saved** (other people's).
+- **Shopping** (right): your own shopping list.
+
+The button at the top right of every page is **Log in** (or your picture once logged in): name and picture,
+night mode, Log out. No passwords yet: logging in means picking your profile. Only the person who added a recipe
+can edit it. Saving, adding recipes and the shopping list ask you to log in first.
 
 ## Style rules (the whole point of the app)
 - Few words: no "more" paragraphs; steps read at a glance.

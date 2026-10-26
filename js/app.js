@@ -4,20 +4,13 @@
   let cleanup = null;
 
   // Nav icons and the browser-tab icon come from the app's own icon set.
-  // The Profile tab shows your own picture — or "Log in" when nobody is logged in on this device.
-  App.refreshNav = () => document.querySelectorAll('.nav [data-ic]').forEach(el => {
-    const me = App.store.me();
-    if (el.dataset.ic !== 'me') { el.innerHTML = App.icon(el.dataset.ic); return; }
-    el.innerHTML = me ? App.util.avatarHtml(me, 'nav-av') : App.icon('person');
-    el.nextSibling.textContent = me ? 'Profile' : 'Log in';
-  });
+  App.refreshNav = () => document.querySelectorAll('.nav [data-ic]').forEach(el => { el.innerHTML = App.icon(el.dataset.ic); });
 
-  // Things that need to know who you are (logging a cook, adding a recipe) send you to Log in first,
-  // then back here. Returns true when it did.
+  // Things that need to know who you are (saving, adding a recipe, the shopping list) open Log in first.
+  // Returns true when it did.
   App.needLogin = () => {
     if (App.store.me()) return false;
-    App.session.afterLogin = location.hash || '#/';
-    location.hash = '#/me';
+    App.account();
     return true;
   };
   App.refreshNav();
@@ -44,9 +37,9 @@
     [/^#\/new$/,                () => { location.replace('#/edit/' + encodeURIComponent(App.store.addRecipe({}))); }, 'recipes'],
     [/^#\/edit\/([^/]+)$/,      m => App.views.recipe(root, { id: m[1], edit: true }), 'recipes'],
     [/^#\/list$/,               () => App.views.shopping(root),         'list'],
-    [/^#\/me$/,                 () => App.views.profile(root),          'me'],
-    [/^#\/u\/([^/]+)$/,         m => App.views.profile(root, { id: m[1] }), 'me'],
-    [/^#\/log$/,                () => location.replace('#/me'),         'me'], // old link
+    [/^#\/search$/,             () => App.views.search(root),           'search'],
+    [/^#\/u\/([^/]+)$/,         m => App.views.person(root, { id: m[1] }), 'search'],
+    [/^#\/(me|log)$/,           () => location.replace('#/'),           'recipes'], // old links
   ];
 
   function render() {
@@ -63,6 +56,7 @@
       cleanup = view(m);
       document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
       document.documentElement.dataset.tab = tab; // each tab has its own page color
+      if (!/^#\/(r|edit|new)\b/.test(hash)) App.session.from = hash;
       themeColor();
       return;
     }
@@ -82,6 +76,21 @@
     window.scrollTo(0, y);
   };
   window.addEventListener('hashchange', () => { if (pending) setTimeout(App.onRemoteChange, 0); });
+
+  // Redraw the current screen in place (after logging in or out).
+  App.rerender = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+
+  // The account button in every header, and the heart on recipe cards (inside the card's link).
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-acct]')) { App.account(); return; }
+    const h = e.target.closest('[data-heart]');
+    if (!h) return;
+    e.preventDefault(); e.stopPropagation();
+    if (App.needLogin()) return;
+    App.store.toggleSaved(h.dataset.heart);
+    App.rerender(); // a card may move in or out of your recipe book
+    navigator.vibrate?.(10);
+  }, true);
 
   // Timer buttons work on every screen.
   document.addEventListener('click', e => {

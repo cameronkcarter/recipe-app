@@ -56,6 +56,9 @@ window.App = window.App || {};
       [WH, P('M9 19a7 7 0 0 1 3.5-5.2'), 1.6], [CORAL, R(3, 21.5, 26, 4, 2)], [CORALD, R(18, 21.5, 11, 4, 2)]] },
     can: { f: [16, 16.6], L: [[STL, R(7, 7, 18, 21, 3)], [STLD, P('M7 9.5h18M7 25.5h18'), 1.4], [RED, R(7, 12, 18, 10, 0)], [REDD, R(20, 12, 5, 10, 0)]] },
     // ---------- app & nav ----------
+    heart: { f: [16, 15.4], L: [['#F2667A', P('M16 27C9 22 4 17.5 4 11.8 4 8 7 5 10.6 5c2.3 0 4.2 1.2 5.4 3.1C17.2 6.2 19.1 5 21.4 5 25 5 28 8 28 11.8 28 17.5 23 22 16 27z')],
+      ['#D94A60', P('M28 11.8C28 17.5 23 22 16 27c4.6-4.4 8.2-8.7 8.2-13.7 0-3-1.4-5.6-3.6-7.3H21.4C25 5 28 8 28 11.8z')], ['#F9A4B0', P('M8 10.5c.4-1.6 1.5-2.7 3-3'), 1.6]] },
+    search: { L: [[WOODD, P('M20.5 20.5l7 7'), 4.2], ['#C3E6F5', C(13.5, 13.5, 9)], ['#9FD3EA', P('M22.5 13.5a9 9 0 0 1-15.4 6.4 9 9 0 0 0 15.4-6.4z')], [WH, P('M8.5 11.5c.6-2 2-3.4 4-4'), 1.8], ['#7FB6D9', C(13.5, 13.5, 9), 2.2]] },
     book: { L: [[CORAL, R(6, 4, 20, 24, 3)], [CORALD, P('M6 7a3 3 0 0 1 3-3h1.5v24H9a3 3 0 0 1-3-3z')], [LABEL, R(13.5, 9, 9, 6, 1.5)], ['#D9A45F', P('M15.5 11.3h5M15.5 13h3'), 1], ['#F2C14E', P('M19 27v4l1.5-1.3L22 31v-4z')]] },
     basket: { L: [[GS, P('M10 12c-.5-3 0-5 1.5-6.5M10.5 12c1-2.5 2.5-3.5 4-4'), 1.7], ['#E9B36A', R(17, 2, 4.2, 12, 2.1, '22 19 8')], ['#DDA663', P('M4.5 13h23l-2.2 11.2a3.5 3.5 0 0 1-3.4 2.8H10.1a3.5 3.5 0 0 1-3.4-2.8z')],
       ['#C4894B', P('M6.6 21.5h18.8l-.5 2.7a3.5 3.5 0 0 1-3.4 2.8H10.5a3.5 3.5 0 0 1-3.4-2.8z')], [WOODD, P('M11 16v8.5M16 16v9M21 16v8.5'), 1.2], ['#C4894B', R(3.5, 11.5, 25, 3.5, 1.75)]] },
@@ -192,18 +195,6 @@ window.App = window.App || {};
   // The main color of an icon, for the soft blob behind a recipe's icon.
   App.iconColor = name => (I[name] || I.cloche).L.find(l => !l[2])?.[0] || '#F9A27E';
 
-  // "Made it" seal: a scalloped green badge with a check, plus a little bubble with the count.
-  let sealPath = '';
-  for (let i = 0; i <= 20; i++) {
-    const a = i / 20 * Math.PI * 2 - Math.PI / 2, r = i % 2 ? 10.2 : 12;
-    sealPath += (i ? 'L' : 'M') + (16 + r * Math.cos(a)).toFixed(2) + ' ' + (16 + r * Math.sin(a)).toFixed(2);
-  }
-  App.seal = n => `<span class="seal" title="Made ${n}×"><svg class="ic" viewBox="0 0 32 32" aria-hidden="true">` +
-    `<path d="${sealPath}z" fill="#6DB56A" stroke="#6DB56A" stroke-width="2.4" stroke-linejoin="round"/>` +
-    `<circle cx="16" cy="16" r="7.6" fill="none" stroke="#A8DCA2" stroke-width="1" stroke-dasharray="1.6 1.6"/>` +
-    `<path d="M11.8 16.3l2.8 2.8 5.6-5.8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>` +
-    `<b>${n}</b></span>`;
-
   // Small line glyphs for buttons (back, edit, search…). They follow the text color.
   const G2 = {
     back: 'M14.5 5.5L8 12l6.5 6.5',
@@ -218,6 +209,7 @@ window.App = window.App || {};
     paste: 'M9 4.5h6v3H9zM8 6H6.5A1.5 1.5 0 0 0 5 7.5v12A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 17.5 6H16M8.5 12h7M8.5 15.5h5',
     chevron: 'M9 6l6 6-6 6',
     undo: 'M9 14L4.5 9.5 9 5M5 9.5h9a5.5 5.5 0 0 1 0 11h-3',
+    heart: 'M12 20C7 16.6 3.5 13.4 3.5 9.3 3.5 6.6 5.6 4.5 8.2 4.5c1.6 0 3 .8 3.8 2.2.8-1.4 2.2-2.2 3.8-2.2 2.6 0 4.7 2.1 4.7 4.8 0 4.1-3.5 7.3-8.5 10.7z',
     logout: 'M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14M9.5 16.5L5 12l4.5-4.5M5 12h10',
   };
   App.glyph = (name, cls = '') => `<svg class="gl ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${G2[name]}"/></svg>`;

@@ -107,9 +107,8 @@ App.SEED_PROFILES = [
   { id: 'cameron', name: 'Cameron Carter', avatar: 'avo', color: '#82C25E' },
   { id: 'ellen', name: 'Ellen Moffatt', avatar: 'squash', color: '#F2A33A' },
 ];
-// Who added the recipes that existed before profiles, and who cooked the early log entries.
+// Who added the recipes that existed before profiles.
 App.SEED_AUTHORS = { 'sweet-potato-chili': 'cameron', 'instant-pot-butternut-squash-soup': 'cameron', 'pasted-recipe': 'ellen' };
-App.SEED_COOKS = { 'pasted-recipe': 'ellen' }; // any other early entry was Cameron's
 
 // Store sections for the shopping list (in walking order).
 App.CATEGORIES = [
