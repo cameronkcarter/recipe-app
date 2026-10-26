@@ -18,14 +18,30 @@ App.views.library = root => {
     return { mine, saved, all: [...mine, ...saved].sort((x, y) => (y.addedAt || 0) - (x.addedAt || 0)) };
   };
 
+  // Your own filter chips (vegan, instant pot, soup…): added with +, kept on your profile until you remove them.
+  // Tapping one shows only recipes with that tag (vegan / Instant Pot also count when the recipe obviously is).
+  let tag = App.views.library.tag || null;
+  const myChips = () => S.me()?.bookFilters || [];
+  const hasTag = (r, t) => (r.tags || []).some(x => x.toLowerCase() === t) ||
+    U.tagIcons(r).some(x => x.label.toLowerCase() === t || (t === 'instapot' && x.icon === 'ip'));
+  const tagIcon = t => t === 'vegan' ? App.icon('leaf') : /instant ?pot/.test(t) ? App.icon('ip') : '';
   const chipsHtml = () => {
     const b = book();
     const chip = (id, label, n, ico) => `<button class="chip filter ${id} ${show === id ? 'on' : ''}" data-show="${id}">${ico}${label}<b>${n}</b></button>`;
-    return chip('all', 'All', b.all.length, '') + chip('mine', 'Mine', b.mine.length, '<i class="dot"></i>') + chip('saved', 'Saved', b.saved.length, App.icon('heart'));
+    return chip('all', 'All', b.all.length, '') + chip('mine', 'Mine', b.mine.length, '<i class="dot"></i>') + chip('saved', 'Saved', b.saved.length, App.icon('heart')) +
+      myChips().map(t => `<button class="chip filter tagf ${tag === t ? 'on' : ''}" data-tagf="${U.esc(t)}">${tagIcon(t)}${U.esc(t)}<b>${b.all.filter(r => hasTag(r, t)).length}</b></button>`).join('') +
+      `<button class="chip filter add" data-act="add-filter" aria-label="Add a filter">${App.glyph('plus')}</button>`;
+  };
+  // Tags you could add as chips: vegan and Instant Pot always, then every tag your recipes use.
+  const filterMenuHtml = () => {
+    const n = {};
+    for (const r of book().all) for (const t of (r.tags || []).map(x => x.toLowerCase())) n[t] = (n[t] || 0) + 1;
+    const opts = [...new Set(['vegan', 'instant pot', ...Object.keys(n).sort((a, b) => n[b] - n[a])])];
+    return `<div class="pop-head">Show a chip for</div>${opts.map(t => `<button class="sug" data-pick="${U.esc(t)}">${tagIcon(t) ? `<span class="ing-ico">${tagIcon(t)}</span>` : '<span class="ing-ico letter">#</span>'}${U.esc(t)}${myChips().includes(t) ? `<small>${App.glyph('check')}</small>` : ''}</button>`).join('')}`;
   };
   const cardsHtml = () => {
     const b = book();
-    const list = b[show].filter(match);
+    const list = b[show].filter(r => match(r) && (!tag || hasTag(r, tag)));
     if (!b.all.length) return `<div class="empty"><div class="big">${App.icon('book')}</div><p>Your recipe book is empty.<br>Tap <b>+</b> to add a recipe, or save one from <a href="#/search">Search</a>.</p></div>`;
     if (!list.length) return query.trim()
       ? `<div class="empty">Nothing in your book matches “${U.esc(query)}”.<br><a href="#/search">Search all recipes</a></div>`
@@ -53,12 +69,16 @@ App.views.library = root => {
 
   root.onclick = e => {
     if (e.target.closest('[data-act=add]') && !App.needLogin()) addSheet();
-    const f = e.target.closest('[data-show]');
-    if (f) {
-      show = App.views.library.show = f.dataset.show === show ? 'all' : f.dataset.show;
-      root.querySelector('#chips').innerHTML = chipsHtml();
-      root.querySelector('#cards').innerHTML = cardsHtml();
-    }
+    const redraw = () => { root.querySelector('#chips').innerHTML = chipsHtml(); root.querySelector('#cards').innerHTML = cardsHtml(); };
+    const f = e.target.closest('[data-show]'), tf = e.target.closest('[data-tagf]'), add = e.target.closest('[data-act=add-filter]');
+    if (f) { show = App.views.library.show = f.dataset.show === show ? 'all' : f.dataset.show; redraw(); }
+    if (tf) { tag = App.views.library.tag = tag === tf.dataset.tagf ? null : tf.dataset.tagf; redraw(); }
+    if (add) App.ui.popover(add, filterMenuHtml(), t => {
+      const list = myChips().includes(t) ? myChips().filter(x => x !== t) : [...myChips(), t];
+      if (!list.includes(tag)) tag = App.views.library.tag = null;
+      S.updateProfile(S.me().id, { bookFilters: list });
+      redraw();
+    });
   };
 
   function addSheet() {

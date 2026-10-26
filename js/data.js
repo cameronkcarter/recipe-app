@@ -49,6 +49,15 @@ App.verb = id => App.VERBS.find(v => v.id === (App.VERB_ALIASES[id] || id)) || {
 
 // Keyword → icon name (see js/icons.js). Checked in order, so put specific phrases first.
 App.ING_ICONS = [
+  ['eggplant', 'eggplant'], ['pineapple', 'pineapple'], ['buttermilk', 'milk'], ['peanut butter', 'jar'], ['cornstarch', 'jar'], ['corn starch', 'jar'], ['cornmeal', 'wheat'],
+  ['grapefruit', 'orange'], ['grapeseed', 'oil'], ['pepperoni', 'sausage'], ['rice vinegar', 'bottle'], ['wine vinegar', 'bottle'], ['vinegar', 'bottle'], ['rice noodle', 'noodle'],
+  ['thai chil', 'chili'], ['chile', 'chili'], ['serrano', 'chili'], ['poblano', 'bellpep'], ['cauliflower', 'cauliflower'], ['snow pea', 'peas'], ['snap pea', 'peas'], ['peas', 'peas'],
+  ['green bean', 'greenbean'], ['string bean', 'greenbean'], ['asparagus', 'asparagus'], ['beet', 'beet'], ['radish', 'beet'], ['strawberr', 'strawberry'], ['grape', 'grapes'],
+  ['pearl onion', 'onion'], ['pear', 'pear'], ['olive oil', 'oil'], ['olive', 'olive'], ['caper', 'olive'], ['cabbage', 'greens'], ['bok choy', 'greens'], ['brussels', 'greens'], ['arugula', 'greens'],
+  ['leek', 'scallion'], ['lemongrass', 'scallion'], ['quinoa', 'rice'], ['basmati', 'rice'], ['jasmine rice', 'rice'], ['arborio', 'rice'], ['couscous', 'rice'], ['tempeh', 'tofu'], ['lamb', 'steak'], ['ground beef', 'steak'],
+  ['mozzarella', 'cheese'], ['feta', 'cheese'], ['cheddar', 'cheese'], ['ricotta', 'cheese'], ['gouda', 'cheese'], ['mayo', 'jar'], ['sriracha', 'bottle'], ['hot sauce', 'bottle'],
+  ['fish sauce', 'bottle'], ['worcestershire', 'bottle'], ['panko', 'bread'], ['breadcrumb', 'bread'], ['tortilla chip', 'tortilla'], ['yeast', 'jar'], ['baking', 'jar'], ['cocoa', 'choc'],
+  ['syrup', 'honey'], ['molasses', 'honey'], ['sesame seed', 'seeds'], ['sesame oil', 'oil'], ['ice cube', 'snow'], ['mango', 'orange'], ['peach', 'orange'], ['apricot', 'orange'],
   ['butternut', 'squash'], ['celery', 'celery'], ['red potato', 'redpotato'], ['bouillon', 'bouillon'], ['better than bouillon', 'bouillon'], ['white wine', 'wine'], ['cooking wine', 'wine'], ['squash', 'squash'], ['pumpkin seed', 'seeds'], ['pumpkin', 'pumpkin'], ['sweet potato', 'spud'], ['green onion', 'scallion'], ['scallion', 'scallion'],
   ['bell pepper', 'bellpep'], ['red pepper flake', 'chili'], ['black pepper', 'pepper'], ['coconut milk', 'can'],
   ['chili powder', 'jar'], ['black bean', 'bean'], ['olive oil', 'oil'], ['sour cream', 'tub'],
@@ -72,20 +81,22 @@ App.ING_ICONS = [
 ];
 
 // Dish words in a recipe title → the recipe's suggested icon.
-App.DISH_ICONS = [['soup', 'pot'], ['stew', 'pot'], ['chili', 'chili'], ['curry', 'curry'], ['salad', 'salad'], ['pasta', 'noodle'], ['spaghetti', 'noodle'],
-  ['noodle', 'noodle'], ['ramen', 'noodle'], ['pizza', 'pizza'], ['taco', 'taco'], ['burrito', 'taco'], ['burger', 'burger'], ['sandwich', 'toast'], ['toast', 'toast'],
+App.DISH_ICONS = [['soup', 'soup'], ['chowder', 'soup'], ['bisque', 'soup'], ['stew', 'stew'], ['stir fry', 'wok'], ['stir-fry', 'wok'], ['fried rice', 'wok'], ['lo mein', 'wok'],
+  ['casserole', 'casserole'], ['lasagna', 'casserole'], ['enchilada', 'casserole'], ['roast chicken', 'roast'], ['roasted chicken', 'roast'], ['whole chicken', 'roast'],
+  ['dumpling', 'dumpling'], ['potsticker', 'dumpling'], ['gyoza', 'dumpling'], ['sandwich', 'sandwich'], ['panini', 'sandwich'], ['chili', 'chili'], ['curry', 'curry'], ['salad', 'salad'], ['pasta', 'noodle'], ['spaghetti', 'noodle'],
+  ['noodle', 'noodle'], ['ramen', 'noodle'], ['pizza', 'pizza'], ['taco', 'taco'], ['burrito', 'taco'], ['burger', 'burger'], ['toast', 'toast'],
   ['cake', 'cake'], ['cookie', 'cookie'], ['brownie', 'choc'], ['pie', 'pie'], ['bread', 'bread'], ['muffin', 'muffin'], ['pancake', 'pancake'], ['waffle', 'pancake'],
   ['rice', 'rice'], ['egg', 'friedegg'], ['chicken', 'drum'], ['salmon', 'fish'], ['shrimp', 'shrimp'], ['smoothie', 'smoothie']];
 
 // Icons to pick from for a recipe, dishes first.
-App.RECIPE_ICON_CHOICES = ['pot', 'chili', 'curry', 'salad', 'noodle', 'rice', 'pizza', 'taco', 'burger', 'toast', 'friedegg', 'pancake', 'muffin', 'cake', 'cookie', 'pie', 'choc',
+App.RECIPE_ICON_CHOICES = ['soup', 'stew', 'wok', 'casserole', 'roast', 'dumpling', 'sandwich', 'pot', 'chili', 'curry', 'salad', 'noodle', 'rice', 'pizza', 'taco', 'burger', 'toast', 'friedegg', 'pancake', 'muffin', 'cake', 'cookie', 'pie', 'choc',
   'bread', 'smoothie', 'ip', 'pan', 'oven', 'drum', 'steak', 'fish', 'shrimp', 'tofu', 'bean', 'squash', 'pumpkin', 'spud', 'potato', 'avo', 'tomato', 'carrot', 'broccoli',
   'mushroom', 'corn', 'greens', 'eggplant', 'bellpep', 'onion', 'garlic', 'lemon', 'apple', 'banana', 'berries', 'coconut', 'cheese', 'egg', 'cloche'];
 
 // Recipes saved before the icon set used emoji; this maps those to the new icons.
 App.EMOJI_ICONS = { '🎃': 'squash', '🌰': 'seeds', '🍠': 'spud', '🌱': 'scallion', '🫑': 'bellpep', '🌶': 'chili', '🫘': 'bean', '🫒': 'oil', '🥛': 'milk', '🍞': 'bread',
   '🫗': 'bottle', '🍁': 'maple', '🥜': 'peanut', '🍅': 'tomato', '🧅': 'onion', '🧄': 'garlic', '🥔': 'potato', '🥑': 'avo', '🌿': 'herb', '🧂': 'salt', '🫙': 'jar',
-  '🍲': 'pot', '🧈': 'butter', '🧀': 'cheese', '🥚': 'egg', '🍯': 'honey', '🍋': 'lemon', '🍊': 'orange', '🍎': 'apple', '🍌': 'banana', '🫐': 'berries', '🍗': 'drum',
+  '🍲': 'soup', '🧈': 'butter', '🧀': 'cheese', '🥚': 'egg', '🍯': 'honey', '🍋': 'lemon', '🍊': 'orange', '🍎': 'apple', '🍌': 'banana', '🫐': 'berries', '🍗': 'drum',
   '🥩': 'steak', '🥓': 'bacon', '🌭': 'sausage', '🐟': 'fish', '🦐': 'shrimp', '🍤': 'shrimp', '🍚': 'rice', '🍝': 'noodle', '🍜': 'noodle', '🫓': 'tortilla', '🌽': 'corn',
   '🥕': 'carrot', '🍄': 'mushroom', '🥦': 'broccoli', '🥬': 'greens', '🥒': 'cucumber', '🍆': 'eggplant', '🫚': 'ginger', '🥥': 'coconut', '🍫': 'choc', '🍷': 'wine',
   '🍛': 'curry', '🥗': 'salad', '🍕': 'pizza', '🌮': 'taco', '🌯': 'taco', '🍔': 'burger', '🥪': 'toast', '🍰': 'cake', '🍪': 'cookie', '🥧': 'pie', '🧁': 'muffin',

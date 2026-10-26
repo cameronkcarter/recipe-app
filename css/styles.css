@@ -609,3 +609,32 @@ h2.sec .count { background: var(--surface-2); color: var(--muted); border-radius
 .fm-head { font: 500 .8rem var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
 .fm-head .muted { text-transform: none; letter-spacing: 0; font-size: .8rem; margin-left: 4px; }
 .fm-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ---- pop-up menus (actions, ingredient suggestions) ---- */
+.pop { position: absolute; z-index: 60; max-width: min(360px, calc(100vw - 16px)); max-height: 52vh; overflow: auto; padding: 8px;
+  box-shadow: 0 14px 34px rgba(30, 18, 10, .28); border-bottom-width: 2px; }
+.pop .pop-head { font: 500 .72rem var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin: 6px 4px 4px; }
+.pop .pop-head:first-child { margin-top: 0; }
+.pop .acts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.pop .act { border: none; background: var(--surface-2); border-radius: 12px; padding: 6px 2px 5px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font: 500 .74rem/1.1 var(--font-head); color: var(--text); text-align: center; }
+.pop .act .ic { width: 28px; height: 28px; }
+.pop .act.on { background: var(--accent); color: var(--accent-ink); }
+.pop .sug { display: flex; align-items: center; gap: 10px; width: 100%; border: none; background: none; padding: 6px 8px; border-radius: 12px; text-align: left; font-weight: 700; color: var(--text); }
+.pop .sug:hover, .pop .sug:first-of-type { background: var(--surface-2); }
+.pop .sug .ing-ico { width: 28px; height: 28px; }
+.pop .sug small { margin-left: auto; color: var(--muted); font-weight: 700; font-size: .75rem; }
+/* edit mode: + between steps adds one there */
+.ins-step { display: flex; align-items: center; justify-content: center; gap: 6px; height: 22px; margin: -8px 0; border: none; background: none; padding: 0;
+  color: var(--muted); font: 500 .82rem var(--font-head); opacity: .55; position: relative; }
+.ins-step::before { content: ''; position: absolute; left: 30%; right: 30%; top: 50%; border-top: 2px dashed var(--line-strong); z-index: 0; }
+.ins-step .gl { width: 20px; height: 20px; padding: 3px; border-radius: 50%; background: var(--bg); border: 2px solid var(--line-strong); stroke-width: 3; position: relative; z-index: 1; }
+.ins-step span { background: var(--bg); padding: 0 6px; position: relative; z-index: 1; }
+.ins-step.first { margin: 0 0 2px; height: 26px; }
+.ins-step:hover, .ins-step:focus-visible { opacity: 1; color: var(--accent); }
+body.dragging-now .ins-step { visibility: hidden; }
+/* the "+ ingredient" boxes take the whole row so their hint is never cut off */
+.inl.add-ing { width: 100%; display: block; }
+.verb-pick { border: none; background: none; padding: 0; text-align: left; color: inherit; }
+.pop .sug small .gl { width: 16px; height: 16px; color: var(--accent); stroke-width: 3; }
+.chip.filter.add { padding: 4px 8px; }

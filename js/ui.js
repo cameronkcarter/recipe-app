@@ -38,6 +38,32 @@ App.ui = {};
     return `<span class="heart ${on ? 'on' : ''}" role="button" tabindex="0" data-heart="${U.esc(id)}" aria-pressed="${on}" aria-label="${on ? 'Remove from your recipes' : 'Save to your recipes'}">${on ? App.icon('heart') : App.glyph('heart')}</span>`;
   };
 
+  // A small app-style menu that opens under (or above) something you tapped. Tapping an item with
+  // data-pick calls onPick(value); tapping outside closes it. Items keep the keyboard open while typing.
+  let openPop = null;
+  App.ui.popover = (anchor, html, onPick) => {
+    openPop?.close();
+    const el = document.createElement('div');
+    el.className = 'pop card';
+    el.innerHTML = html;
+    document.body.appendChild(el);
+    const place = () => {
+      const a = anchor.getBoundingClientRect(), h = el.offsetHeight, w = el.offsetWidth;
+      const below = a.bottom + 6 + h < window.innerHeight - 70 || a.top < h + 16;
+      el.style.top = (window.scrollY + (below ? a.bottom + 6 : a.top - h - 6)) + 'px';
+      el.style.left = Math.max(8, Math.min(window.scrollX + a.left, window.scrollX + document.documentElement.clientWidth - w - 8)) + 'px';
+    };
+    place();
+    const outside = e => { if (!el.contains(e.target) && e.target !== anchor) close(); };
+    const close = () => { el.remove(); document.removeEventListener('pointerdown', outside, true); if (openPop?.el === el) openPop = null; };
+    el.addEventListener('pointerdown', e => e.preventDefault()); // don't take focus from a box you're typing in
+    el.addEventListener('click', e => { const b = e.target.closest('[data-pick]'); if (b) { close(); onPick(b.dataset.pick); } });
+    document.addEventListener('pointerdown', outside, true);
+    openPop = { el, close, update(h) { if (!h) return close(); el.innerHTML = h; place(); } };
+    return openPop;
+  };
+  App.ui.closePopover = () => openPop?.close();
+
   // A short message above the bottom bar, with an optional Undo. Disappears after a few seconds.
   let toastTimer = null;
   App.ui.toast = (text, undo) => {

@@ -1,7 +1,9 @@
 // Inline edit mode for the recipe page. No pop-ups: steps look the same as when cooking, but
 //   • each ingredient is a bubble — drag it onto another step, tap its words to type
 //   • drag a step (by its number, or press-and-hold anywhere on it) to move it up or down
-//   • tap the action word to pick another; tap note / time to type; tap heat to cycle
+//   • tap the action to pick another from an icon menu; tap note / time to type; tap heat to cycle
+//   • typing an ingredient suggests matches (with icons), this recipe's own ingredients first
+//   • the + between steps adds a step right there
 // Changes stay on a working copy until Done (Cancel discards them).
 window.App = window.App || {};
 App.edit = (() => {
@@ -16,13 +18,31 @@ App.edit = (() => {
     ctx.font = getComputedStyle(el).font;
     el.style.width = Math.ceil(ctx.measureText(el.value || el.placeholder).width + 8) + 'px';
   }
-  const autosizeAll = root => root.querySelectorAll('input.inl').forEach(autosize);
+  const autosizeAll = root => root.querySelectorAll('input.inl:not(.add-ing)').forEach(autosize);
   const inl = (attrs, value, ph, cls = '') =>
     `<input class="inl ${cls}" ${attrs} value="${U.esc(value ?? '')}" placeholder="${U.esc(ph)}" autocomplete="off">`;
 
-  const verbOptions = sel => [...new Set(App.VERBS.map(v => v.group))].map(g =>
-    `<optgroup label="${g}">${App.VERBS.filter(v => v.group === g)
-      .map(v => `<option value="${v.id}" ${v.id === sel ? 'selected' : ''}>${v.label}</option>`).join('')}</optgroup>`).join('');
+  // The action menu: every action as an icon with its word, in small groups.
+  const verbMenuHtml = sel => [...new Set(App.VERBS.map(v => v.group))].map(g =>
+    `<div class="pop-head">${g}</div><div class="acts">${App.VERBS.filter(v => v.group === g)
+      .map(v => `<button class="act ${v.id === sel ? 'on' : ''}" data-pick="${v.id}">${App.icon(v.icon)}${v.label}</button>`).join('')}</div>`).join('');
+
+  // Ingredient suggestions for what you've typed so far ("2 cups bro" → broth, broccoli…):
+  // this recipe's ingredients first, then everyday ones.
+  const KNOWN = () => U._known ||= [...new Set(App.ING_ICONS.map(([k]) => k).filter(k => k.length > 3 && !/^(berr|nut|oat|bean|tofu)$/.test(k) && !/(tion|ione|ullion|ileon)$/.test(k)))];
+  function suggestions(r, text) {
+    const p = U.parseIngredientLine(text);
+    const frag = (p?.name || '').toLowerCase().trim();
+    if (frag.length < 2) return null;
+    const starts = n => n.toLowerCase().split(' ').some(w => w.startsWith(frag)) || n.toLowerCase().startsWith(frag);
+    const mine = r.ingredients.filter(g => starts(g.name)).map(g => ({ name: g.name, mine: true }));
+    const more = KNOWN().filter(n => starts(n) && !mine.some(m => m.name.toLowerCase() === n))
+      .sort((x, y) => (!x.startsWith(frag)) - (!y.startsWith(frag)) || x.length - y.length).map(name => ({ name })); // 'ri' → rice before rice vinegar
+    const list = [...mine, ...more].slice(0, 7);
+    if (!list.length || (list.length === 1 && list[0].name.toLowerCase() === frag)) return null;
+    const prefix = text.slice(0, Math.max(0, text.toLowerCase().lastIndexOf(frag)));
+    return `${list.map(x => `<button class="sug" data-pick="${U.esc(prefix + x.name)}">${U.ingIconHtml({ name: x.name })}${U.esc(x.name)}${x.mine ? '<small>in recipe</small>' : ''}</button>`).join('')}`;
+  }
 
   // ---------- Rendering ----------
   // chef: "A"/"B" when co-op is on, so the step shows a tag you can tap to switch chefs.
@@ -47,11 +67,10 @@ App.edit = (() => {
       ${chef ? `<button class="chef-pill pill-${chef}" data-chef-swap="${s.id}" aria-label="Chef ${chef} — tap to switch">${chef}</button>` : ''}
       <div class="body">
         <div class="s-grid">
-          <label class="s-verb verb-pick ${v.label.length > 7 ? 'long' : ''}"><span class="vi">${App.icon(v.icon)}</span><span class="vl">${U.esc(v.label)}</span>
-            <select data-verb="${s.id}" aria-label="Action">${verbOptions(App.verb(s.verb).id)}</select></label>
+          <button type="button" class="s-verb verb-pick ${v.label.length > 7 ? 'long' : ''}" data-pick-verb="${s.id}" aria-label="Action: ${U.esc(v.label)}. Tap to change"><span class="vi">${App.icon(v.icon)}</span><span class="vl">${U.esc(v.label)}</span></button>
           <div class="s-what">
             ${bubbles ? `<ul class="s-ings">${bubbles}</ul>` : ''}
-            ${inl(`data-add-ing="${s.id}" aria-label="Add ingredient" enterkeyhint="done" list="ing-suggest"`, '', '+ ingredient', 'add-ing')}
+            ${inl(`data-add-ing="${s.id}" aria-label="Add an ingredient (optional)" enterkeyhint="done"`, '', s.uses?.length ? '+ ingredient' : '+ ingredient, or leave empty', 'add-ing')}
             <div class="s-meta">
               <span class="time-field ${s.time ? '' : 'empty'}">${App.icon('clock')}${inl(`data-time="${s.id}" inputmode="numeric" aria-label="Minutes"`, s.time ? s.time + ' min' : '', '+ time', 'time' + (s.time ? '' : ' empty'))}</span>
               ${inl(`data-text="${s.id}" aria-label="When it's done (until…, then…)"`, s.text, '+ until…', 'note' + (s.text ? '' : ' empty'))}
@@ -103,12 +122,7 @@ App.edit = (() => {
     const firstTop = r.ingredients.findIndex(x => x.group);
     if (firstTop < 0) r.ingredients.push(p); else r.ingredients.splice(firstTop, 0, p);
   }
-  // Names the "+ ingredient" boxes suggest: this recipe's ingredients first, then everyday ones.
-  function suggestHtml(r) {
-    const common = [...new Set(App.ING_ICONS.map(([k]) => k).filter(k => k.length > 3 && !/^(berr|nut|oat)$/.test(k)))];
-    const mine = r.ingredients.map(g => g.name);
-    return `<datalist id="ing-suggest">${[...new Set([...mine, ...common])].map(n => `<option value="${U.esc(n)}"></option>`).join('')}</datalist>`;
-  }
+
   // Removing an ingredient from its last step removes it from the recipe too.
   function removeUse(r, stepId, ingId) {
     const s = r.steps.find(x => x.id === stepId);
@@ -141,12 +155,15 @@ App.edit = (() => {
     r.steps = r.steps.filter(s => s !== gone);
     r.steps.forEach(s => { if (s.after.includes(id)) s.after = [...new Set(s.after.filter(x => x !== id).concat(gone.after))]; });
   }
-  function newStep(r) {
-    const prev = r.steps[r.steps.length - 1];
+  // A new step at position `at` (default: the end). It follows the step before it, and the step after it
+  // now waits for it instead. A step added at the very start doesn't hold anything up (it can run alongside).
+  function newStep(r, at = r.steps.length) {
+    const prev = r.steps[at - 1], next = r.steps[at];
     const s = { id: U.uid('s'), verb: 'add', uses: [], after: prev ? [prev.id] : [] };
+    if (prev && next && Array.isArray(next.after) && next.after.includes(prev.id)) next.after = next.after.map(x => x === prev.id ? s.id : x);
     active = s.id;
     if (isCustomSplit(r)) s.chef = 'A';
-    r.steps.push(s);
+    r.steps.splice(at, 0, s);
     return s;
   }
 
@@ -163,7 +180,22 @@ App.edit = (() => {
       st.uses.find(u => u.ing === t.dataset.unote).note = t.textContent.trim() || undefined;
     };
     on(root, 'input', e => {
-      if (e.target.matches('input.inl')) autosize(e.target);
+      if (e.target.matches('input.inl:not(.add-ing)')) autosize(e.target);
+      const box = e.target;
+      if (box.matches('[data-add-ing], [data-add-list]')) {
+        const html = suggestions(r, box.value);
+        const pick = v => {
+          box.value = '';
+          if (box.dataset.addIng) addIngredientToStep(r, box.dataset.addIng, v); else addIngredientToList(r, v);
+          const sel = box.dataset.addIng ? `[data-add-ing="${box.dataset.addIng}"]` : '[data-add-list]';
+          commit(true);
+          root.querySelector(sel)?.focus();
+        };
+        if (!html) App.ui.closePopover();
+        box._pickFn = pick;
+        if (box._pop?.el.isConnected) box._pop.update(html);
+        else box._pop = App.ui.popover(box, html, v => box._pickFn(v));
+      }
       else if (e.target.dataset?.unote != null) setNote(e.target);
     });
     on(root, 'focusout', e => {
@@ -192,8 +224,9 @@ App.edit = (() => {
         r.steps.find(s => s.id === d.time).time = n > 0 ? n : undefined;
         t.value = n > 0 ? n + ' min' : ''; autosize(t); commit();
       }
-      else if (d.addIng && t.value.trim()) { addIngredientToStep(r, d.addIng, t.value); commit(true); }
-      else if ('addList' in d && t.value.trim()) { addIngredientToList(r, t.value); commit(true); root.querySelector('[data-add-list]')?.focus(); }
+      else if ((d.addIng || 'addList' in d) && !t.value.trim()) App.ui.closePopover();
+      else if (d.addIng && t.value.trim()) { App.ui.closePopover(); addIngredientToStep(r, d.addIng, t.value); commit(true); }
+      else if ('addList' in d && t.value.trim()) { App.ui.closePopover(); addIngredientToList(r, t.value); commit(true); root.querySelector('[data-add-list]')?.focus(); }
     });
     on(root, 'keydown', e => {
       if (e.key === 'Enter' && e.target.classList.contains('inl')) { e.preventDefault(); e.target.blur(); }
@@ -208,7 +241,11 @@ App.edit = (() => {
       const t = e.target.closest('button');
       if (!t) return;
       const d = t.dataset;
-      if (d.heat) { const s = r.steps.find(x => x.id === d.heat); s.heat = ((s.heat || 0) + 1) % 4 || undefined; commit(true); }
+      if (d.pickVerb) {
+        const s = r.steps.find(x => x.id === d.pickVerb);
+        App.ui.popover(t, verbMenuHtml(App.verb(s.verb).id), v => { s.verb = v; commit(true); });
+      }
+      else if (d.heat) { const s = r.steps.find(x => x.id === d.heat); s.heat = ((s.heat || 0) + 1) % 4 || undefined; commit(true); }
       else if (d.rmUse) { removeUse(r, t.closest('[data-step]').dataset.step, d.rmUse); commit(true); }
       else if (d.chefSwap) { swapChef(r, d.chefSwap, false); commit(true); }
       else if (d.rmIng) { removeIngredient(r, d.rmIng); commit(true); }
@@ -346,5 +383,5 @@ App.edit = (() => {
   function isCustomSplit(r) { return r.steps.some(s => s.chef === 'A' || s.chef === 'B'); }
   function autoSplit(r, persist = true) { r.steps.forEach(s => delete s.chef); if (persist) save(r); }
 
-  return { autosizeAll, stepHtml, ingRowHtml, suggestHtml, bind, newStep, swapChef, autoSplit, isCustomSplit };
+  return { autosizeAll, stepHtml, ingRowHtml, bind, newStep, swapChef, autoSplit, isCustomSplit };
 })();

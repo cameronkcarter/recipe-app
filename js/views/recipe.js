@@ -44,7 +44,8 @@ App.views.recipe = (root, { id, edit = false }) => {
     const stepHtml = r.steps.map((s, i) => {
       const chef = duo.byId[s.id].chef;
       const chefCls = coop ? 'chef-' + chef : '';
-      if (edit) return E.stepHtml(r, s, i, chefCls, coop ? chef : null);
+      // edit mode: a + before each step adds a new step right there (the first one says so)
+      if (edit) return `<button class="ins-step ${i ? '' : 'first'}" data-insert="${i}" aria-label="Add a step ${i ? 'here' : 'at the start'}">${App.glyph('plus')}${i ? '' : '<span>Add a step at the start</span>'}</button>` + E.stepHtml(r, s, i, chefCls, coop ? chef : null);
       const isDone = done.has(s.id), label = isDone ? App.glyph('check') : i + 1;
       const num = coop
         ? `<button class="num ${chefCls}" data-swap="${s.id}" aria-label="Step ${i + 1}: Chef ${chef}. Tap to switch chef">${label}</button>`
@@ -94,9 +95,8 @@ App.views.recipe = (root, { id, edit = false }) => {
         <button class="ing-toggle" data-act="toggle-ings" aria-expanded="${ingOpen}">${App.glyph('chevron')} Ingredients <span class="count">${r.ingredients.length}</span></button>
         ${edit ? '' : `<button class="btn small" data-act="to-list">${App.icon('basket')}Add to list</button>`}
       </div>
-      ${ingOpen ? (edit ? `<ul class="card ing-list edit">${ingHtml}<li class="ing-item"><input class="inl add-ing" data-add-list placeholder="+ ingredient (like 2 carrots)" aria-label="Add an ingredient" list="ing-suggest" enterkeyhint="done" autocomplete="off"></li></ul>`
+      ${ingOpen ? (edit ? `<ul class="card ing-list edit">${ingHtml}<li class="ing-item"><input class="inl add-ing" data-add-list placeholder="+ ingredient (like 2 carrots)" aria-label="Add an ingredient" enterkeyhint="done" autocomplete="off"></li></ul>`
         : r.ingredients.length ? `<ul class="card ing-list">${ingHtml}</ul>` : `<div class="muted">No ingredients yet.</div>`) : ''}
-      ${edit ? E.suggestHtml(r) : ''}
 
       <div class="section-label">Steps <span class="hint">${edit ? 'drag to move · tap to change' : 'swipe when done'}</span></div>
       <div class="steps">${stepHtml || (edit ? '' : '<div class="muted">No steps yet.</div>')}</div>
@@ -168,6 +168,7 @@ App.views.recipe = (root, { id, edit = false }) => {
     }
     else if (d.swap) { E.swapChef(r, d.swap); render(); }
     else if (d.act === 'auto') { E.autoSplit(r, !edit); render(); }
+    else if ('insert' in d) { const n = E.newStep(r, +d.insert); render(); root.querySelector(`[data-add-ing="${n.id}"]`)?.focus(); }
     else if (d.act === 'add-step') { E.newStep(r); render(); root.querySelector('.step.edit:last-child [data-add-ing]')?.focus(); }
     else if (d.act === 'delete') {
       if (confirm(`Delete “${r.title || 'this recipe'}”?`)) { S.deleteRecipe(r.id); location.hash = '#/'; }
