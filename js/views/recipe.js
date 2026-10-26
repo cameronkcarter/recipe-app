@@ -65,7 +65,7 @@ App.views.recipe = (root, { id, edit = false }) => {
           <a class="btn primary small" href="#/r/${enc}" data-done>Save</a></header>`
         : App.ui.topbar(`<a class="icon-btn" href="${back}" aria-label="Back">${App.glyph('back')}</a><span class="title-sm"></span>`,
           `<button class="icon-btn" data-act="share" aria-label="Share recipe">${App.glyph('share')}</button>` +
-          (mine ? `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">${App.glyph('pencil')}</a>` : `<span class="icon-btn heart-btn">${App.ui.heart(r.id)}</span>`))}
+          (mine ? `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">${App.glyph('pencil')}</a>` : `<span class="icon-btn heart-btn">${App.ui.heart(r.id)}</span>`), { account: false })}
       ${imported ? `<div class="import-banner">${App.icon('sparkle')}Imported. Tap any word to fix it.</div>` : ''}
       <div class="hero">
         ${edit

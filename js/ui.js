@@ -102,10 +102,11 @@ App.ui = {};
 
   // ---------- Page header + account ----------
   // Every page's header ends with the account button: "Log in" when logged out, your picture when logged in.
-  App.ui.topbar = (left, right = '') => {
+  // { account: false } leaves the account button off (recipe pages: back, share and edit are enough).
+  App.ui.topbar = (left, right = '', { account = true } = {}) => {
     const me = App.store.me();
     return `<header class="topbar">${left}${right}
-      ${me ? `<button class="acct" data-acct aria-label="Your account">${U.avatarHtml(me)}</button>`
+      ${!account ? '' : me ? `<button class="acct" data-acct aria-label="Your account">${U.avatarHtml(me)}</button>`
         : `<button class="btn small primary" data-acct>Log in</button>`}</header>`;
   };
 
