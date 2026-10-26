@@ -49,7 +49,9 @@ App.verb = id => App.VERBS.find(v => v.id === (App.VERB_ALIASES[id] || id)) || {
 
 // Keyword → icon name (see js/icons.js). Checked in order, so put specific phrases first.
 App.ING_ICONS = [
-  ['eggplant', 'eggplant'], ['pineapple', 'pineapple'], ['buttermilk', 'milk'], ['peanut butter', 'jar'], ['cornstarch', 'jar'], ['corn starch', 'jar'], ['cornmeal', 'wheat'],
+  ['eggplant', 'eggplant'], ['pineapple', 'pineapple'], ['ziti', 'noodle'], ['penne', 'noodle'], ['rigatoni', 'noodle'], ['macaroni', 'noodle'], ['fusilli', 'noodle'], ['rotini', 'noodle'],
+  ['farfalle', 'noodle'], ['orzo', 'noodle'], ['linguine', 'noodle'], ['fettuccine', 'noodle'], ['lasagna', 'noodle'], ['tortellini', 'noodle'], ['ravioli', 'noodle'], ['gnocchi', 'noodle'], ['udon', 'noodle'], ['ramen', 'noodle'],
+  ['parmigiano', 'cheese'], ['pecorino', 'cheese'], ['cotija', 'cheese'], ['gruy', 'cheese'], ['provolone', 'cheese'], ['buttermilk', 'milk'], ['peanut butter', 'jar'], ['cornstarch', 'jar'], ['corn starch', 'jar'], ['cornmeal', 'wheat'],
   ['grapefruit', 'orange'], ['grapeseed', 'oil'], ['pepperoni', 'sausage'], ['rice vinegar', 'bottle'], ['wine vinegar', 'bottle'], ['vinegar', 'bottle'], ['rice noodle', 'noodle'],
   ['thai chil', 'chili'], ['chile', 'chili'], ['serrano', 'chili'], ['poblano', 'bellpep'], ['cauliflower', 'cauliflower'], ['snow pea', 'peas'], ['snap pea', 'peas'], ['peas', 'peas'],
   ['green bean', 'greenbean'], ['string bean', 'greenbean'], ['asparagus', 'asparagus'], ['beet', 'beet'], ['radish', 'beet'], ['strawberr', 'strawberry'], ['grape', 'grapes'],
@@ -57,7 +59,7 @@ App.ING_ICONS = [
   ['leek', 'scallion'], ['lemongrass', 'scallion'], ['quinoa', 'rice'], ['basmati', 'rice'], ['jasmine rice', 'rice'], ['arborio', 'rice'], ['couscous', 'rice'], ['tempeh', 'tofu'], ['lamb', 'steak'], ['ground beef', 'steak'],
   ['mozzarella', 'cheese'], ['feta', 'cheese'], ['cheddar', 'cheese'], ['ricotta', 'cheese'], ['gouda', 'cheese'], ['mayo', 'jar'], ['sriracha', 'bottle'], ['hot sauce', 'bottle'],
   ['fish sauce', 'bottle'], ['worcestershire', 'bottle'], ['panko', 'bread'], ['breadcrumb', 'bread'], ['tortilla chip', 'tortilla'], ['yeast', 'jar'], ['baking', 'jar'], ['cocoa', 'choc'],
-  ['syrup', 'honey'], ['molasses', 'honey'], ['sesame seed', 'seeds'], ['sesame oil', 'oil'], ['ice cube', 'snow'], ['mango', 'orange'], ['peach', 'orange'], ['apricot', 'orange'],
+  ['maple', 'maple'], ['syrup', 'honey'], ['molasses', 'honey'], ['sesame seed', 'seeds'], ['sesame oil', 'oil'], ['ice cube', 'snow'], ['mango', 'orange'], ['peach', 'orange'], ['apricot', 'orange'],
   ['butternut', 'squash'], ['celery', 'celery'], ['red potato', 'redpotato'], ['bouillon', 'bouillon'], ['better than bouillon', 'bouillon'], ['white wine', 'wine'], ['cooking wine', 'wine'], ['squash', 'squash'], ['pumpkin seed', 'seeds'], ['pumpkin', 'pumpkin'], ['sweet potato', 'spud'], ['green onion', 'scallion'], ['scallion', 'scallion'],
   ['bell pepper', 'bellpep'], ['red pepper flake', 'chili'], ['black pepper', 'pepper'], ['coconut milk', 'can'],
   ['chili powder', 'jar'], ['black bean', 'bean'], ['olive oil', 'oil'], ['sour cream', 'tub'],
@@ -81,15 +83,16 @@ App.ING_ICONS = [
 ];
 
 // Dish words in a recipe title → the recipe's suggested icon.
-App.DISH_ICONS = [['soup', 'soup'], ['chowder', 'soup'], ['bisque', 'soup'], ['stew', 'stew'], ['stir fry', 'wok'], ['stir-fry', 'wok'], ['fried rice', 'wok'], ['lo mein', 'wok'],
+App.DISH_ICONS = [['mac and cheese', 'mac'], ['mac & cheese', 'mac'], ['mac n cheese', 'mac'], ['macaroni', 'mac'], ['spaghetti', 'spaghetti'], ['meatball', 'spaghetti'],
+  ['alfredo', 'spaghetti'], ['carbonara', 'spaghetti'], ['bolognese', 'spaghetti'], ['linguine', 'spaghetti'], ['fettuccine', 'spaghetti'], ['ziti', 'penne'], ['penne', 'penne'],
+  ['rigatoni', 'penne'], ['pasta', 'penne'], ['soup', 'soup'], ['chowder', 'soup'], ['bisque', 'soup'], ['stew', 'stew'], ['stir fry', 'wok'], ['stir-fry', 'wok'], ['fried rice', 'wok'], ['lo mein', 'wok'],
   ['casserole', 'casserole'], ['lasagna', 'casserole'], ['enchilada', 'casserole'], ['roast chicken', 'roast'], ['roasted chicken', 'roast'], ['whole chicken', 'roast'],
-  ['dumpling', 'dumpling'], ['potsticker', 'dumpling'], ['gyoza', 'dumpling'], ['sandwich', 'sandwich'], ['panini', 'sandwich'], ['chili', 'chili'], ['curry', 'curry'], ['salad', 'salad'], ['pasta', 'noodle'], ['spaghetti', 'noodle'],
-  ['noodle', 'noodle'], ['ramen', 'noodle'], ['pizza', 'pizza'], ['taco', 'taco'], ['burrito', 'taco'], ['burger', 'burger'], ['toast', 'toast'],
+  ['dumpling', 'dumpling'], ['potsticker', 'dumpling'], ['gyoza', 'dumpling'], ['sandwich', 'sandwich'], ['panini', 'sandwich'], ['chili', 'chili'], ['curry', 'curry'], ['salad', 'salad'], ['noodle', 'noodle'], ['ramen', 'noodle'], ['pizza', 'pizza'], ['taco', 'taco'], ['burrito', 'taco'], ['burger', 'burger'], ['toast', 'toast'],
   ['cake', 'cake'], ['cookie', 'cookie'], ['brownie', 'choc'], ['pie', 'pie'], ['bread', 'bread'], ['muffin', 'muffin'], ['pancake', 'pancake'], ['waffle', 'pancake'],
   ['rice', 'rice'], ['egg', 'friedegg'], ['chicken', 'drum'], ['salmon', 'fish'], ['shrimp', 'shrimp'], ['smoothie', 'smoothie']];
 
 // Icons to pick from for a recipe, dishes first.
-App.RECIPE_ICON_CHOICES = ['soup', 'stew', 'wok', 'casserole', 'roast', 'dumpling', 'sandwich', 'pot', 'chili', 'curry', 'salad', 'noodle', 'rice', 'pizza', 'taco', 'burger', 'toast', 'friedegg', 'pancake', 'muffin', 'cake', 'cookie', 'pie', 'choc',
+App.RECIPE_ICON_CHOICES = ['soup', 'stew', 'penne', 'spaghetti', 'mac', 'wok', 'casserole', 'roast', 'dumpling', 'sandwich', 'pot', 'chili', 'curry', 'salad', 'noodle', 'rice', 'pizza', 'taco', 'burger', 'toast', 'friedegg', 'pancake', 'muffin', 'cake', 'cookie', 'pie', 'choc',
   'bread', 'smoothie', 'ip', 'pan', 'oven', 'drum', 'steak', 'fish', 'shrimp', 'tofu', 'bean', 'squash', 'pumpkin', 'spud', 'potato', 'avo', 'tomato', 'carrot', 'broccoli',
   'mushroom', 'corn', 'greens', 'eggplant', 'bellpep', 'onion', 'garlic', 'lemon', 'apple', 'banana', 'berries', 'coconut', 'cheese', 'egg', 'cloche'];
 
@@ -112,6 +115,26 @@ App.SEED_PROFILES = [
 ];
 // Who added the recipes that existed before profiles.
 App.SEED_AUTHORS = { 'sweet-potato-chili': 'cameron', 'instant-pot-butternut-squash-soup': 'cameron', 'pasted-recipe': 'ellen' };
+
+// Standard steps for the new-recipe builder: one tap fills in the action, usual ingredients, time and cue.
+// "parallel" steps don't wait for the step before (rice can cook while you do everything else).
+// "for" lists the ways of cooking it shows up for.
+App.STEP_PRESETS = [
+  { label: 'Cook rice', icon: 'rice', verb: 'cook', ings: ['1 cup rice', '2 cups water'], time: 20, text: 'covered, until tender', parallel: true, for: ['stovetop', 'oven', 'slow cooker', 'instant pot'] },
+  { label: 'Boil pasta', icon: 'noodle', verb: 'boil', ings: ['1 lb pasta'], time: 10, text: 'in salted water, until al dente, then drain', parallel: true, for: ['stovetop', 'oven'] },
+  { label: 'Sauté onion & garlic', icon: 'onion', verb: 'saute', ings: ['1 tbsp olive oil', '1 onion', '2 cloves garlic'], heat: 2, time: 5, text: 'until soft', for: ['stovetop', 'instant pot', 'slow cooker'] },
+  { label: 'Brown the meat', icon: 'steak', verb: 'saute', heat: 3, text: 'until browned, then set aside', for: ['stovetop', 'instant pot', 'slow cooker', 'oven'] },
+  { label: 'Deglaze', icon: 'pitcher', verb: 'deglaze', ings: ['splash white wine'], text: 'scrape up the browned bits', for: ['stovetop', 'instant pot'] },
+  { label: 'Pressure cook', icon: 'ip', verb: 'pressure', time: 10, text: 'then natural release, 10 min', for: ['instant pot'] },
+  { label: 'Simmer', icon: 'pot', verb: 'simmer', time: 20, text: 'covered, until tender', for: ['stovetop', 'slow cooker'] },
+  { label: 'Slow cook', icon: 'pot', verb: 'cook', time: 360, text: 'on low, until tender', for: ['slow cooker'] },
+  { label: 'Preheat oven', icon: 'thermo', verb: 'preheat', temp: '400°F', parallel: true, for: ['oven'] },
+  { label: 'Bake', icon: 'oven', verb: 'bake', time: 25, temp: '400°F', text: 'until golden', for: ['oven'] },
+  { label: 'Roast vegetables', icon: 'oven', verb: 'bake', time: 30, temp: '425°F', text: 'tossed in oil, until browned', for: ['oven'] },
+  { label: 'Shred chicken', icon: 'fork', verb: 'shred', ings: ['chicken'], text: 'lift out, shred, stir back in', for: ['instant pot', 'slow cooker', 'stovetop'] },
+  { label: 'Season to taste', icon: 'salt', verb: 'season', ings: ['salt', 'black pepper'], text: 'to taste', for: 'all' },
+  { label: 'Serve', icon: 'cloche', verb: 'serve', for: 'all' },
+];
 
 // Everyday tags offered when you add a tag to a recipe (alongside ones that fit it, and ones already in use).
 App.TAG_SUGGESTIONS = ['dinner', 'lunch', 'breakfast', 'dessert', 'side', 'snack', 'quick', 'vegan', 'vegetarian', 'gluten-free', 'dairy-free',

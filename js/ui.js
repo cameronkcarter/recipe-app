@@ -29,8 +29,8 @@ App.ui = {};
       ${tags.length ? `<div class="tags">${tags.map(t => `<span class="tag-ico" title="${t.label}">${App.icon(t.icon)}</span>`).join('')}</div>` : ''}
       ${U.recipeIconHtml(r)}
       <div class="name">${U.esc(r.title)}</div>
-      <div class="meta">${mine ? '<span></span>' : `<span class="who">${App.ui.heart(r.id)}${by ? U.esc(U.firstName(by)) : ''}</span>`}
-        <span class="time">${App.icon('clock')}${U.fmtMins(U.schedule(r, 1).total)}</span></div></a>`;
+      <div class="meta">${mine ? '<span></span>' : `<span class="who">${App.ui.heart(r.id)}${by ? `<span class="cook">${U.esc(U.firstName(by))}</span>` : ''}</span>`}
+        <span class="time">${App.icon('clock')}${U.fmtMinsShort(U.schedule(r, 1).total)}</span></div></a>`;
   };
   // Filled when it's in your recipe book. Works inside a card link (see the click handler in app.js).
   App.ui.heart = id => {
@@ -63,6 +63,28 @@ App.ui = {};
     return openPop;
   };
   App.ui.closePopover = () => openPop?.close();
+  // Enter in a box with suggestions open picks the first one (finishing the word you were typing).
+  App.ui.pickFirst = () => { const b = openPop?.el.querySelector('[data-pick]'); if (!b) return false; b.click(); return true; };
+
+  // Ingredient suggestions for what's typed so far ("2 cups ri" → rice, ricotta…): the recipe's own
+  // ingredients first (also by kind — "cheese" offers its parmesan), an exact match on top, and the amount kept.
+  const PRETTY = { berr: 'berries', strawberr: 'strawberries', 'thai chil': 'thai chiles', gruy: 'gruyère cheese', grape: 'grapes' };
+  const known = () => App.ui._known ||= [...new Set(App.ING_ICONS.map(([k]) => PRETTY[k] || k)
+    .filter(k => k.length > 3 && !/^(nut|oat|bean|tofu|ice cube|baking)$/.test(k)))];
+  App.ui.ingSuggestions = (ings, text) => {
+    const p = U.parseIngredientLine(text);
+    const frag = (p?.name || '').toLowerCase().trim();
+    if (frag.length < 2) return null;
+    const prefix = text.slice(0, Math.max(0, text.toLowerCase().lastIndexOf(frag)));
+    const kind = frag.length >= 3 && !frag.includes(' ') ? U.ingIcon(frag) : null;
+    const starts = n => { n = n.toLowerCase(); return n.startsWith(frag) || n.split(/\s+/).some(w => w.startsWith(frag)); };
+    const mine = ings.filter(g => starts(g.name) || (kind && U.ingIcon(g.name) === kind)).map(g => ({ name: g.name, mine: true }));
+    const more = known().filter(n => starts(n) && !mine.some(m => m.name.toLowerCase() === n))
+      .sort((x, y) => (!x.startsWith(frag)) - (!y.startsWith(frag)) || x.length - y.length).map(name => ({ name }));
+    const list = [...mine, ...more].slice(0, 7).sort((a, b) => (b.name.toLowerCase() === frag) - (a.name.toLowerCase() === frag));
+    if (!list.length) return null;
+    return list.map(x => `<button class="sug" data-pick="${U.esc(prefix + x.name)}">${U.ingIconHtml({ name: x.name })}${U.esc(x.name)}${x.mine ? '<small>in recipe</small>' : ''}</button>`).join('');
+  };
 
   // A short message above the bottom bar, with an optional Undo. Disappears after a few seconds.
   let toastTimer = null;

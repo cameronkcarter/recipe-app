@@ -100,7 +100,7 @@ App.views.library = root => {
         <button class="btn primary block" data-paste style="margin-top:8px">Convert</button>
         <div class="import-msg paste-msg" role="status"></div>
       </details>
-      <button class="btn block" data-blank style="margin-top:8px">${App.glyph('pencil')}Blank recipe</button>`,
+      <button class="btn block" data-blank style="margin-top:8px">${App.glyph('pencil')}Start from scratch</button>`,
       (el, close) => {
         const input = el.querySelector('[name=url]'), msg = el.querySelector('.import-msg'), btn = el.querySelector('[data-import]');
         input.focus();

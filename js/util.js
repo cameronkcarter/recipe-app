@@ -129,9 +129,11 @@ U.mergeAmounts = items => {
 };
 
 // ---------- Ingredients ----------
+// A keyword only counts at the start of a word: "sausage" must not match "sage", "goat cheese" not "oat".
 U.ingIcon = name => {
   const n = String(name).toLowerCase();
-  for (const [k, ico] of App.ING_ICONS) if (n.includes(k)) return ico;
+  const at = k => { let i = n.indexOf(k); while (i > -1) { if (i === 0 || !/[a-zé]/.test(n[i - 1])) return true; i = n.indexOf(k, i + 1); } return false; };
+  for (const [k, ico] of App.ING_ICONS) if (at(k)) return ico;
   // close enough: a word that's one letter off (two for long words) from a known ingredient
   for (const w of n.match(/[a-zé]{4,}/g) || [])
     for (const [k, ico] of App.ING_ICONS) if (!k.includes(' ') && k.length >= 4 && U.typos(w, k) <= (k.length >= 7 ? 2 : 1)) return ico;
@@ -191,6 +193,7 @@ U.findIngredient = (list, name) => {
   return list.find(g => norm(g.name) === n)
     || list.find(g => { const a = words(norm(g.name)), b = words(n); return a.size && b.size && ([...b].every(w => a.has(w)) || [...a].every(w => b.has(w))); })
     || (n.length >= 5 ? list.find(g => U.typos(norm(g.name), n) <= 1) : null)
+    || (!n.includes(' ') && U.ingIcon(n) && ['cheese', 'noodle', 'herb', 'greens', 'oil', 'bean', 'jar'].includes(U.ingIcon(n)) ? list.find(g => U.ingIcon(g.name) === U.ingIcon(n)) : null)
     || null;
 };
 
@@ -207,6 +210,12 @@ U.splitCue = note => {
   const i = parts.findIndex(p => U.STEP_CUE.test(p.trim()));
   if (i < 0) return { ing: note || undefined };
   return { ing: parts.slice(0, i).join(', ') || undefined, step: parts.slice(i).join(', ') };
+};
+// The usual way to write an ingredient: spelling fixed, and a cheese's name says "cheese".
+U.canonName = name => {
+  let n = U.fixSpelling(String(name).trim());
+  if (/^(parmesan|parmigiano|pecorino|mozzarella|cheddar|feta|ricotta|gouda|swiss|provolone|goat|cream|cotija|gruyere|gruyère|monterey jack|pepper jack)$/i.test(n)) n += ' cheese';
+  return n;
 };
 U.fixSpelling = name => {
   const dict = U._dict ||= new Set(App.ING_ICONS.flatMap(([k]) => k.split(' ')).filter(w => w.length >= 4));
@@ -226,7 +235,7 @@ U.tidyAmount = g => {
 };
 U.tidyRecipe = r => {
   for (const g of r.ingredients) {
-    let n = U.fixSpelling(g.name.trim());
+    let n = U.canonName(g.name);
     if (/^[A-Z][a-z]/.test(n) && n.slice(1) === n.slice(1).toLowerCase()) n = n[0].toLowerCase() + n.slice(1);
     g.name = n;
     U.tidyAmount(g);
@@ -458,6 +467,8 @@ U.fmtMins = m => {
   const h = Math.floor(m / 60), r = m % 60;
   return h + ' hr' + (r ? ' ' + r + ' min' : '');
 };
+// Short form for tight spots like recipe cards: 45m, 1h 14m.
+U.fmtMinsShort = m => { m = Math.round(m); const h = Math.floor(m / 60), r = m % 60; return h ? h + 'h' + (r ? ' ' + r + 'm' : '') : m + 'm'; };
 U.HEAT = ['', 'Low', 'Medium', 'High'];
 
 // ---------- Dates ----------

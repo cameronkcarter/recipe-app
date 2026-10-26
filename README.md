@@ -10,6 +10,9 @@ Simple, symbol-based recipes with co-op cooking, your own recipe book, and a sho
   then open http://localhost:5173. Your phone on the same Wi-Fi can open `http://<your-computer-IP>:5173`.
 - Quick look without importing: double-click `index.html`.
 
+## Checks
+`node tests/ingredient-icons.js` checks that ~90 everyday ingredients get the right icon. Run it after changing App.ING_ICONS.
+
 ## Files
 - `index.html` — page shell + bottom nav
 - `css/styles.css` — all styling: kawaii theme (Fredoka + Nunito), night mode, a page tint per tab
@@ -21,7 +24,7 @@ Simple, symbol-based recipes with co-op cooking, your own recipe book, and a sho
 - `js/importer.js` — turns a recipe from a link or pasted text into symbol steps
 - `js/ui.js` — timers, bottom sheets, step rendering, notes
 - `js/edit.js` — inline edit mode (tap-to-change words, drag ingredients) and co-op swapping
-- `js/views/` — one file per screen (library = recipe book, recipe, shopping, search + person)
+- `js/views/` — one file per screen (library = recipe book, recipe, shopping, search + person, builder = new recipe)
 
 ## Tabs and accounts
 - **Search** (left): every recipe on the site, with filter chips for cooks and tags. "+ Filter" narrows by cook or tag; the heart saves a recipe to your book (with Undo).
@@ -44,7 +47,7 @@ step, misspelled ingredients get the usual spelling, amounts use the tidiest uni
 "splash" becomes the amount, and the ingredient list follows the order of the steps.
 
 ## Adding recipes
-Tap **+** → paste a link, paste recipe text, or start blank. Imports save right away and open in
+Tap **+** → paste a link, paste recipe text, or **Start from scratch** (a guided builder: name and how it's cooked → steps one at a time, from standard steps like "Cook rice" or an action, with earlier ingredients ready to tap → review and save). Imports save right away and open in
 edit mode. Link import tries, in order: the local server (`serve.js`, uses curl), then the free
 Jina Reader (r.jina.ai) so it also works on the public site. Some sites block both — then paste the text.
 

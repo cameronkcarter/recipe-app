@@ -638,3 +638,85 @@ body.dragging-now .ins-step { visibility: hidden; }
 .verb-pick { border: none; background: none; padding: 0; text-align: left; color: inherit; }
 .pop .sug small .gl { width: 16px; height: 16px; color: var(--accent); stroke-width: 3; }
 .chip.filter.add { padding: 4px 8px; }
+
+/* edit mode: a step's extras are matching pills — ⏱ time · 🔥 heat · ✎ note (until…, then…) */
+.step.edit .s-meta { gap: 6px; margin-top: 8px; align-items: center; }
+.step.edit .opt { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 10px 0 7px; border-radius: 999px; background: var(--surface-2);
+  border: none; color: var(--muted); font: 700 .84rem var(--font-body); cursor: text; max-width: 100%; }
+.step.edit .opt .ic { width: 18px; height: 18px; flex: none; }
+.step.edit .opt .gl { width: 15px; height: 15px; flex: none; margin: 0 1px; }
+.step.edit .opt .inl { border-bottom: none; padding: 0; min-width: 2.2em; color: var(--text); }
+.step.edit .opt .inl::placeholder { color: var(--muted); }
+.step.edit .opt.wide { flex: 1 1 100%; }
+.step.edit .opt.wide .inl { flex: 1; width: auto !important; }
+.step.edit button.opt { cursor: pointer; }
+.step.edit .opt.heat-btn:not(.off) { color: var(--text); }
+.step.edit .opt:focus-within { box-shadow: 0 0 0 2px var(--accent); }
+.step.edit .s-what .add-ing { margin-top: 6px; }
+
+/* ============ New recipe, guided (js/views/builder.js) ============ */
+.topbar .steps-dots { display: flex; gap: 5px; margin-left: auto; }
+.steps-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+.steps-dots i.on { width: 22px; border-radius: 999px; background: var(--accent); }
+.b-card { padding: 14px 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.b-q { margin: 6px 0 2px; font-size: 1.15rem; }
+.b-card .b-q:first-child { margin-top: 0; }
+.b-label { font: 500 .78rem var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 8px 2px 2px; display: flex; align-items: center; gap: 6px; }
+.b-label .link { margin-left: auto; text-transform: none; letter-spacing: 0; font-size: .85rem; }
+.b-label .muted { text-transform: none; letter-spacing: 0; }
+.b-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.b-chips.scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.chip.pick { border: 2px solid var(--line); background: var(--surface); font-family: var(--font-head); font-weight: 500; padding: 5px 12px 5px 6px; flex: none; }
+.chip.pick .ic, .chip.pick .ing-ico { width: 24px; height: 24px; }
+.chip.pick small { color: var(--good); font-weight: 800; font-size: .72rem; margin-left: 2px; }
+.chip.pick.on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.b-next { margin-top: 10px; }
+.b-hint { margin: 4px 2px 10px; }
+.acts.b-acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; }
+.b-acts .act { border: 2px solid var(--line); background: var(--surface); border-radius: 14px; padding: 7px 2px 6px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font: 500 .8rem/1.1 var(--font-head); color: var(--text); }
+.b-acts .act .ic { width: 30px; height: 30px; }
+.b-acts .act.more { color: var(--muted); border-style: dashed; justify-content: center; }
+.b-acts .act.more .gl { width: 22px; height: 22px; margin: 4px; }
+.b-verb { display: flex; align-items: center; gap: 8px; border: none; background: var(--surface-2); border-radius: 14px; padding: 6px 12px 6px 6px; align-self: flex-start;
+  font: 500 1.1rem var(--font-head); color: var(--text); }
+.b-verb .ic { width: 34px; height: 34px; }
+.b-verb .muted { font: 700 .8rem var(--font-body); margin-left: 6px; }
+.b-ings { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.b-ings li { display: flex; align-items: center; gap: 7px; padding: 4px 6px 4px 4px; border-radius: 14px; background: var(--surface-2); flex-wrap: wrap; }
+.b-ings .ing-ico { width: 28px; height: 28px; }
+.b-ings .amt { width: 5.5em; }
+.b-ings .nm { font-weight: 800; }
+.b-ings .un { flex: 1; min-width: 7em; color: var(--muted); font-size: .9rem; }
+.b-ings .x { border: none; background: none; color: var(--muted); margin-left: auto; display: grid; place-items: center; }
+.b-ings .x .gl { width: 14px; height: 14px; }
+.b-tray { background: color-mix(in srgb, var(--good) 10%, var(--surface)); border-radius: 14px; padding: 4px 8px 8px; }
+.b-tray .b-label { margin-top: 4px; }
+.b-add { margin-top: 2px; }
+.b-opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.b-opts .opt { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 10px 0 7px; border-radius: 999px; background: var(--surface-2); border: none;
+  color: var(--muted); font: 700 .86rem var(--font-body); }
+.b-opts .opt .ic { width: 18px; height: 18px; }
+.b-opts .opt .gl { width: 15px; height: 15px; }
+.b-opts .opt .inl { border: none; padding: 0; width: 4.8em; color: var(--text); background: none; }
+.b-opts .opt.wide { flex: 1 1 100%; }
+.b-opts .opt.wide .inl { flex: 1; width: auto; }
+.b-opts button.opt:not(.off) { color: var(--text); }
+.b-opts .opt:focus-within { box-shadow: 0 0 0 2px var(--accent); }
+.b-btns { justify-content: flex-end; margin-top: 6px; }
+.b-steps { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.b-step { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 2px solid var(--line); border-radius: 16px; padding: 6px 8px; cursor: pointer; }
+.b-step.editing { border-color: var(--accent); }
+.b-step .n { width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-deep); display: grid; place-items: center; font: 600 .8rem var(--font-head); flex: none; }
+.b-step > .ic { width: 26px; height: 26px; flex: none; }
+.b-step b { font-family: var(--font-head); font-weight: 500; }
+.b-step .muted { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; }
+.b-step .x { border: none; background: none; color: var(--muted); display: grid; place-items: center; }
+.b-step .x .gl { width: 14px; height: 14px; }
+.b-foot { justify-content: space-between; margin-top: 16px; }
+.composer { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+/* card bottom row: the cook's name gives way (…) before the time ever wraps or overlaps */
+.recipe-card .meta { gap: 6px; }
+.recipe-card .who { flex: 1 1 auto; }
+.recipe-card .who .cook { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recipe-card .time { flex: none; white-space: nowrap; }

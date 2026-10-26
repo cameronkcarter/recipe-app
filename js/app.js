@@ -29,7 +29,7 @@
   const routes = [
     [/^#?\/?$/,                 () => App.views.library(root),          'recipes'],
     [/^#\/r\/([^/]+)$/,         m => App.views.recipe(root, { id: m[1] }), 'recipes'],
-    [/^#\/new$/,                () => { location.replace('#/edit/' + encodeURIComponent(App.store.addRecipe({}))); }, 'recipes'],
+    [/^#\/new$/,                () => App.views.builder(root),          'recipes'], // guided new recipe
     [/^#\/edit\/([^/]+)$/,      m => App.views.recipe(root, { id: m[1], edit: true }), 'recipes'],
     [/^#\/list$/,               () => App.views.shopping(root),         'list'],
     [/^#\/search$/,             () => App.views.search(root),           'search'],

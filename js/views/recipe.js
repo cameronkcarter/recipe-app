@@ -28,7 +28,7 @@ App.views.recipe = (root, { id, edit = false }) => {
     const coop = App.session.mode === 'coop';
     const solo = U.schedule(r, 1), duo = U.schedule(r, 2);
     const sc = scale();
-    const ingOpen = !!App.session.ingOpen || (edit && !r.steps.length); // a new recipe starts with its ingredients open
+    const ingOpen = !!App.session.ingOpen;
     const imported = edit && App.session.justImported === r.id;
 
     let lastGroup = '';
@@ -45,7 +45,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       const chef = duo.byId[s.id].chef;
       const chefCls = coop ? 'chef-' + chef : '';
       // edit mode: a + before each step adds a new step right there (the first one says so)
-      if (edit) return `<button class="ins-step ${i ? '' : 'first'}" data-insert="${i}" aria-label="Add a step ${i ? 'here' : 'at the start'}">${App.glyph('plus')}${i ? '' : '<span>Add a step at the start</span>'}</button>` + E.stepHtml(r, s, i, chefCls, coop ? chef : null);
+      if (edit) return `<button class="ins-step ${i ? '' : 'first'}" data-insert="${i}" aria-label="Add a step ${i ? 'here' : 'at the start'}">${App.glyph('plus')}${i ? '' : '<span>Add step</span>'}</button>` + E.stepHtml(r, s, i, chefCls, coop ? chef : null);
       const isDone = done.has(s.id), label = isDone ? App.glyph('check') : i + 1;
       const num = coop
         ? `<button class="num ${chefCls}" data-swap="${s.id}" aria-label="Step ${i + 1}: Chef ${chef}. Tap to switch chef">${label}</button>`

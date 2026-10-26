@@ -27,23 +27,6 @@ App.edit = (() => {
     `<div class="pop-head">${g}</div><div class="acts">${App.VERBS.filter(v => v.group === g)
       .map(v => `<button class="act ${v.id === sel ? 'on' : ''}" data-pick="${v.id}">${App.icon(v.icon)}${v.label}</button>`).join('')}</div>`).join('');
 
-  // Ingredient suggestions for what you've typed so far ("2 cups bro" → broth, broccoli…):
-  // this recipe's ingredients first, then everyday ones.
-  const KNOWN = () => U._known ||= [...new Set(App.ING_ICONS.map(([k]) => k).filter(k => k.length > 3 && !/^(berr|nut|oat|bean|tofu)$/.test(k) && !/(tion|ione|ullion|ileon)$/.test(k)))];
-  function suggestions(r, text) {
-    const p = U.parseIngredientLine(text);
-    const frag = (p?.name || '').toLowerCase().trim();
-    if (frag.length < 2) return null;
-    const starts = n => n.toLowerCase().split(' ').some(w => w.startsWith(frag)) || n.toLowerCase().startsWith(frag);
-    const mine = r.ingredients.filter(g => starts(g.name)).map(g => ({ name: g.name, mine: true }));
-    const more = KNOWN().filter(n => starts(n) && !mine.some(m => m.name.toLowerCase() === n))
-      .sort((x, y) => (!x.startsWith(frag)) - (!y.startsWith(frag)) || x.length - y.length).map(name => ({ name })); // 'ri' → rice before rice vinegar
-    const list = [...mine, ...more].slice(0, 7);
-    if (!list.length || (list.length === 1 && list[0].name.toLowerCase() === frag)) return null;
-    const prefix = text.slice(0, Math.max(0, text.toLowerCase().lastIndexOf(frag)));
-    return `${list.map(x => `<button class="sug" data-pick="${U.esc(prefix + x.name)}">${U.ingIconHtml({ name: x.name })}${U.esc(x.name)}${x.mine ? '<small>in recipe</small>' : ''}</button>`).join('')}`;
-  }
-
   // ---------- Rendering ----------
   // chef: "A"/"B" when co-op is on, so the step shows a tag you can tap to switch chefs.
   function stepHtml(r, s, i, chefCls, chef) {
@@ -72,9 +55,9 @@ App.edit = (() => {
             ${bubbles ? `<ul class="s-ings">${bubbles}</ul>` : ''}
             ${inl(`data-add-ing="${s.id}" aria-label="Add an ingredient (optional)" enterkeyhint="done"`, '', s.uses?.length ? '+ ingredient' : '+ ingredient, or leave empty', 'add-ing')}
             <div class="s-meta">
-              <span class="time-field ${s.time ? '' : 'empty'}">${App.icon('clock')}${inl(`data-time="${s.id}" inputmode="numeric" aria-label="Minutes"`, s.time ? s.time + ' min' : '', '+ time', 'time' + (s.time ? '' : ' empty'))}</span>
-              ${inl(`data-text="${s.id}" aria-label="When it's done (until…, then…)"`, s.text, '+ until…', 'note' + (s.text ? '' : ' empty'))}
-              <button class="heat-btn ${s.heat ? '' : 'off empty'}" data-heat="${s.id}">${App.icon('flame')}${s.heat ? U.HEAT[s.heat].toLowerCase() : 'no'} heat</button>
+              <label class="opt ${s.time ? '' : 'empty'}">${App.icon('clock')}${inl(`data-time="${s.id}" inputmode="numeric" aria-label="Minutes"`, s.time ? s.time + ' min' : '', 'time', 'time')}</label>
+              <button class="opt heat-btn ${s.heat ? '' : 'off empty'}" data-heat="${s.id}">${App.icon('flame')}${s.heat ? U.HEAT[s.heat].toLowerCase() + ' heat' : 'heat'}</button>
+              <label class="opt wide ${s.text ? '' : 'empty'}">${App.glyph('pencil')}${inl(`data-text="${s.id}" aria-label="Note for this step (until…, then…)"`, s.text, 'note (until…, then…)', 'note')}</label>
             </div>
           </div>
         </div>
@@ -102,6 +85,7 @@ App.edit = (() => {
   function addIngredientToStep(r, stepId, text) {
     const p = U.parseIngredientLine(text);
     if (!p) return;
+    p.name = U.canonName(p.name);
     const s = r.steps.find(x => x.id === stepId);
     let g = U.findIngredient(r.ingredients, p.name);
     if (g && g.qty == null && !g.unit && (p.qty != null || p.unit)) { g.qty = p.qty; g.unit = p.unit; } // typed an amount it didn't have yet
@@ -117,6 +101,7 @@ App.edit = (() => {
   function addIngredientToList(r, text) {
     const p = U.parseIngredientLine(text);
     if (!p) return;
+    p.name = U.canonName(p.name);
     const g = U.findIngredient(r.ingredients, p.name);
     if (g) { if (p.qty != null || p.unit) { g.qty = p.qty; g.unit = p.unit; } if (p.note) g.note = p.note; return; }
     const firstTop = r.ingredients.findIndex(x => x.group);
@@ -183,7 +168,7 @@ App.edit = (() => {
       if (e.target.matches('input.inl:not(.add-ing)')) autosize(e.target);
       const box = e.target;
       if (box.matches('[data-add-ing], [data-add-list]')) {
-        const html = suggestions(r, box.value);
+        const html = App.ui.ingSuggestions(r.ingredients, box.value);
         const pick = v => {
           box.value = '';
           if (box.dataset.addIng) addIngredientToStep(r, box.dataset.addIng, v); else addIngredientToList(r, v);
@@ -229,7 +214,10 @@ App.edit = (() => {
       else if ('addList' in d && t.value.trim()) { App.ui.closePopover(); addIngredientToList(r, t.value); commit(true); root.querySelector('[data-add-list]')?.focus(); }
     });
     on(root, 'keydown', e => {
-      if (e.key === 'Enter' && e.target.classList.contains('inl')) { e.preventDefault(); e.target.blur(); }
+      if (e.key !== 'Enter' || !e.target.classList.contains('inl')) return;
+      e.preventDefault();
+      if (e.target.matches('[data-add-ing], [data-add-list]') && App.ui.pickFirst()) return; // finish the suggested word
+      e.target.blur();
     });
     on(root, 'click', e => {
       const card = e.target.closest('.step.edit');
