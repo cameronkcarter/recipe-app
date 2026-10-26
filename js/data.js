@@ -91,10 +91,22 @@ App.DISH_ICONS = [['mac and cheese', 'mac'], ['mac & cheese', 'mac'], ['mac n ch
   ['cake', 'cake'], ['cookie', 'cookie'], ['brownie', 'choc'], ['pie', 'pie'], ['bread', 'bread'], ['muffin', 'muffin'], ['pancake', 'pancake'], ['waffle', 'pancake'],
   ['rice', 'rice'], ['egg', 'friedegg'], ['chicken', 'drum'], ['salmon', 'fish'], ['shrimp', 'shrimp'], ['smoothie', 'smoothie']];
 
-// Icons to pick from for a recipe, dishes first.
-App.RECIPE_ICON_CHOICES = ['soup', 'stew', 'penne', 'spaghetti', 'mac', 'wok', 'casserole', 'roast', 'dumpling', 'sandwich', 'pot', 'chili', 'curry', 'salad', 'noodle', 'rice', 'pizza', 'taco', 'burger', 'toast', 'friedegg', 'pancake', 'muffin', 'cake', 'cookie', 'pie', 'choc',
-  'bread', 'smoothie', 'ip', 'pan', 'oven', 'drum', 'steak', 'fish', 'shrimp', 'tofu', 'bean', 'squash', 'pumpkin', 'spud', 'potato', 'avo', 'tomato', 'carrot', 'broccoli',
-  'mushroom', 'corn', 'greens', 'eggplant', 'bellpep', 'onion', 'garlic', 'lemon', 'apple', 'banana', 'berries', 'coconut', 'cheese', 'egg', 'cloche'];
+// Icons to pick from for a recipe, in small groups.
+App.RECIPE_ICON_GROUPS = [
+  ['Soups & stews', ['soup', 'stew', 'pot', 'chili', 'curry']],
+  ['Pasta & noodles', ['penne', 'spaghetti', 'mac', 'noodle']],
+  ['Rice & bowls', ['rice', 'wok', 'salad', 'bean']],
+  ['From the oven', ['casserole', 'roast', 'pizza', 'pie', 'bread', 'oven']],
+  ['Handhelds', ['taco', 'burger', 'sandwich', 'dumpling', 'toast']],
+  ['Breakfast', ['friedegg', 'pancake', 'muffin', 'egg', 'smoothie']],
+  ['Sweets', ['cake', 'cookie', 'choc', 'strawberry']],
+  ['Mains', ['drum', 'steak', 'fish', 'shrimp', 'tofu', 'cheese']],
+  ['Produce', ['squash', 'pumpkin', 'spud', 'potato', 'avo', 'tomato', 'carrot', 'broccoli', 'cauliflower', 'mushroom', 'corn', 'greens', 'eggplant', 'bellpep',
+    'onion', 'garlic', 'lemon', 'apple', 'banana', 'berries', 'pineapple', 'coconut']],
+  ['Other', ['ip', 'pan', 'cloche']],
+];
+// Every icon a recipe can use, in picker order.
+App.RECIPE_ICON_CHOICES = App.RECIPE_ICON_GROUPS.flatMap(([, list]) => list);
 
 // Recipes saved before the icon set used emoji; this maps those to the new icons.
 App.EMOJI_ICONS = { '🎃': 'squash', '🌰': 'seeds', '🍠': 'spud', '🌱': 'scallion', '🫑': 'bellpep', '🌶': 'chili', '🫘': 'bean', '🫒': 'oil', '🥛': 'milk', '🍞': 'bread',

@@ -130,11 +130,12 @@ App.views.recipe = (root, { id, edit = false }) => {
   // Edit mode: tap the icon to choose another. The suggested one is first (marked with a dot).
   function iconPickerHtml() {
     const sugg = U.suggestIcon(r), cur = U.recipeIcon(r);
-    const list = [sugg, ...App.RECIPE_ICON_CHOICES.filter(x => x !== sugg)];
     const bg = U.recipeBlob(r);
+    const btn = ic => `<button data-icon="${ic}" class="${ic === cur ? 'on' : ''} ${ic === sugg ? 'sugg' : ''}" style="--blob:${bg}" aria-label="${ic}">${App.icon(ic)}</button>`;
     return `<div class="card icon-picker">
       <div class="swatches">${App.BLOB_COLORS.map(c => `<button class="sw ${c === bg ? 'on' : ''}" data-bg="${c}" style="--sw:${c}" aria-label="Background color"></button>`).join('')}</div>
-      ${list.map(ic => `<button data-icon="${ic}" class="${ic === cur ? 'on' : ''} ${ic === sugg ? 'sugg' : ''}" style="--blob:${bg}" aria-label="${ic}">${App.icon(ic)}</button>`).join('')}</div>`;
+      <div class="pick-head">Suggested</div>${btn(sugg)}${cur !== sugg ? btn(cur) : ''}
+      ${App.RECIPE_ICON_GROUPS.map(([label, ics]) => `<div class="pick-head">${label}</div>${ics.map(btn).join('')}`).join('')}</div>`;
   }
 
   // "by Ellen Moffatt" under the title, linking to their profile.
