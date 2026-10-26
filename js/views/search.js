@@ -1,33 +1,47 @@
-// Search tab: every recipe on the site, and people. Tap the heart on a card to save it to your recipe book.
-// #/u/<id> shows one person's recipes.
+// Search tab: every recipe on the site. Filter chips on top narrow it by who added it or by tag;
+// each card shows its cook's first name and a heart to save it to your recipe book.
+// #/u/<id> shows one person's recipes (from the "by …" link on a recipe).
 App.views = App.views || {};
 App.views.search = root => {
   const U = App.util, S = App.store;
-  let query = App.views.search.query || '';
+  const st = App.views.search.state ||= { query: '', people: [], tags: [] };
 
+  // Tags worth filtering by: the most used ones on the site.
+  const topTags = () => {
+    const n = {};
+    for (const r of S.recipes()) for (const t of new Set((r.tags || []).map(x => x.toLowerCase()))) n[t] = (n[t] || 0) + 1;
+    return Object.keys(n).sort((a, b) => n[b] - n[a] || a.localeCompare(b)).slice(0, 10);
+  };
+  const filtersHtml = () => {
+    const people = S.profiles().filter(p => S.recipes().some(r => r.author === p.id));
+    return people.map(p => `<button class="chip filter cook ${st.people.includes(p.id) ? 'on' : ''}" data-person="${U.esc(p.id)}">${U.avatarHtml(p)}${U.esc(U.firstName(p))}</button>`).join('') +
+      topTags().map(t => `<button class="chip filter ${st.tags.includes(t) ? 'on' : ''}" data-tag="${U.esc(t)}">${t === 'vegan' ? App.icon('leaf') : /instant ?pot/.test(t) ? App.icon('ip') : ''}${U.esc(t)}</button>`).join('');
+  };
   const resultsHtml = () => {
-    const q = query.trim().toLowerCase();
-    const people = S.profiles().filter(p => !q || p.name.toLowerCase().includes(q));
-    const recipes = S.recipes().filter(r => !q || r.title.toLowerCase().includes(q) ||
-      (r.tags || []).some(t => t.toLowerCase().includes(q)) ||
-      r.ingredients.some(i => i.name.toLowerCase().includes(q)) ||
-      S.profile(r.author)?.name.toLowerCase().includes(q));
-    if (q && !people.length && !recipes.length) return `<div class="empty">Nothing matches “${U.esc(query)}”.</div>`;
-    return `${people.length ? `<h2 class="sec">People</h2>
-        <div class="people">${people.map(p => `<a class="person" href="#/u/${encodeURIComponent(p.id)}">${U.avatarHtml(p, 'lg')}<span>${U.esc(U.firstName(p))}</span></a>`).join('')}</div>` : ''}
-      ${recipes.length ? `<h2 class="sec">${q ? 'Recipes' : 'All recipes'}</h2>
-        <div class="recipe-grid">${recipes.map(App.ui.recipeCard).join('')}</div>` : ''}`;
+    const q = st.query.trim().toLowerCase();
+    const list = S.recipes().filter(r =>
+      (!st.people.length || st.people.includes(r.author)) &&
+      st.tags.every(t => (r.tags || []).some(x => x.toLowerCase() === t)) &&
+      (!q || r.title.toLowerCase().includes(q) || (r.tags || []).some(t => t.toLowerCase().includes(q)) ||
+        r.ingredients.some(i => i.name.toLowerCase().includes(q)) || S.profile(r.author)?.name.toLowerCase().includes(q)));
+    if (!list.length) return `<div class="empty">No recipes match${q ? ` “${U.esc(st.query)}”` : ''}.</div>`;
+    return `<div class="recipe-grid">${list.map(App.ui.recipeCard).join('')}</div>`;
   };
 
   root.innerHTML = `
     ${App.ui.topbar('<h1>Search</h1>')}
-    <div class="search-wrap">${App.glyph('search')}<input class="input search" type="search" placeholder="Recipes, ingredients, people" value="${U.esc(query)}"></div>
+    <div class="search-wrap">${App.glyph('search')}<input class="input search" type="search" placeholder="Recipes, ingredients, cooks" value="${U.esc(st.query)}"></div>
+    <div class="filters scroll" id="filters">${filtersHtml()}</div>
     <div id="results">${resultsHtml()}</div>`;
 
-  root.querySelector('.search').addEventListener('input', e => {
-    query = App.views.search.query = e.target.value;
-    root.querySelector('#results').innerHTML = resultsHtml();
-  });
+  const redraw = () => { root.querySelector('#filters').innerHTML = filtersHtml(); root.querySelector('#results').innerHTML = resultsHtml(); };
+  root.querySelector('.search').addEventListener('input', e => { st.query = e.target.value; root.querySelector('#results').innerHTML = resultsHtml(); });
+  root.onclick = e => {
+    const p = e.target.closest('[data-person]'), t = e.target.closest('[data-tag]');
+    const toggle = (arr, v) => arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v];
+    if (p) { st.people = toggle(st.people, p.dataset.person); redraw(); }
+    if (t) { st.tags = toggle(st.tags, t.dataset.tag); redraw(); }
+  };
 };
 
 // One person: their picture, name, and the recipes they added.

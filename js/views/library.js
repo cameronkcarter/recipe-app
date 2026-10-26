@@ -1,29 +1,40 @@
-// Recipes tab: your recipe book — recipes you added, and other people's you saved with the heart.
+// Recipes tab: your recipe book — recipes you added (Mine) and other people's you saved (Saved), in one grid.
+// Saved cards are tinted rose; the chips on top show how many of each and filter the grid.
 App.views = App.views || {};
 App.views.library = root => {
   const U = App.util, S = App.store;
   let query = App.views.library.query || '';
+  let show = App.views.library.show || 'all'; // all | mine | saved
 
   const match = r => {
     const q = query.trim().toLowerCase();
     return !q || r.title.toLowerCase().includes(q) ||
       (r.tags || []).some(t => t.toLowerCase().includes(q)) ||
-      r.ingredients.some(i => i.name.toLowerCase().includes(q));
+      r.ingredients.some(i => i.name.toLowerCase().includes(q)) ||
+      S.profile(r.author)?.name.toLowerCase().includes(q);
   };
-  const grid = list => `<div class="recipe-grid">${list.map(App.ui.recipeCard).join('')}</div>`;
-
-  const cardsHtml = () => {
+  const book = () => {
     const mine = S.mine(), saved = S.saved().filter(r => r.author !== S.me()?.id);
-    const m = mine.filter(match), s = saved.filter(match);
-    if (query.trim() && !m.length && !s.length) return `<div class="empty">Nothing in your recipes matches “${U.esc(query)}”.<br><a href="#/search">Search all recipes</a></div>`;
-    return `<h2 class="sec">My recipes <span class="count">${mine.length}</span></h2>
-      ${m.length ? grid(m) : `<div class="muted hint-line">${mine.length ? 'No matches.' : 'Tap + to add your first recipe.'}</div>`}
-      <h2 class="sec">Saved <span class="count">${saved.length}</span></h2>
-      ${s.length ? grid(s) : `<div class="muted hint-line">${saved.length ? 'No matches.' : `Tap ${App.glyph('heart')} on any recipe in <a href="#/search">Search</a> to save it here.`}</div>`}`;
+    return { mine, saved, all: [...mine, ...saved].sort((x, y) => (y.addedAt || 0) - (x.addedAt || 0)) };
+  };
+
+  const chipsHtml = () => {
+    const b = book();
+    const chip = (id, label, n, ico) => `<button class="chip filter ${id} ${show === id ? 'on' : ''}" data-show="${id}">${ico}${label}<b>${n}</b></button>`;
+    return chip('all', 'All', b.all.length, '') + chip('mine', 'Mine', b.mine.length, '<i class="dot"></i>') + chip('saved', 'Saved', b.saved.length, App.icon('heart'));
+  };
+  const cardsHtml = () => {
+    const b = book();
+    const list = b[show].filter(match);
+    if (!b.all.length) return `<div class="empty"><div class="big">${App.icon('book')}</div><p>Your recipe book is empty.<br>Tap <b>+</b> to add a recipe, or save one from <a href="#/search">Search</a>.</p></div>`;
+    if (!list.length) return query.trim()
+      ? `<div class="empty">Nothing in your book matches “${U.esc(query)}”.<br><a href="#/search">Search all recipes</a></div>`
+      : `<div class="muted hint-line">${show === 'saved' ? `Tap ${App.glyph('heart')} on any recipe in <a href="#/search">Search</a> to save it here.` : 'Tap + to add your first recipe.'}</div>`;
+    return `<div class="recipe-grid">${list.map(App.ui.recipeCard).join('')}</div>`;
   };
 
   if (!S.me()) {
-    root.innerHTML = `${App.ui.topbar('<h1>Recipes</h1>')}
+    root.innerHTML = `${App.ui.topbar('<h1>Recipe book</h1>')}
       <div class="card logged-out">
         <div class="big">${App.icon('book')}</div>
         <h2>Your recipe book</h2>
@@ -34,13 +45,20 @@ App.views.library = root => {
   }
 
   root.innerHTML = `
-    ${App.ui.topbar('<h1>Recipes</h1>')}
-    <div class="search-wrap">${App.glyph('search')}<input class="input search" type="search" placeholder="Search your recipes" value="${U.esc(query)}"></div>
+    ${App.ui.topbar('<h1>Recipe book</h1>')}
+    <div class="search-wrap">${App.glyph('search')}<input class="input search" type="search" placeholder="Search your book" value="${U.esc(query)}"></div>
+    <div class="filters" id="chips">${chipsHtml()}</div>
     <div id="cards">${cardsHtml()}</div>
     <button class="fab" aria-label="Add recipe" data-act="add">${App.glyph('plus')}</button>`;
 
   root.onclick = e => {
     if (e.target.closest('[data-act=add]') && !App.needLogin()) addSheet();
+    const f = e.target.closest('[data-show]');
+    if (f) {
+      show = App.views.library.show = f.dataset.show === show ? 'all' : f.dataset.show;
+      root.querySelector('#chips').innerHTML = chipsHtml();
+      root.querySelector('#cards').innerHTML = cardsHtml();
+    }
   };
 
   function addSheet() {

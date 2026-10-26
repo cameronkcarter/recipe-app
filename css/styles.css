@@ -557,9 +557,7 @@ h2.sec .count { background: var(--surface-2); color: var(--muted); border-radius
 .heart-btn { padding: 0; }
 .heart-btn .heart { margin: 0; }
 
-/* People row in Search, one person's page */
-.people { display: flex; gap: 14px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
-.person { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; font: 500 .85rem var(--font-head); flex: none; width: 76px; text-align: center; }
+/* one person's page */
 .avatar.lg { width: 64px; height: 64px; }
 .prof-head p { margin: 0; }
 
@@ -580,3 +578,19 @@ h2.sec .count { background: var(--surface-2); color: var(--muted); border-radius
 .acct-pics { padding: 0; margin: 4px 0 12px; }
 .join-err { color: var(--danger); font-size: .88rem; font-weight: 700; margin: -4px 2px 6px; }
 .join-err:empty { display: none; }
+
+/* ---- recipe book + search: filter chips, saved (rose) cards ---- */
+.filters { display: flex; gap: 6px; flex-wrap: wrap; margin: -2px 0 12px; }
+.filters.scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.filters.scroll::-webkit-scrollbar { display: none; }
+.chip.filter { border: 2px solid var(--line); background: var(--surface); font-family: var(--font-head); font-weight: 500; padding: 4px 11px; flex: none; }
+.chip.filter b { font-weight: 600; color: var(--muted); margin-left: 3px; }
+.chip.filter .ic, .chip.filter .avatar { width: 20px; height: 20px; }
+.chip.filter.cook { padding-left: 4px; }
+.chip.filter .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); display: inline-block; }
+.chip.filter.on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.chip.filter.on b { color: inherit; }
+.chip.filter.saved.on { border-color: #e8798a; background: color-mix(in srgb, #f2667a 14%, var(--surface)); }
+.recipe-card.saved { background: color-mix(in srgb, #f2667a 8%, var(--surface)); border-color: color-mix(in srgb, #f2667a 22%, var(--line)); border-bottom-color: color-mix(in srgb, #f2667a 30%, var(--line-strong)); }
+.recipe-card .who { display: inline-flex; align-items: center; gap: 2px; font-size: .8rem; font-weight: 700; color: var(--muted); min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.recipe-card .who .heart { margin: -4px 0 -4px -6px; }

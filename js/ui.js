@@ -18,15 +18,19 @@ App.ui = {};
   };
 
   // ---------- Recipe card (recipe book, search, someone's recipes) ----------
-  // Icon, name, time — and a heart to save someone else's recipe to your recipe book.
+  // Icon and name; along the bottom, time on the right and — on someone else's recipe — the heart
+  // (save it to your recipe book) with the cook's first name. Saved recipes are tinted rose, yours stay plain.
   App.ui.recipeCard = r => {
     const S = App.store, tags = U.tagIcons(r);
     const mine = r.author && r.author === S.me()?.id;
-    return `<a class="card recipe-card" href="#/r/${encodeURIComponent(r.id)}">
+    const saved = !mine && S.isSaved(r.id);
+    const by = mine ? null : S.profile(r.author);
+    return `<a class="card recipe-card ${saved ? 'saved' : ''}" href="#/r/${encodeURIComponent(r.id)}">
       ${tags.length ? `<div class="tags">${tags.map(t => `<span class="tag-ico" title="${t.label}">${App.icon(t.icon)}</span>`).join('')}</div>` : ''}
       ${U.recipeIconHtml(r)}
       <div class="name">${U.esc(r.title)}</div>
-      <div class="meta"><span class="time">${App.icon('clock')}${U.fmtMins(U.schedule(r, 1).total)}</span>${mine ? '' : App.ui.heart(r.id)}</div></a>`;
+      <div class="meta">${mine ? '<span></span>' : `<span class="who">${App.ui.heart(r.id)}${by ? U.esc(U.firstName(by)) : ''}</span>`}
+        <span class="time">${App.icon('clock')}${U.fmtMins(U.schedule(r, 1).total)}</span></div></a>`;
   };
   // Filled when it's in your recipe book. Works inside a card link (see the click handler in app.js).
   App.ui.heart = id => {
