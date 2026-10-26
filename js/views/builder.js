@@ -24,7 +24,7 @@ App.views.builder = root => {
     mash: 'mashed', shred: 'shredded', heat: 'heated', saute: 'sautéed', cook: 'cooked', boil: 'boiled', simmer: 'simmered', pressure: 'cooked', bake: 'baked',
     broil: 'broiled', grill: 'grilled', rest: 'rested', chill: 'chilled', add: 'added' };
 
-  const blank = () => ({ verb: null, uses: [], time: undefined, heat: undefined, text: '', temp: undefined, parallel: false });
+  const blank = () => ({ verb: null, uses: [], time: undefined, heat: undefined, text: '', temp: undefined, parallel: false, makes: '' });
   const st = App.session.builder ||= { stage: 'basics', r: { title: '', servings: 4, method: '', tags: [], ingredients: [], steps: [] }, cur: blank(), editing: null, err: '' };
   const r = st.r;
   const ing = id => r.ingredients.find(g => g.id === id);
@@ -37,6 +37,8 @@ App.views.builder = root => {
   function addToCur(text) {
     const p = U.parseIngredientLine(text);
     if (!p) return;
+    const mix = U.findMixture(r, before().length, p.name);
+    if (mix) { if (!st.cur.uses.some(u => u.from === mix.id)) st.cur.uses.push({ from: mix.id }); return; }
     p.name = U.canonName(p.name);
     let g = U.findIngredient(r.ingredients, p.name);
     if (g && g.qty == null && !g.unit && (p.qty != null || p.unit)) { g.qty = p.qty; g.unit = p.unit; }
@@ -58,9 +60,10 @@ App.views.builder = root => {
   function commitStep() {
     const c = st.cur;
     if (!c.verb) { st.err = 'Pick what happens in this step first.'; return false; }
-    const clean = { verb: c.verb, uses: c.uses.map(u => ({ ...u })), time: c.time || undefined, heat: c.heat || undefined, text: c.text.trim() || undefined, temp: c.temp || undefined };
-    if (st.editing) Object.assign(r.steps.find(s => s.id === st.editing), clean);
-    else { const prev = r.steps[r.steps.length - 1]; r.steps.push({ id: U.uid('s'), ...clean, after: c.parallel || !prev ? [] : [prev.id] }); }
+    const clean = { verb: c.verb, uses: c.uses.map(u => ({ ...u })), time: c.time || undefined, heat: c.heat || undefined, text: c.text.trim() || undefined, temp: c.temp || undefined, makes: c.makes.trim() || undefined };
+    const mixes = clean.uses.filter(u => u.from).map(u => u.from);
+    if (st.editing) { const s = r.steps.find(x => x.id === st.editing); Object.assign(s, clean); s.after = [...new Set([...(s.after || []), ...mixes])]; }
+    else { const prev = r.steps[r.steps.length - 1]; r.steps.push({ id: U.uid('s'), ...clean, after: [...new Set([...(c.parallel || !prev ? [] : [prev.id]), ...mixes])] }); }
     st.cur = blank(); st.editing = null; st.err = '';
     return true;
   }
@@ -112,20 +115,22 @@ App.views.builder = root => {
     } else {
       const prior = usedBefore();
       const ready = [...prior].filter(id => !c.uses.some(u => u.ing === id) && ing(id)).reverse();
+      const mixes = before().filter(s => s.makes && !c.uses.some(u => u.from === s.id));
       const lastVerb = id => { const s = [...before()].reverse().find(x => (x.uses || []).some(u => u.ing === id)); return DONE[App.verb(s?.verb).id] || ''; };
       compose = `
         <button class="b-verb" data-act="more-verbs" aria-label="Change the action">${icoFor(c.verb)}<b>${App.verb(c.verb).label}</b><span class="muted">change</span></button>
-        <ul class="b-ings">${c.uses.map(u => { const g = ing(u.ing); if (!g) return ''; const first = !prior.has(g.id);
+        <ul class="b-ings">${c.uses.map(u => { if (u.from) return App.ui.mixtureHtml(r, u.from, `<button class="x" data-rm-from="${u.from}" aria-label="Remove">${App.glyph('x')}</button>`); const g = ing(u.ing); if (!g) return ''; const first = !prior.has(g.id);
           return `<li>${U.ingIconHtml(g)}${first ? `<input class="inl amt" data-amt="${g.id}" value="${U.esc(g.qty != null || g.unit ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '')}" placeholder="amount" inputmode="decimal" aria-label="Amount">` : ''}
             <span class="nm">${U.esc(g.name)}</span><input class="inl un" data-unote="${g.id}" value="${U.esc(u.note || '')}" placeholder="+ prep (diced…)" aria-label="How it's prepped">
             <button class="x" data-rm-use="${g.id}" aria-label="Remove">${App.glyph('x')}</button></li>`; }).join('')}</ul>
-        ${ready.length ? `<div class="b-tray"><div class="b-label">Ready to add <button class="link" data-act="add-all">Add all</button></div>
-          <div class="b-chips">${ready.map(id => { const g = ing(id), d = lastVerb(id); return `<button class="chip pick" data-ready="${id}">${U.ingIconHtml(g)}${U.esc(g.name)}${d ? `<small>${d}</small>` : ''}</button>`; }).join('')}</div></div>` : ''}
+        ${ready.length || mixes.length ? `<div class="b-tray"><div class="b-label">Ready to add <button class="link" data-act="add-all">Add all</button></div>
+          <div class="b-chips">${mixes.map(s => `<button class="chip pick" data-ready-from="${s.id}">${App.icon('bowl')}${U.esc(s.makes)}<small>step ${r.steps.indexOf(s) + 1}</small></button>`).join('')}${ready.map(id => { const g = ing(id), d = lastVerb(id); return `<button class="chip pick" data-ready="${id}">${U.ingIconHtml(g)}${U.esc(g.name)}${d ? `<small>${d}</small>` : ''}</button>`; }).join('')}</div></div>` : ''}
         <input class="input b-add" data-b-add placeholder="${c.uses.length ? '+ ingredient' : '+ ingredient, or leave empty'}" autocomplete="off" enterkeyhint="done" aria-label="Add an ingredient">
         <div class="b-opts">
           <label class="opt">${App.icon('clock')}<input class="inl" data-b-time inputmode="numeric" value="${c.time ? c.time + ' min' : ''}" placeholder="time" aria-label="Minutes"></label>
           <button class="opt ${c.heat ? '' : 'off'}" data-act="heat">${App.icon('flame')}${c.heat ? U.HEAT[c.heat].toLowerCase() + ' heat' : 'heat'}</button>
           ${c.temp !== undefined || App.verb(c.verb).group === 'Oven' ? `<label class="opt">${App.icon('thermo')}<input class="inl" data-b-temp value="${U.esc(c.temp || '')}" placeholder="temp" aria-label="Oven temperature"></label>` : ''}
+          ${c.uses.length > 1 || c.makes ? `<label class="opt wide">${App.icon('bowl')}<input class="inl" data-b-makes value="${U.esc(c.makes)}" placeholder="makes… (spice mix, sauce)" aria-label="What this step makes"></label>` : ''}
           <label class="opt wide">${App.glyph('pencil')}<input class="inl" data-b-text value="${U.esc(c.text)}" placeholder="note (until…, then…)" aria-label="Note for this step"></label>
         </div>`;
     }
@@ -187,6 +192,8 @@ App.views.builder = root => {
     else if (d.verb && !t.closest('.pop')) st.cur.verb = d.verb;
     else if (d.act === 'more-verbs') return verbMenu(t);
     else if (d.ready) st.cur.uses.push({ ing: d.ready });
+    else if (d.readyFrom) st.cur.uses.push({ from: d.readyFrom });
+    else if (d.rmFrom) st.cur.uses = st.cur.uses.filter(u => u.from !== d.rmFrom);
     else if (d.act === 'add-all') [...usedBefore()].filter(id => !st.cur.uses.some(u => u.ing === id)).forEach(id => st.cur.uses.push({ ing: id }));
     else if (d.rmUse) st.cur.uses = st.cur.uses.filter(u => u.ing !== d.rmUse);
     else if (d.act === 'heat') st.cur.heat = ((st.cur.heat || 0) + 1) % 4 || undefined;
@@ -203,7 +210,7 @@ App.views.builder = root => {
       if (!curIsEmpty() && st.editing !== d.editStep && !confirm('Leave the step you were building?')) return;
       const s = r.steps.find(x => x.id === d.editStep);
       st.editing = s.id;
-      st.cur = { ...blank(), verb: s.verb, uses: (s.uses || []).map(u => ({ ...u })), time: s.time, heat: s.heat, text: s.text || '', temp: s.temp };
+      st.cur = { ...blank(), verb: s.verb, uses: (s.uses || []).map(u => ({ ...u })), time: s.time, heat: s.heat, text: s.text || '', temp: s.temp, makes: s.makes || '' };
     }
     else if (d.tag) r.tags = r.tags.includes(d.tag) ? r.tags.filter(x => x !== d.tag) : [...r.tags, d.tag];
     else return;
@@ -213,13 +220,14 @@ App.views.builder = root => {
     const t = e.target, d = t.dataset;
     if (d.b === 'title') r.title = t.value;
     else if ('bText' in d) st.cur.text = t.value;
+    else if ('bMakes' in d) st.cur.makes = t.value;
     else if ('bTemp' in d) st.cur.temp = t.value.trim() || undefined;
     else if (d.unote) { const u = st.cur.uses.find(x => x.ing === d.unote); if (u) u.note = t.value.trim() || undefined; }
     else if ('bAdd' in d) {
-      const html = App.ui.ingSuggestions(r.ingredients, t.value);
+      const html = App.ui.ingSuggestions(r.ingredients, t.value, U.mixtures(r, before().length));
       if (!html) return App.ui.closePopover();
       if (t._pop?.el.isConnected) t._pop.update(html);
-      else t._pop = App.ui.popover(t, html, v => { addToCur(v); render(); root.querySelector('[data-b-add]')?.focus(); });
+      else t._pop = App.ui.popover(t, html, v => { if (v.startsWith('@from:')) st.cur.uses.push({ from: v.slice(6) }); else addToCur(v); render(); root.querySelector('[data-b-add]')?.focus(); });
     }
   };
   root.onchange = e => {

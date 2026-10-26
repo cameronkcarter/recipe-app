@@ -283,6 +283,23 @@ U.recipeKey = r => {
 };
 U.recipeUrl = r => location.origin + location.pathname + '#/r/' + U.recipeKey(r);
 
+// ---------- Mixtures ----------
+// A step can say what it makes ("spice mix"): step.makes. A later step uses it like an ingredient —
+// { from: stepId } in its uses — shown with a bowl and "from step 5", never on the shopping list.
+U.mixtures = (r, beforeIndex = r.steps.length) => r.steps.slice(0, beforeIndex).filter(s => s.makes)
+  .map(s => ({ id: s.id, name: s.makes, n: r.steps.indexOf(s) + 1 }));
+U.findMixture = (r, beforeIndex, name) => {
+  const n = String(name).toLowerCase().replace(/\bmixture\b/, 'mix').trim();
+  return U.mixtures(r, beforeIndex).find(m => { const x = m.name.toLowerCase().replace(/\bmixture\b/, 'mix'); return x === n || x.includes(n) || n.includes(x); }) || null;
+};
+// Using a mixture means waiting for the step that makes it.
+U.useMixture = (r, step, fromId) => {
+  step.uses ||= [];
+  if (!step.uses.some(u => u.from === fromId)) step.uses.push({ from: fromId });
+  if (Array.isArray(step.after)) { if (!step.after.includes(fromId)) step.after.push(fromId); }
+  else step.after = [...U.stepDeps(r, r.steps.indexOf(step)), fromId];
+};
+
 U.category = ing => {
   if (ing.cat) return ing.cat;
   const n = String(ing.name).toLowerCase();
@@ -331,7 +348,7 @@ U.parseIngredientLine = line => {
 // ---------- Steps / scheduling ----------
 U.stepDeps = (recipe, i) => {
   const s = recipe.steps[i];
-  if (Array.isArray(s.after)) return s.after.filter(id => recipe.steps.some(x => x.id === id));
+  if (Array.isArray(s.after)) return s.after.filter(id => { const k = recipe.steps.findIndex(x => x.id === id); return k > -1 && k < i; });
   return i > 0 ? [recipe.steps[i - 1].id] : [];
 };
 // Minutes a step takes. Only timed steps (simmer 20 min, sauté 4 min) store a time and show it;

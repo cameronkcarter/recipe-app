@@ -736,3 +736,13 @@ body.dragging-now .ins-step { visibility: hidden; }
 .ing-list.edit .ing-item .x { margin-left: 0; }
 .ing-list.edit .ing-item.lifted { background: var(--surface-2); box-shadow: 0 8px 22px rgba(0,0,0,.25); position: relative; z-index: 2; border-radius: 12px; }
 body.dragging-now .ing-grip { cursor: grabbing; }
+
+/* co-op: step numbers stay white on the chef's color (night mode used to make them orange on orange) */
+:root[data-theme="dark"] .step .num.chef-A, :root[data-theme="dark"] .step .num.chef-B { color: #fff; }
+.step .num.chef-A, .step .num.chef-B { font-weight: 600; text-shadow: 0 1px 0 rgba(0,0,0,.18); }
+/* mixtures: "makes spice mix" on the step that makes it; "spice mix · from step 5" where it's used */
+.s-meta .makes { color: var(--good); }
+.mix-use .ing-ico { border-radius: 50%; background: color-mix(in srgb, var(--good) 14%, transparent); }
+.step.edit .s-ings li.mix-use { display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px 3px 4px; border-radius: 999px; background: var(--surface-2); border: 2px dashed color-mix(in srgb, var(--good) 45%, var(--line)); }
+.step.edit .s-ings li.mix-use .x { border: none; background: none; color: var(--muted); padding: 0 4px; opacity: .6; display: grid; place-items: center; }
+.b-ings li.mix-use { border: 2px dashed color-mix(in srgb, var(--good) 45%, var(--line)); }

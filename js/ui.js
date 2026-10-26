@@ -71,7 +71,7 @@ App.ui = {};
   const PRETTY = { berr: 'berries', strawberr: 'strawberries', 'thai chil': 'thai chiles', gruy: 'gruyère cheese', grape: 'grapes' };
   const known = () => App.ui._known ||= [...new Set(App.ING_ICONS.map(([k]) => PRETTY[k] || k)
     .filter(k => k.length > 3 && !/^(nut|oat|bean|tofu|ice cube|baking)$/.test(k)))];
-  App.ui.ingSuggestions = (ings, text) => {
+  App.ui.ingSuggestions = (ings, text, mixes = []) => {
     const p = U.parseIngredientLine(text);
     const frag = (p?.name || '').toLowerCase().trim();
     if (frag.length < 2) return null;
@@ -82,8 +82,10 @@ App.ui = {};
     const more = known().filter(n => starts(n) && !mine.some(m => m.name.toLowerCase() === n))
       .sort((x, y) => (!x.startsWith(frag)) - (!y.startsWith(frag)) || x.length - y.length).map(name => ({ name }));
     const list = [...mine, ...more].slice(0, 7).sort((a, b) => (b.name.toLowerCase() === frag) - (a.name.toLowerCase() === frag));
-    if (!list.length) return null;
-    return list.map(x => `<button class="sug" data-pick="${U.esc(prefix + x.name)}">${U.ingIconHtml({ name: x.name })}${U.esc(x.name)}${x.mine ? '<small>in recipe</small>' : ''}</button>`).join('');
+    const mx = mixes.filter(m => starts(m.name) || (frag.length >= 3 && 'mixture'.startsWith(frag)));
+    if (!list.length && !mx.length) return null;
+    return mx.map(m => `<button class="sug" data-pick="@from:${m.id}"><span class="ing-ico">${App.icon('bowl')}</span>${U.esc(m.name)}<small>from step ${m.n}</small></button>`).join('') +
+      list.map(x => `<button class="sug" data-pick="${U.esc(prefix + x.name)}">${U.ingIconHtml({ name: x.name })}${U.esc(x.name)}${x.mine ? '<small>in recipe</small>' : ''}</button>`).join('');
   };
 
   // A short message above the bottom bar, with an optional Undo. Disappears after a few seconds.
@@ -196,6 +198,7 @@ App.ui = {};
     const idx = recipe.steps.indexOf(step);
     const usedBefore = new Set(recipe.steps.slice(0, Math.max(0, idx)).flatMap(s => (s.uses || []).map(u => u.ing)));
     const items = (step.uses || []).map(use => {
+      if (use.from) return App.ui.mixtureHtml(recipe, use.from);
       const ing = recipe.ingredients.find(i => i.id === use.ing);
       if (!ing) return '';
       const amt = use.qty != null || !usedBefore.has(ing.id) ? App.ui.useAmount(use, ing, scale) : '';
@@ -209,8 +212,16 @@ App.ui = {};
 
   // One line under the ingredients: time first, then its cue, then heat —
   // "5 min · until softened · medium heat", each with its little icon.
+  // A mixture used in a step: a bowl, its name, and which step made it.
+  App.ui.mixtureHtml = (recipe, fromId, extra = '') => {
+    const src = recipe.steps.find(s => s.id === fromId);
+    if (!src) return '';
+    return `<li class="mix-use"><span class="ing-ico">${App.icon('bowl')}</span><span>${U.esc(src.makes || 'mixture')} <span class="un">· from step ${recipe.steps.indexOf(src) + 1}</span></span>${extra}</li>`;
+  };
+
   App.ui.stepMeta = (step, recipe, opts = {}) => {
     const out = [];
+    if (step.makes) out.push(`<span class="m makes">${App.icon('bowl')}makes ${U.esc(step.makes)}</span>`);
     if (step.time) {
       const v = App.verb(step.verb);
       out.push(`<button class="s-timer" data-action="timer" data-mins="${+step.time}" data-label="${U.esc(v.label + (recipe ? ' · ' + recipe.title : ''))}" title="Start a timer">${App.icon('clock')}${U.esc(U.fmtMins(+step.time))}</button>`);

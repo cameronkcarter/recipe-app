@@ -33,6 +33,7 @@ App.edit = (() => {
     const v = App.verb(s.verb);
     const usedBefore = new Set(r.steps.slice(0, i).flatMap(x => (x.uses || []).map(u => u.ing)));
     const bubbles = (s.uses || []).map((u, k) => {
+      if (u.from) return App.ui.mixtureHtml(r, u.from, `<button class="x" data-rm-from="${u.from}" aria-label="Remove">${App.glyph('x')}</button>`);
       const g = ing(r, u.ing);
       if (!g) return '';
       const first = !usedBefore.has(g.id);
@@ -58,6 +59,7 @@ App.edit = (() => {
               <label class="opt ${s.time ? '' : 'empty'}">${App.icon('clock')}${inl(`data-time="${s.id}" inputmode="numeric" aria-label="Minutes"`, s.time ? s.time + ' min' : '', 'time', 'time')}</label>
               <button class="opt heat-btn ${s.heat ? '' : 'off empty'}" data-heat="${s.id}">${App.icon('flame')}${s.heat ? U.HEAT[s.heat].toLowerCase() + ' heat' : 'heat'}</button>
               <label class="opt wide ${s.text ? '' : 'empty'}">${App.glyph('pencil')}${inl(`data-text="${s.id}" aria-label="Note for this step (until…, then…)"`, s.text, 'note (until…, then…)', 'note')}</label>
+              ${(s.uses || []).length > 1 || s.makes ? `<label class="opt wide ${s.makes ? '' : 'empty'}">${App.icon('bowl')}${inl(`data-makes="${s.id}" aria-label="What this step makes, to use in a later step"`, s.makes, 'makes… (spice mix, sauce)', 'note')}</label>` : ''}
             </div>
           </div>
         </div>
@@ -95,6 +97,8 @@ App.edit = (() => {
   function addIngredientToStep(r, stepId, text) {
     const p = U.parseIngredientLine(text);
     if (!p) return;
+    const st = r.steps.find(x => x.id === stepId), mix = U.findMixture(r, r.steps.indexOf(st), p.name);
+    if (mix) return U.useMixture(r, st, mix.id);
     p.name = U.canonName(p.name);
     const s = r.steps.find(x => x.id === stepId);
     let g = U.findIngredient(r.ingredients, p.name);
@@ -178,15 +182,17 @@ App.edit = (() => {
       if (e.target.matches('input.inl:not(.add-ing)')) autosize(e.target);
       const box = e.target;
       if (box.matches('[data-add-ing], [data-add-list]')) {
-        const html = App.ui.ingSuggestions(r.ingredients, box.value);
+        const at = box.dataset.addIng ? r.steps.findIndex(x => x.id === box.dataset.addIng) : 0;
+        const html = App.ui.ingSuggestions(r.ingredients, box.value, box.dataset.addIng ? U.mixtures(r, at) : []);
         const pick = v => {
           box.value = '';
-          if (box.dataset.addIng) addIngredientToStep(r, box.dataset.addIng, v); else addIngredientToList(r, v);
+          if (v.startsWith('@from:')) U.useMixture(r, r.steps.find(x => x.id === box.dataset.addIng), v.slice(6));
+          else if (box.dataset.addIng) addIngredientToStep(r, box.dataset.addIng, v); else addIngredientToList(r, v);
           const sel = box.dataset.addIng ? `[data-add-ing="${box.dataset.addIng}"]` : '[data-add-list]';
           commit(true);
           root.querySelector(sel)?.focus();
         };
-        if (!html) App.ui.closePopover();
+        if (!html) return App.ui.closePopover();
         box._pickFn = pick;
         if (box._pop?.el.isConnected) box._pop.update(html);
         else box._pop = App.ui.popover(box, html, v => box._pickFn(v));
@@ -213,6 +219,7 @@ App.edit = (() => {
         st.uses.find(u => u.ing === d.unote).note = t.value.trim() || undefined;
         commit();
       }
+      else if (d.makes) { r.steps.find(s => s.id === d.makes).makes = t.value.trim() || undefined; commit(true); }
       else if (d.text) { r.steps.find(s => s.id === d.text).text = t.value.trim() || undefined; commit(); }
       else if (d.time) {
         const n = parseFloat(t.value.replace(/[^\d.]/g, ''));
@@ -245,6 +252,7 @@ App.edit = (() => {
         App.ui.popover(t, verbMenuHtml(App.verb(s.verb).id), v => { s.verb = v; commit(true); });
       }
       else if (d.heat) { const s = r.steps.find(x => x.id === d.heat); s.heat = ((s.heat || 0) + 1) % 4 || undefined; commit(true); }
+      else if (d.rmFrom) { const st = r.steps.find(x => x.id === t.closest('[data-step]').dataset.step); st.uses = st.uses.filter(u => u.from !== d.rmFrom); commit(true); }
       else if (d.rmUse) { removeUse(r, t.closest('[data-step]').dataset.step, d.rmUse); commit(true); }
       else if (d.chefSwap) { swapChef(r, d.chefSwap, false); commit(true); }
       else if (d.rmIng) { removeIngredient(r, d.rmIng); commit(true); }
