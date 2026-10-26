@@ -95,7 +95,6 @@ App.views.recipe = (root, { id, edit = false }) => {
       <div class="coop-line">
         ${coop
           ? `<span class="a">● A</span> <span class="b">● B</span> · ~${U.fmtMins(duo.total)}<span class="muted"> · ${edit ? 'tap A / B to set who does each step' : 'tap a number to swap, just for now'}</span>
-             ${edit && E.isCustomSplit(r) ? `<button class="link" data-act="auto">${App.glyph('undo')}Use automatic split</button>` : ''}
              ${tweaks ? `<button class="link" data-act="reset-split">${App.glyph('undo')}Reset</button>` : ''}`
           : `<span class="time">${App.icon('clock')}~${U.fmtMins(solo.total)}</span>`}
       </div>
@@ -185,7 +184,6 @@ App.views.recipe = (root, { id, edit = false }) => {
       render();
     }
     else if (d.act === 'reset-split') { delete App.session.split[r.id]; render(); }
-    else if (d.act === 'auto') { E.autoSplit(r, false); render(); } // edit mode; kept on Save
     else if ('insert' in d) { const n = E.newStep(r, +d.insert); render(); root.querySelector(`[data-add-ing="${n.id}"]`)?.focus(); }
     else if (d.act === 'add-step') { E.newStep(r); render(); root.querySelector('.step.edit:last-child [data-add-ing]')?.focus(); }
     else if (d.act === 'delete') {
