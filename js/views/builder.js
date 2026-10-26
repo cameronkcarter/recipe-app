@@ -165,7 +165,7 @@ App.views.builder = root => {
     const id = S.addRecipe({ ...data, title: data.title.trim() || 'Untitled' });
     delete App.session.builder;
     App.ui.toast(`Saved “${data.title}”`);
-    location.hash = '#/r/' + encodeURIComponent(id);
+    location.hash = '#/r/' + U.recipeKey(S.recipe(id));
   }
   const verbMenu = anchor => App.ui.popover(anchor, [...new Set(App.VERBS.map(v => v.group))].map(g =>
     `<div class="pop-head">${g}</div><div class="acts">${App.VERBS.filter(v => v.group === g).map(v => `<button class="act ${v.id === st.cur.verb ? 'on' : ''}" data-pick="${v.id}">${App.icon(v.icon)}${v.label}</button>`).join('')}</div>`).join(''),

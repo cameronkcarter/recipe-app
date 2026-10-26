@@ -274,6 +274,15 @@ U.fittingTags = r => {
   return [...new Set(out)];
 };
 
+// A recipe's link uses its name ("coconut-curry-over-rice") when no other recipe has the same name;
+// otherwise its id. Old links by id keep working (see App.store.find).
+U.recipeKey = r => {
+  const slug = U.slug(r.title || '');
+  const clash = !r.title || App.store.recipes().some(x => x !== r && x.id !== r.id && U.slug(x.title || '') === slug) || (App.store.recipe(slug) && App.store.recipe(slug).id !== r.id);
+  return encodeURIComponent(clash ? r.id : slug);
+};
+U.recipeUrl = r => location.origin + location.pathname + '#/r/' + U.recipeKey(r);
+
 U.category = ing => {
   if (ing.cat) return ing.cat;
   const n = String(ing.name).toLowerCase();

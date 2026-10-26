@@ -93,6 +93,8 @@ App.store = (() => {
     save,
     recipes: () => state.recipes,
     recipe: id => state.recipes.find(r => r.id === id),
+    // A recipe by its id or by its link name ("coconut-curry-over-rice").
+    find: key => state.recipes.find(r => r.id === key) || state.recipes.find(r => App.util.slug(r.title || '') === key),
     upsertRecipe(r) {
       const i = state.recipes.findIndex(x => x.id === r.id);
       if (i > -1) state.recipes[i] = r; else state.recipes.unshift(r);

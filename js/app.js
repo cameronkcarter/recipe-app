@@ -110,6 +110,7 @@
       if (latest && latest !== myVersion) location.replace(location.pathname + '?v=' + latest + location.hash);
     } catch (e) { /* offline: keep going */ }
   };
+  if (/[?&](v|check)=/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
   checkForUpdate();
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForUpdate(); });
   render();

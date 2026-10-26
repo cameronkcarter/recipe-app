@@ -5,11 +5,11 @@ App.session = App.session || { servings: {}, mode: 'solo', ingOpen: false };
 
 App.views.recipe = (root, { id, edit = false }) => {
   const U = App.util, S = App.store, ui = App.ui, E = App.edit;
-  const stored = S.recipe(id);
+  const stored = S.find(id);
   // Edit mode changes a copy: Done saves it, Cancel throws it away.
   const r = edit && stored ? JSON.parse(JSON.stringify(stored)) : stored;
   if (!r) { root.innerHTML = `<div class="empty"><p>Recipe not found.</p><a href="#/">Back to recipes</a></div>`; return; }
-  const enc = encodeURIComponent(r.id);
+  const enc = U.recipeKey(r);
 
   // Only the person who added a recipe can edit it; everyone else can save it (the heart).
   const mine = r.author && r.author === S.me()?.id;
@@ -62,7 +62,8 @@ App.views.recipe = (root, { id, edit = false }) => {
       ${edit ? `<header class="topbar"><a class="btn small" href="#/r/${enc}" data-cancel>Cancel</a><span class="title-sm"></span>
           <a class="btn primary small" href="#/r/${enc}" data-done>Save</a></header>`
         : App.ui.topbar(`<a class="icon-btn" href="${back}" aria-label="Back">${App.glyph('back')}</a><span class="title-sm"></span>`,
-          mine ? `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">${App.glyph('pencil')}</a>` : `<span class="icon-btn heart-btn">${App.ui.heart(r.id)}</span>`)}
+          `<button class="icon-btn" data-act="share" aria-label="Share recipe">${App.glyph('share')}</button>` +
+          (mine ? `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">${App.glyph('pencil')}</a>` : `<span class="icon-btn heart-btn">${App.ui.heart(r.id)}</span>`))}
       ${imported ? `<div class="import-banner">${App.icon('sparkle')}Imported. Tap any word to fix it.</div>` : ''}
       <div class="hero">
         ${edit
@@ -152,7 +153,7 @@ App.views.recipe = (root, { id, edit = false }) => {
   root.onclick = e => {
     // Done: let the bubbles settle into place, then switch back to the cooking view
     const done = e.target.closest('[data-done]');
-    if (done) { e.preventDefault(); S.upsertRecipe(U.tidyRecipe(r)); root.classList.add('settling'); setTimeout(() => { root.classList.remove('settling'); location.hash = done.getAttribute('href'); }, 260); return; }
+    if (done) { e.preventDefault(); S.upsertRecipe(U.tidyRecipe(r)); root.classList.add('settling'); setTimeout(() => { root.classList.remove('settling'); location.hash = '#/r/' + U.recipeKey(r); }, 260); return; }
     const t = e.target.closest('button');
     if (!t) return;
     const d = t.dataset;
@@ -173,6 +174,12 @@ App.views.recipe = (root, { id, edit = false }) => {
     else if (d.act === 'add-step') { E.newStep(r); render(); root.querySelector('.step.edit:last-child [data-add-ing]')?.focus(); }
     else if (d.act === 'delete') {
       if (confirm(`Delete “${r.title || 'this recipe'}”?`)) { S.deleteRecipe(r.id); location.hash = '#/'; }
+    }
+    else if (d.act === 'share') {
+      // the phone's share sheet when there is one; otherwise copy the link
+      const url = U.recipeUrl(r);
+      if (navigator.share) navigator.share({ title: r.title, url }).catch(() => {});
+      else navigator.clipboard?.writeText(url).then(() => App.ui.toast('Link copied'), () => prompt('Copy this link', url));
     }
     else if (d.act === 'toggle-ings') { App.session.ingOpen = !App.session.ingOpen; render(); }
     else if (d.act === 'to-list') {
@@ -278,7 +285,7 @@ App.views.recipe = (root, { id, edit = false }) => {
     root.classList.remove('wiggle', 'settling');
     ui.keepAwake(false);
     if (edit && App.session.justImported === r.id) delete App.session.justImported;
-    const saved = S.recipe(id);
+    const saved = S.recipe(r.id);
     if (edit && saved && !saved.title.trim() && !saved.ingredients.length && !saved.steps.length) S.deleteRecipe(id); // abandoned blank recipe
   };
 };

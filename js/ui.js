@@ -25,7 +25,7 @@ App.ui = {};
     const mine = r.author && r.author === S.me()?.id;
     const saved = !mine && S.isSaved(r.id);
     const by = mine ? null : S.profile(r.author);
-    return `<a class="card recipe-card ${saved ? 'saved' : ''}" href="#/r/${encodeURIComponent(r.id)}">
+    return `<a class="card recipe-card ${saved ? 'saved' : ''}" href="#/r/${U.recipeKey(r)}">
       ${tags.length ? `<div class="tags">${tags.map(t => `<span class="tag-ico" title="${t.label}">${App.icon(t.icon)}</span>`).join('')}</div>` : ''}
       ${U.recipeIconHtml(r)}
       <div class="name">${U.esc(r.title)}</div>
