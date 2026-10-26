@@ -38,6 +38,20 @@ App.ui = {};
     return `<span class="heart ${on ? 'on' : ''}" role="button" tabindex="0" data-heart="${U.esc(id)}" aria-pressed="${on}" aria-label="${on ? 'Remove from your recipes' : 'Save to your recipes'}">${on ? App.icon('heart') : App.glyph('heart')}</span>`;
   };
 
+  // A short message above the bottom bar, with an optional Undo. Disappears after a few seconds.
+  let toastTimer = null;
+  App.ui.toast = (text, undo) => {
+    document.querySelector('.toast')?.remove();
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.setAttribute('role', 'status');
+    el.innerHTML = `<span>${U.esc(text)}</span>${undo ? '<button>Undo</button>' : ''}`;
+    if (undo) el.querySelector('button').onclick = () => { el.remove(); undo(); };
+    document.body.appendChild(el);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.remove(), 5000);
+  };
+
   // ---------- Page header + account ----------
   // Every page's header ends with the account button: "Log in" when logged out, your picture when logged in.
   App.ui.topbar = (left, right = '') => {

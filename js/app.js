@@ -16,7 +16,7 @@
   App.refreshNav();
   document.querySelector('link[rel=icon]').href = 'data:image/svg+xml,' + encodeURIComponent(App.icon('pot').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
 
-  // Night mode: the toggle saves a choice on this device; until then the app follows the phone's setting.
+  // Night mode is the default; the switch in the account panel saves a choice on this device.
   const themeColor = () => document.querySelector('meta[name=theme-color]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   App.toggleTheme = () => {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
@@ -25,11 +25,6 @@
     themeColor();
     return next;
   };
-  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', e => {
-    let saved = null;
-    try { saved = localStorage.getItem('recipeapp.theme'); } catch (err) {}
-    if (!saved) { document.documentElement.dataset.theme = e.matches ? 'dark' : 'light'; themeColor(); }
-  });
 
   const routes = [
     [/^#?\/?$/,                 () => App.views.library(root),          'recipes'],
@@ -87,8 +82,12 @@
     if (!h) return;
     e.preventDefault(); e.stopPropagation();
     if (App.needLogin()) return;
-    App.store.toggleSaved(h.dataset.heart);
+    const id = h.dataset.heart, title = App.store.recipe(id)?.title || 'Recipe';
+    const wasSaved = App.store.isSaved(id);
+    App.store.toggleSaved(id);
     App.rerender(); // a card may move in or out of your recipe book
+    App.ui.toast(wasSaved ? `Removed “${title}” from your recipes` : `Saved “${title}” to your recipes`,
+      wasSaved ? () => { App.store.toggleSaved(id); App.rerender(); } : null);
     navigator.vibrate?.(10);
   }, true);
 
@@ -99,5 +98,19 @@
   });
 
   window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+
+  // Phones hang on to old copies of the site. When the app opens or comes back on screen, check
+  // whether a newer version is up and, if so, load it (not while you're editing a recipe).
+  const myVersion = (document.querySelector('script[src*="app.js?v="]')?.src.match(/v=([\w-]+)/) || [])[1];
+  const checkForUpdate = async () => {
+    if (!myVersion || location.protocol === 'file:' || /^#\/edit\//.test(location.hash)) return;
+    try {
+      const html = await (await fetch(location.pathname + '?check=' + Date.now(), { cache: 'no-store' })).text();
+      const latest = (html.match(/app\.js\?v=([\w-]+)/) || [])[1];
+      if (latest && latest !== myVersion) location.replace(location.pathname + '?v=' + latest + location.hash);
+    } catch (e) { /* offline: keep going */ }
+  };
+  checkForUpdate();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForUpdate(); });
   render();
 })();

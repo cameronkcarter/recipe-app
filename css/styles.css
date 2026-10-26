@@ -55,7 +55,7 @@
   --bg: #19211a; --surface: #233025; --surface-2: #2d3c2f; --line: #304132; --line-strong: #121a13;
   --accent: #78c26f; --accent-deep: #4c8a45; --accent-soft: #2b462b;
 }
-:root[data-theme="dark"][data-tab="me"] {
+:root[data-theme="dark"][data-tab="search"] {
   --bg: #211b27; --surface: #2c2433; --surface-2: #382e41; --line: #3b3145; --line-strong: #16111b;
   --accent: #b497e6; --accent-deep: #8062bc; --accent-soft: #3d3150;
 }
@@ -594,3 +594,18 @@ h2.sec .count { background: var(--surface-2); color: var(--muted); border-radius
 .recipe-card.saved { background: color-mix(in srgb, #f2667a 8%, var(--surface)); border-color: color-mix(in srgb, #f2667a 22%, var(--line)); border-bottom-color: color-mix(in srgb, #f2667a 30%, var(--line-strong)); }
 .recipe-card .who { display: inline-flex; align-items: center; gap: 2px; font-size: .8rem; font-weight: 700; color: var(--muted); min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .recipe-card .who .heart { margin: -4px 0 -4px -6px; }
+
+/* toast: "Removed … · Undo" above the bottom bar */
+.toast { position: fixed; left: 50%; bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 30;
+  display: flex; align-items: center; gap: 14px; max-width: min(92vw, 560px); padding: 10px 10px 10px 16px; border-radius: 999px;
+  background: #4a3428; color: #fff; font-weight: 700; font-size: .9rem; box-shadow: 0 4px 0 #2e2019; animation: toast-in .2s ease-out; }
+.toast span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toast button { border: none; border-radius: 999px; padding: 6px 14px; background: var(--accent); color: #fff; font: 500 .9rem var(--font-head); flex: none; }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+/* Search: "+ Filter" opens a small menu; chosen filters sit beside it as chips with ✕ */
+.chip.filter.add { border-style: dashed; color: var(--muted); }
+.chip.filter .gl { width: 14px; height: 14px; stroke-width: 3; }
+.filter-menu { padding: 10px 12px 12px; margin: -4px 0 14px; display: flex; flex-direction: column; gap: 6px; }
+.fm-head { font: 500 .8rem var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+.fm-head .muted { text-transform: none; letter-spacing: 0; font-size: .8rem; margin-left: 4px; }
+.fm-opts { display: flex; flex-wrap: wrap; gap: 6px; }

@@ -194,6 +194,60 @@ U.findIngredient = (list, name) => {
     || null;
 };
 
+// ---------- Tidying a recipe (on Save) ----------
+// What a careful cook would fix by hand, done for you every time you save:
+//  • a note that says when/how the step goes ("until clear, then set aside") moves from the ingredient to
+//    the step; notes about the ingredient itself ("medium", "diced") stay on the ingredient
+//  • misspelled ingredient names get the usual spelling ("tyme" → thyme), and names are lowercase
+//  • amounts use the tidiest unit (6 tsp → 2 tbsp, 8 tbsp → ½ cup); a note like "splash" becomes the amount
+//  • the ingredient list follows the order the steps use them
+U.STEP_CUE = /^(?:until|till|then|and then|set aside|remove|scrape|for \d|covered|uncovered|stirring|occasionally|over (?:low|medium|high)|on (?:low|medium|high)|in batches|in the (?:pot|pan)|to taste)\b/i;
+U.splitCue = note => {
+  const parts = String(note || '').split(/,\s*/).filter(Boolean);
+  const i = parts.findIndex(p => U.STEP_CUE.test(p.trim()));
+  if (i < 0) return { ing: note || undefined };
+  return { ing: parts.slice(0, i).join(', ') || undefined, step: parts.slice(i).join(', ') };
+};
+U.fixSpelling = name => {
+  const dict = U._dict ||= new Set(App.ING_ICONS.flatMap(([k]) => k.split(' ')).filter(w => w.length >= 4));
+  return String(name).replace(/[A-Za-zé]{4,}/g, w => {
+    const l = w.toLowerCase();
+    if (dict.has(l) || dict.has(l.replace(/(es|s)$/, ''))) return w;
+    let best = null;
+    for (const d of dict) { const t = U.typos(l, d); if (t <= (d.length >= 7 ? 2 : 1) && (!best || t < best[1])) best = [d, t]; }
+    return best ? best[0] : w;
+  });
+};
+U.tidyAmount = g => {
+  if (g.qty == null) return;
+  const whole = x => Math.abs(x - Math.round(x)) < .01;
+  if (U.normUnit(g.unit) === 'tsp' && g.qty >= 3 && whole(g.qty / 3)) { g.qty = Math.round(g.qty / 3); g.unit = 'tbsp'; }
+  if (U.normUnit(g.unit) === 'tbsp' && g.qty >= 4 && whole(g.qty / 4)) { g.qty = Math.round(g.qty / 4) / 4; g.unit = 'cup'; }
+};
+U.tidyRecipe = r => {
+  for (const g of r.ingredients) {
+    let n = U.fixSpelling(g.name.trim());
+    if (/^[A-Z][a-z]/.test(n) && n.slice(1) === n.slice(1).toLowerCase()) n = n[0].toLowerCase() + n.slice(1);
+    g.name = n;
+    U.tidyAmount(g);
+  }
+  for (const s of r.steps) for (const u of s.uses || []) {
+    if (!u.note) continue;
+    // a note that is really an amount ("splash", "a pinch") becomes the amount, when there isn't one
+    const g = r.ingredients.find(x => x.id === u.ing), amt = u.note.trim().match(/^(?:a\s+)?(splash|pinch|dash|drizzle|handful|sprinkle)$/i);
+    if (amt && g && g.qty == null && !g.unit) { g.unit = amt[1].toLowerCase(); delete u.note; continue; }
+    const { ing, step } = U.splitCue(u.note);
+    u.note = ing;
+    if (step && !(s.text || '').toLowerCase().includes(step.toLowerCase())) s.text = s.text ? s.text + ', ' + step : step;
+    if (!u.note) delete u.note;
+  }
+  const first = new Map();
+  r.steps.forEach((s, i) => (s.uses || []).forEach(u => { if (!first.has(u.ing)) first.set(u.ing, i); }));
+  const order = g => g.group ? 1e6 : first.has(g.id) ? first.get(g.id) : 1e5;
+  r.ingredients = r.ingredients.map((g, i) => [g, i]).sort((a, b) => order(a[0]) - order(b[0]) || a[1] - b[1]).map(x => x[0]);
+  return r;
+};
+
 U.category = ing => {
   if (ing.cat) return ing.cat;
   const n = String(ing.name).toLowerCase();

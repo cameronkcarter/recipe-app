@@ -151,7 +151,7 @@ App.views.recipe = (root, { id, edit = false }) => {
   root.onclick = e => {
     // Done: let the bubbles settle into place, then switch back to the cooking view
     const done = e.target.closest('[data-done]');
-    if (done) { e.preventDefault(); S.upsertRecipe(r); root.classList.add('settling'); setTimeout(() => { root.classList.remove('settling'); location.hash = done.getAttribute('href'); }, 260); return; }
+    if (done) { e.preventDefault(); S.upsertRecipe(U.tidyRecipe(r)); root.classList.add('settling'); setTimeout(() => { root.classList.remove('settling'); location.hash = done.getAttribute('href'); }, 260); return; }
     const t = e.target.closest('button');
     if (!t) return;
     const d = t.dataset;

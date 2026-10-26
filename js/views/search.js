@@ -1,21 +1,33 @@
-// Search tab: every recipe on the site. Filter chips on top narrow it by who added it or by tag;
-// each card shows its cook's first name and a heart to save it to your recipe book.
+// Search tab: every recipe on the site. "+ Filter" narrows it by who added a recipe or by tag
+// (the labels cooks put on their recipes); active filters show as chips you can remove.
+// Each card shows its cook's first name and a heart to save it to your recipes.
 // #/u/<id> shows one person's recipes (from the "by …" link on a recipe).
 App.views = App.views || {};
 App.views.search = root => {
   const U = App.util, S = App.store;
   const st = App.views.search.state ||= { query: '', people: [], tags: [] };
+  let open = false; // the filter menu
 
-  // Tags worth filtering by: the most used ones on the site.
-  const topTags = () => {
+  // Tags on the site with how many recipes use each, most used first.
+  const tagCounts = () => {
     const n = {};
     for (const r of S.recipes()) for (const t of new Set((r.tags || []).map(x => x.toLowerCase()))) n[t] = (n[t] || 0) + 1;
-    return Object.keys(n).sort((a, b) => n[b] - n[a] || a.localeCompare(b)).slice(0, 10);
+    return Object.entries(n).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   };
+  const tagIcon = t => t === 'vegan' ? App.icon('leaf') : /instant ?pot/.test(t) ? App.icon('ip') : '';
   const filtersHtml = () => {
-    const people = S.profiles().filter(p => S.recipes().some(r => r.author === p.id));
-    return people.map(p => `<button class="chip filter cook ${st.people.includes(p.id) ? 'on' : ''}" data-person="${U.esc(p.id)}">${U.avatarHtml(p)}${U.esc(U.firstName(p))}</button>`).join('') +
-      topTags().map(t => `<button class="chip filter ${st.tags.includes(t) ? 'on' : ''}" data-tag="${U.esc(t)}">${t === 'vegan' ? App.icon('leaf') : /instant ?pot/.test(t) ? App.icon('ip') : ''}${U.esc(t)}</button>`).join('');
+    const chips = [
+      ...st.people.map(id => { const p = S.profile(id); return p ? `<button class="chip filter on cook" data-person="${U.esc(id)}" aria-label="Remove filter">${U.avatarHtml(p)}${U.esc(U.firstName(p))}${App.glyph('x')}</button>` : ''; }),
+      ...st.tags.map(t => `<button class="chip filter on" data-tag="${U.esc(t)}" aria-label="Remove filter">${tagIcon(t)}${U.esc(t)}${App.glyph('x')}</button>`),
+    ].join('');
+    const cooks = S.profiles().filter(p => S.recipes().some(r => r.author === p.id));
+    const menu = open ? `<div class="card filter-menu">
+        <div class="fm-head">Added by</div>
+        <div class="fm-opts">${cooks.map(p => `<button class="chip filter cook ${st.people.includes(p.id) ? 'on' : ''}" data-person="${U.esc(p.id)}">${U.avatarHtml(p)}${U.esc(p.name)}</button>`).join('')}</div>
+        <div class="fm-head">Tagged <span class="muted">labels cooks add to their recipes</span></div>
+        <div class="fm-opts">${tagCounts().map(([t, n]) => `<button class="chip filter ${st.tags.includes(t) ? 'on' : ''}" data-tag="${U.esc(t)}">${tagIcon(t)}${U.esc(t)}<b>${n}</b></button>`).join('') || '<span class="muted">No tags yet.</span>'}</div>
+      </div>` : '';
+    return `<div class="filters"><button class="chip filter add ${open ? 'on' : ''}" data-act="filters" aria-expanded="${open}">${App.glyph('plus')}Filter</button>${chips}</div>${menu}`;
   };
   const resultsHtml = () => {
     const q = st.query.trim().toLowerCase();
@@ -31,7 +43,7 @@ App.views.search = root => {
   root.innerHTML = `
     ${App.ui.topbar('<h1>Search</h1>')}
     <div class="search-wrap">${App.glyph('search')}<input class="input search" type="search" placeholder="Recipes, ingredients, cooks" value="${U.esc(st.query)}"></div>
-    <div class="filters scroll" id="filters">${filtersHtml()}</div>
+    <div id="filters">${filtersHtml()}</div>
     <div id="results">${resultsHtml()}</div>`;
 
   const redraw = () => { root.querySelector('#filters').innerHTML = filtersHtml(); root.querySelector('#results').innerHTML = resultsHtml(); };
@@ -39,8 +51,10 @@ App.views.search = root => {
   root.onclick = e => {
     const p = e.target.closest('[data-person]'), t = e.target.closest('[data-tag]');
     const toggle = (arr, v) => arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v];
-    if (p) { st.people = toggle(st.people, p.dataset.person); redraw(); }
-    if (t) { st.tags = toggle(st.tags, t.dataset.tag); redraw(); }
+    if (e.target.closest('[data-act=filters]')) { open = !open; redraw(); }
+    else if (p) { st.people = toggle(st.people, p.dataset.person); redraw(); }
+    else if (t) { st.tags = toggle(st.tags, t.dataset.tag); redraw(); }
+    else if (open && !e.target.closest('.filter-menu')) { open = false; redraw(); }
   };
 };
 

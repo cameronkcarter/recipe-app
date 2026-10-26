@@ -24,8 +24,8 @@ Simple, symbol-based recipes with co-op cooking, your own recipe book, and a sho
 - `js/views/` — one file per screen (library = recipe book, recipe, shopping, search + person)
 
 ## Tabs and accounts
-- **Search** (left): every recipe on the site, with filter chips for cooks and tags. The heart saves a recipe to your book.
-- **Book** (middle): your recipe book in one grid: **Mine** (ones you added) and **Saved** (other people's, tinted rose). Chips on top show the counts and filter.
+- **Search** (left): every recipe on the site, with filter chips for cooks and tags. "+ Filter" narrows by cook or tag; the heart saves a recipe to your book (with Undo).
+- **Recipes** (middle): your recipe book in one grid: **Mine** (ones you added) and **Saved** (other people's, tinted rose). Chips on top show the counts and filter.
 - **Shopping** (right): your own shopping list.
 
 The button at the top right of every page is **Log in** (or your picture once logged in): name and picture,
@@ -37,6 +37,11 @@ can edit it. Saving, adding recipes and the shopping list ask you to log in firs
 - ONE knife step: chop/dice/mince/peel together; each ingredient's note says how ("peeled, 1" cubes", "diced").
 - Size / drained / prep notes live on the ingredient in the step ("2 cans black beans · drained, rinsed").
 - Back-to-back same steps are combined; tips, options and storage advice are dropped.
+
+## Saving a recipe
+Save tidies the recipe the way a careful cook would: "until…/then…" notes move from the ingredient to the
+step, misspelled ingredients get the usual spelling, amounts use the tidiest unit (6 tsp → 2 tbsp), a note like
+"splash" becomes the amount, and the ingredient list follows the order of the steps.
 
 ## Adding recipes
 Tap **+** → paste a link, paste recipe text, or start blank. Imports save right away and open in

@@ -38,7 +38,7 @@ App.edit = (() => {
         ${U.ingIconHtml(g)}
         ${first ? inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt' + (amt ? '' : ' empty')) : ''}
         ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
-        <span class="inl un ${u.note ? '' : 'empty'}" contenteditable="true" role="textbox" data-unote="${g.id}" data-ph="+ note" aria-label="Note">${U.esc(u.note || '')}</span>
+        <span class="inl un ${u.note ? '' : 'empty'}" contenteditable="true" role="textbox" data-unote="${g.id}" data-ph="+ prep" aria-label="How it's prepped (diced, drained…)">${U.esc(u.note || '')}</span>
         <button class="x" data-rm-use="${g.id}" aria-label="Remove ${U.esc(g.name)}">${App.glyph('x')}</button>
       </li>`;
     }).join('');
@@ -54,7 +54,7 @@ App.edit = (() => {
             ${inl(`data-add-ing="${s.id}" aria-label="Add ingredient" enterkeyhint="done" list="ing-suggest"`, '', '+ ingredient', 'add-ing')}
             <div class="s-meta">
               <span class="time-field ${s.time ? '' : 'empty'}">${App.icon('clock')}${inl(`data-time="${s.id}" inputmode="numeric" aria-label="Minutes"`, s.time ? s.time + ' min' : '', '+ time', 'time' + (s.time ? '' : ' empty'))}</span>
-              ${inl(`data-text="${s.id}" aria-label="Note"`, s.text, '+ note', 'note' + (s.text ? '' : ' empty'))}
+              ${inl(`data-text="${s.id}" aria-label="When it's done (until…, then…)"`, s.text, '+ until…', 'note' + (s.text ? '' : ' empty'))}
               <button class="heat-btn ${s.heat ? '' : 'off empty'}" data-heat="${s.id}">${App.icon('flame')}${s.heat ? U.HEAT[s.heat].toLowerCase() : 'no'} heat</button>
             </div>
           </div>

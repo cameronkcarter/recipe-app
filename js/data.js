@@ -49,14 +49,14 @@ App.verb = id => App.VERBS.find(v => v.id === (App.VERB_ALIASES[id] || id)) || {
 
 // Keyword → icon name (see js/icons.js). Checked in order, so put specific phrases first.
 App.ING_ICONS = [
-  ['butternut', 'squash'], ['celery', 'celery'], ['red potato', 'redpotato'], ['bouillon', 'bouillon'], ['bullion', 'bouillon'], ['boullion', 'bouillon'], ['bouillion', 'bouillon'], ['boulion', 'bouillon'], ['bouleon', 'bouillon'], ['better than bouillon', 'bouillon'], ['white wine', 'wine'], ['cooking wine', 'wine'], ['squash', 'squash'], ['pumpkin seed', 'seeds'], ['pumpkin', 'pumpkin'], ['sweet potato', 'spud'], ['green onion', 'scallion'], ['scallion', 'scallion'],
+  ['butternut', 'squash'], ['celery', 'celery'], ['red potato', 'redpotato'], ['bouillon', 'bouillon'], ['better than bouillon', 'bouillon'], ['white wine', 'wine'], ['cooking wine', 'wine'], ['squash', 'squash'], ['pumpkin seed', 'seeds'], ['pumpkin', 'pumpkin'], ['sweet potato', 'spud'], ['green onion', 'scallion'], ['scallion', 'scallion'],
   ['bell pepper', 'bellpep'], ['red pepper flake', 'chili'], ['black pepper', 'pepper'], ['coconut milk', 'can'],
   ['chili powder', 'jar'], ['black bean', 'bean'], ['olive oil', 'oil'], ['sour cream', 'tub'],
   ['cornbread', 'bread'], ['soy sauce', 'bottle'], ['maple', 'maple'], ['peanut', 'peanut'],
   ['diced tomato', 'can'], ['crushed tomato', 'can'], ['tomato paste', 'can'], ['tomato sauce', 'can'],
   ['ketchup', 'bottle'], ['tomato', 'tomato'], ['mustard', 'mustard'], ['onion', 'onion'], ['garlic', 'garlic'], ['shallot', 'onion'], ['potato', 'potato'],
   ['avocado', 'avo'], ['cilantro', 'herb'], ['parsley', 'herb'], ['basil', 'herb'], ['thyme', 'herb'],
-  ['rosemary', 'herb'], ['sage', 'herb'], ['oregano', 'herb'], ['mint', 'herb'], ['dill', 'herb'], ['tyme', 'herb'], ['bay leaf', 'herb'], ['bay leaves', 'herb'],
+  ['rosemary', 'herb'], ['sage', 'herb'], ['oregano', 'herb'], ['mint', 'herb'], ['dill', 'herb'], ['bay leaf', 'herb'], ['bay leaves', 'herb'],
   ['jalapeño', 'chili'], ['jalapeno', 'chili'], ['chili', 'chili'], ['paprika', 'jar'], ['cayenne', 'jar'],
   ['salt', 'salt'], ['cumin', 'jar'], ['cinnamon', 'jar'], ['nutmeg', 'jar'], ['turmeric', 'jar'], ['curry', 'jar'], ['vanilla', 'bottle'], ['pepper', 'pepper'], ['bean', 'bean'], ['lentil', 'bean'], ['chickpea', 'bean'],
   ['broth', 'carton'], ['stock', 'carton'], ['water', 'drop'], ['oil', 'oil'],
