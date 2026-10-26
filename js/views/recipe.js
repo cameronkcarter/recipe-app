@@ -142,6 +142,7 @@ App.views.recipe = (root, { id, edit = false }) => {
 
   // Title, icon, source, tags
   root.oninput = e => {
+    if ('addTag' in e.target.dataset) return tagMenu(e.target);
     const f = e.target.dataset.f;
     if (!f) return;
     r[f] = e.target.value;
@@ -186,12 +187,36 @@ App.views.recipe = (root, { id, edit = false }) => {
   };
 
   // Edit mode: a typed tag is added when you press enter or tap away ("quick, soup" adds two).
+  // Tag suggestions: ones that fit this recipe first, then tags already used on the site, then everyday ones.
+  const tagMenuHtml = text => {
+    const have = new Set((r.tags || []).map(x => x.toLowerCase()));
+    const q = text.trim().toLowerCase();
+    const fits = U.fittingTags(r);
+    const used = [...new Set(S.recipes().flatMap(x => (x.tags || []).map(t => t.toLowerCase())))];
+    const all = [...new Set([...fits, ...used, ...App.TAG_SUGGESTIONS])].filter(t => !have.has(t) && (!q || t.includes(q)));
+    if (!all.length) return null;
+    const icon = t => t === 'vegan' ? App.icon('leaf') : /instant ?pot/.test(t) ? App.icon('ip') : null;
+    return all.slice(0, 9).map(t => `<button class="sug" data-pick="${U.esc(t)}">${icon(t) ? `<span class="ing-ico">${icon(t)}</span>` : '<span class="ing-ico letter">#</span>'}${U.esc(t)}${fits.includes(t) ? '<small>fits</small>' : ''}</button>`).join('');
+  };
+  const addTags = list => {
+    r.tags = [...new Set([...(r.tags || []), ...list])];
+    render();
+    root.querySelector('[data-add-tag]')?.focus();
+  };
+  const tagMenu = box => {
+    const html = tagMenuHtml(box.value);
+    if (!html) return App.ui.closePopover();
+    if (box._pop?.el.isConnected) box._pop.update(html);
+    else box._pop = App.ui.popover(box, html, t => { box.value = ''; addTags([t]); });
+  };
+  const onFocus = e => { if (e.target.dataset && 'addTag' in e.target.dataset) tagMenu(e.target); };
+  root.addEventListener('focus', onFocus, true); // focus doesn't bubble; capture catches the tag box
+
   root.onchange = e => {
     if (!('addTag' in e.target.dataset)) return;
+    App.ui.closePopover();
     const add = e.target.value.split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
-    r.tags = [...new Set([...(r.tags || []), ...add])];
-    render();
-    if (add.length) root.querySelector('[data-add-tag]')?.focus();
+    if (add.length) addTags(add);
   };
 
   const unbind = edit ? E.bind(root, r, render) : bindSwipe();
@@ -248,6 +273,8 @@ App.views.recipe = (root, { id, edit = false }) => {
   ui.keepAwake(!edit); // keep the phone screen on while cooking
   return () => {
     unbind?.();
+    root.removeEventListener('focus', onFocus, true);
+    App.ui.closePopover();
     root.classList.remove('wiggle', 'settling');
     ui.keepAwake(false);
     if (edit && App.session.justImported === r.id) delete App.session.justImported;

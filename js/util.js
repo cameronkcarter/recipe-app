@@ -248,6 +248,23 @@ U.tidyRecipe = r => {
   return r;
 };
 
+// Tags that clearly fit a recipe: what it's cooked in, how long it takes, what's in it, what it is.
+U.fittingTags = r => {
+  const out = [];
+  const verbs = new Set((r.steps || []).map(s => App.verb(s.verb).id));
+  if (verbs.has('pressure')) out.push('instant pot');
+  if (r.steps?.length && U.schedule(r, 1).total <= 30) out.push('quick');
+  const icons = (r.ingredients || []).filter(g => !/\bvegan\b|plant|vegetable broth|coconut milk|almond milk|oat milk/i.test(g.name)).map(g => U.ingIcon(g.name));
+  const meat = ['drum', 'steak', 'bacon', 'sausage', 'fish', 'shrimp'], animal = [...meat, 'milk', 'butter', 'cheese', 'egg', 'tub', 'honey'];
+  if (r.ingredients?.length) {
+    if (!icons.some(i => animal.includes(i)) && !/chicken|beef|pork|turkey|bouillon/i.test(r.ingredients.map(g => g.name).join(' '))) out.push('vegan');
+    else if (!icons.some(i => meat.includes(i)) && !/chicken|beef|pork|turkey/i.test(r.ingredients.map(g => g.name).join(' '))) out.push('vegetarian');
+  }
+  const t = String(r.title || '').toLowerCase();
+  for (const w of ['soup', 'stew', 'curry', 'salad', 'pasta', 'chili', 'dessert', 'breakfast', 'cookie', 'cake']) if (t.includes(w)) out.push(w);
+  return [...new Set(out)];
+};
+
 U.category = ing => {
   if (ing.cat) return ing.cat;
   const n = String(ing.name).toLowerCase();

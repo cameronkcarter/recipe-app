@@ -113,6 +113,10 @@ App.SEED_PROFILES = [
 // Who added the recipes that existed before profiles.
 App.SEED_AUTHORS = { 'sweet-potato-chili': 'cameron', 'instant-pot-butternut-squash-soup': 'cameron', 'pasted-recipe': 'ellen' };
 
+// Everyday tags offered when you add a tag to a recipe (alongside ones that fit it, and ones already in use).
+App.TAG_SUGGESTIONS = ['dinner', 'lunch', 'breakfast', 'dessert', 'side', 'snack', 'quick', 'vegan', 'vegetarian', 'gluten-free', 'dairy-free',
+  'instant pot', 'slow cooker', 'one pot', 'sheet pan', 'make ahead', 'freezer friendly', 'meal prep', 'spicy', 'kid friendly', 'soup', 'salad', 'pasta'];
+
 // Store sections for the shopping list (in walking order).
 App.CATEGORIES = [
   { id: 'produce', icon: 'greens', label: 'Produce' },
