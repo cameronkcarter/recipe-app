@@ -21,6 +21,7 @@ App.views.recipe = (root, { id, edit = false }) => {
   // Steps swiped off as done while cooking. Lives only while the recipe is open.
   const done = new Set();
   let picking = false; // edit mode: the icon picker is open
+  let lastDuo = null;   // the co-op split as last drawn
   let tagsOpen = false; // cooking view: the extra tags are shown
   const servings = () => edit ? (r.servings || 1) : (App.session.servings[r.id] || r.servings || 1);
   const scale = () => servings() / (r.servings || 1);
@@ -28,7 +29,11 @@ App.views.recipe = (root, { id, edit = false }) => {
   function render() {
     const y = window.scrollY;
     const coop = App.session.mode === 'coop';
-    const solo = U.schedule(r, 1), duo = U.schedule(r, 2);
+    // Co-op: the recipe's split (chosen in edit mode, saved with the recipe), with any swaps made while
+    // cooking on top — those last only for now and are never saved.
+    const tweaks = !edit && App.session.split?.[r.id];
+    const asCooked = tweaks ? { ...r, steps: r.steps.map(s => tweaks[s.id] ? { ...s, chef: tweaks[s.id] } : s) } : r;
+    const solo = U.schedule(r, 1), duo = lastDuo = U.schedule(asCooked, 2);
     const sc = scale();
     const ingOpen = !!App.session.ingOpen;
     const imported = edit && App.session.justImported === r.id;
@@ -89,8 +94,9 @@ App.views.recipe = (root, { id, edit = false }) => {
       </div>
       <div class="coop-line">
         ${coop
-          ? `<span class="a">● A</span> <span class="b">● B</span> · ~${U.fmtMins(duo.total)}<span class="muted"> · ${edit ? 'tap A / B to swap' : 'tap a number to swap'}</span>
-             ${E.isCustomSplit(r) ? `<button class="link" data-act="auto">${App.glyph('undo')}Auto-split</button>` : ''}`
+          ? `<span class="a">● A</span> <span class="b">● B</span> · ~${U.fmtMins(duo.total)}<span class="muted"> · ${edit ? 'tap A / B to set who does each step' : 'tap a number to swap, just for now'}</span>
+             ${edit && E.isCustomSplit(r) ? `<button class="link" data-act="auto">${App.glyph('undo')}Use automatic split</button>` : ''}
+             ${tweaks ? `<button class="link" data-act="reset-split">${App.glyph('undo')}Reset</button>` : ''}`
           : `<span class="time">${App.icon('clock')}~${U.fmtMins(solo.total)}</span>`}
       </div>
 
@@ -171,8 +177,15 @@ App.views.recipe = (root, { id, edit = false }) => {
       else App.session.servings[r.id] = Math.max(1, servings() + +d.serv);
       render();
     }
-    else if (d.swap) { E.swapChef(r, d.swap); render(); }
-    else if (d.act === 'auto') { E.autoSplit(r, !edit); render(); }
+    else if (d.swap) {
+      // cooking view: swap a step to the other chef for now (the recipe's saved split stays as it is)
+      const t = ((App.session.split ||= {})[r.id] ||= {});
+      if (!Object.keys(t).length) for (const s of r.steps) t[s.id] = lastDuo.byId[s.id].chef; // keep the rest where they are
+      t[d.swap] = t[d.swap] === 'A' ? 'B' : 'A';
+      render();
+    }
+    else if (d.act === 'reset-split') { delete App.session.split[r.id]; render(); }
+    else if (d.act === 'auto') { E.autoSplit(r, false); render(); } // edit mode; kept on Save
     else if ('insert' in d) { const n = E.newStep(r, +d.insert); render(); root.querySelector(`[data-add-ing="${n.id}"]`)?.focus(); }
     else if (d.act === 'add-step') { E.newStep(r); render(); root.querySelector('.step.edit:last-child [data-add-ing]')?.focus(); }
     else if (d.act === 'delete') {
