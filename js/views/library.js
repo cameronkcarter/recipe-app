@@ -50,7 +50,7 @@ App.views.library = root => {
   };
 
   if (!S.me()) {
-    root.innerHTML = `${App.ui.topbar('<h1>Recipes</h1>')}
+    root.innerHTML = `${App.ui.topbar('<h1>My Recipes</h1>')}
       <div class="card logged-out">
         <div class="big">${App.icon('book')}</div>
         <h2>Your recipe book</h2>
@@ -61,7 +61,7 @@ App.views.library = root => {
   }
 
   root.innerHTML = `
-    ${App.ui.topbar('<h1>Recipes</h1>')}
+    ${App.ui.topbar('<h1>My Recipes</h1>')}
     <div class="search-wrap">${App.glyph('search')}<input class="input search" type="search" placeholder="Search your book" value="${U.esc(query)}"></div>
     <div class="filters" id="chips">${chipsHtml()}</div>
     <div id="cards">${cardsHtml()}</div>

@@ -28,7 +28,7 @@ Simple, symbol-based recipes with co-op cooking, your own recipe book, and a sho
 
 ## Tabs and accounts
 - **Search** (left): every recipe on the site, with filter chips for cooks and tags. "+ Filter" narrows by cook or tag; the heart saves a recipe to your book (with Undo).
-- **Recipes** (middle): your recipe book in one grid: **Mine** (ones you added) and **Saved** (other people's, tinted rose). Chips on top show the counts and filter.
+- **My Recipes** (middle): your recipe book in one grid: **Mine** (ones you added) and **Saved** (other people's, tinted rose). Chips on top show the counts and filter.
 - **Shopping** (right): your own shopping list.
 
 The button at the top right of every page is **Log in** (or your picture once logged in): name and picture,
