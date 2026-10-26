@@ -118,7 +118,7 @@ App.ui = {};
   App.ui.useAmount = (use, ing, scale) => {
     const qty = use.qty != null ? use.qty : ing.qty;
     const unit = use.qty != null ? (use.unit ?? ing.unit) : ing.unit;
-    return qty != null ? U.fmtAmount(qty * scale, U.normUnit(unit)) : '';
+    return qty != null || unit ? U.fmtAmount(qty == null ? null : qty * scale, U.normUnit(unit)) : '';
   };
 
   // Two columns: the action on the left, what it uses on the right.

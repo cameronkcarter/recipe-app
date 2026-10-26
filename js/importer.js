@@ -8,15 +8,15 @@ App.importer = (() => {
 
   // Words in instructions → verb ids from App.VERBS
   const SYN = {
-    'sauté': 'saute', saute: 'saute', sautee: 'saute', cook: 'cook', fry: 'fry', brown: 'cook', sear: 'sear',
-    heat: 'heat', boil: 'boil', bring: 'boil', simmer: 'simmer', steam: 'steam', melt: 'melt',
-    preheat: 'preheat', bake: 'bake', roast: 'roast', broil: 'broil', grill: 'grill', toast: 'toast',
-    add: 'add', pour: 'pour', place: 'add', put: 'add', transfer: 'pour', combine: 'mix', mix: 'mix', toss: 'mix',
-    stir: 'stir', whisk: 'whisk', beat: 'whisk', fold: 'fold', blend: 'blend', puree: 'blend', 'purée': 'blend',
+    'sauté': 'saute', saute: 'saute', sautee: 'saute', cook: 'cook', fry: 'saute', brown: 'saute', sear: 'saute',
+    heat: 'heat', boil: 'boil', bring: 'boil', simmer: 'simmer', steam: 'boil', melt: 'heat', deglaze: 'deglaze',
+    preheat: 'preheat', bake: 'bake', roast: 'bake', broil: 'broil', grill: 'grill', toast: 'bake',
+    add: 'add', pour: 'add', place: 'add', put: 'add', transfer: 'add', combine: 'mix', mix: 'mix', toss: 'mix',
+    stir: 'mix', whisk: 'mix', beat: 'mix', fold: 'mix', blend: 'blend', puree: 'blend', 'purée': 'blend',
     mash: 'mash', knead: 'knead', season: 'season', sprinkle: 'season', marinate: 'marinate',
-    drain: 'drain', rinse: 'rinse', chop: 'chop', dice: 'dice', mince: 'mince', slice: 'slice', cut: 'chop',
-    grate: 'grate', shred: 'grate', peel: 'peel', rest: 'rest', chill: 'chill', refrigerate: 'chill', cool: 'cool',
-    spread: 'spread', top: 'top', garnish: 'garnish', serve: 'serve',
+    drain: 'drain', rinse: 'rinse', chop: 'chop', dice: 'chop', mince: 'chop', slice: 'chop', cut: 'chop',
+    grate: 'grate', shred: 'shred', peel: 'chop', rest: 'rest', chill: 'chill', refrigerate: 'chill', cool: 'rest',
+    spread: 'top', top: 'top', garnish: 'top', serve: 'serve',
   };
   const STOP = new Set(['fresh', 'large', 'medium', 'small', 'vegan', 'ground', 'dried', 'extra', 'virgin', 'kosher', 'sea', 'smoked', 'unsalted', 'salted', 'whole', 'raw', 'boneless', 'skinless', 'plain', 'light', 'dark', 'frozen', 'canned', 'low-sodium', 'of', 'mild', 'hot', 'sweet', 'extra-virgin', 'fire-roasted', 'yellow', 'white', 'freshly']);
   const GENERIC = new Set(['powder', 'sauce', 'paste', 'seed', 'seeds', 'leaf', 'leaves', 'juice', 'flakes', 'extract', 'mix', 'chips', 'zest']);
@@ -36,7 +36,7 @@ App.importer = (() => {
     grate: 'grated', shred: 'grated', cube: 'cubed', julienne: 'julienned', cut: '',
   };
   const DESC_ORDER = ['peeled', 'trimmed', 'stemmed', 'cored', 'pitted', 'seeds removed', 'halved', 'quartered'];
-  const CUT_VERB = { diced: 'dice', chopped: 'chop', minced: 'mince', sliced: 'slice', grated: 'grate', cubed: 'dice', julienned: 'slice', peeled: 'peel' };
+  const CUT_VERB = { diced: 'chop', chopped: 'chop', minced: 'chop', sliced: 'chop', grated: 'grate', cubed: 'chop', julienned: 'chop', peeled: 'chop' };
   const isSize = s => /^(small|medium|large|big|extra[- ]large|jumbo)$/i.test(s.trim());
   const isPrepText = s => /\b(diced|chopped|minced|sliced|grated|shredded|peeled|cubed|seeded|cored|halved|quartered|trimmed|stemmed|pitted|julienned|cut into|seeds removed)\b/i.test(s);
   const isDrainText = s => /\b(drained|rinsed)\b/i.test(s);

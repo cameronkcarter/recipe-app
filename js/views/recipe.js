@@ -28,7 +28,7 @@ App.views.recipe = (root, { id, edit = false }) => {
     const coop = App.session.mode === 'coop';
     const solo = U.schedule(r, 1), duo = U.schedule(r, 2);
     const sc = scale();
-    const ingOpen = !!App.session.ingOpen;
+    const ingOpen = !!App.session.ingOpen || (edit && !r.steps.length); // a new recipe starts with its ingredients open
     const imported = edit && App.session.justImported === r.id;
 
     let lastGroup = '';
@@ -36,7 +36,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       const head = (g.group || '') !== lastGroup && g.group ? `<li class="group-head">${U.esc(g.group)}</li>` : '';
       lastGroup = g.group || '';
       if (edit) return head + E.ingRowHtml(r, g);
-      const amt = g.qty != null ? U.fmtAmount(g.qty * sc, U.normUnit(g.unit)) : '';
+      const amt = g.qty != null || g.unit ? U.fmtAmount(g.qty == null ? null : g.qty * sc, U.normUnit(g.unit)) : '';
       return `${head}<li>${U.ingIconHtml(g)}<span class="qty">${U.esc(amt) || '—'}</span>
         <span class="nm">${U.esc(g.name)}${g.note ? ` <span class="extra">· ${U.esc(g.note)}</span>` : ''}</span></li>`;
     }).join('');
@@ -94,7 +94,9 @@ App.views.recipe = (root, { id, edit = false }) => {
         <button class="ing-toggle" data-act="toggle-ings" aria-expanded="${ingOpen}">${App.glyph('chevron')} Ingredients <span class="count">${r.ingredients.length}</span></button>
         ${edit ? '' : `<button class="btn small" data-act="to-list">${App.icon('basket')}Add to list</button>`}
       </div>
-      ${ingOpen ? (r.ingredients.length ? `<ul class="card ing-list ${edit ? 'edit' : ''}">${ingHtml}</ul>` : `<div class="muted">No ingredients yet.</div>`) : ''}
+      ${ingOpen ? (edit ? `<ul class="card ing-list edit">${ingHtml}<li class="ing-item"><input class="inl add-ing" data-add-list placeholder="+ ingredient (like 2 carrots)" aria-label="Add an ingredient" list="ing-suggest" enterkeyhint="done" autocomplete="off"></li></ul>`
+        : r.ingredients.length ? `<ul class="card ing-list">${ingHtml}</ul>` : `<div class="muted">No ingredients yet.</div>`) : ''}
+      ${edit ? E.suggestHtml(r) : ''}
 
       <div class="section-label">Steps <span class="hint">${edit ? 'drag to move · tap to change' : 'swipe when done'}</span></div>
       <div class="steps">${stepHtml || (edit ? '' : '<div class="muted">No steps yet.</div>')}</div>

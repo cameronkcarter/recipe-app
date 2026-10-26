@@ -3,68 +3,60 @@ window.App = window.App || {};
 
 // Each verb has an icon. "passive" verbs (simmer, bake, rest...) run on their own,
 // so in co-op mode the chef is free to do something else while they happen.
+// A short list on purpose: one word per thing your hands actually do. How exactly (diced, minced,
+// peeled, browned…) goes in the ingredient's note, not in a separate action.
 App.VERBS = [
   // Prep
   { id: 'chop',     label: 'Chop',     icon: 'knife',    group: 'Prep' },
-  { id: 'dice',     label: 'Dice',     icon: 'knife',    group: 'Prep' },
-  { id: 'mince',    label: 'Mince',    icon: 'knife',    group: 'Prep' },
-  { id: 'slice',    label: 'Slice',    icon: 'knife',    group: 'Prep' },
   { id: 'grate',    label: 'Grate',    icon: 'grater',   group: 'Prep' },
-  { id: 'peel',     label: 'Peel',     icon: 'peeler',   group: 'Prep' },
   { id: 'rinse',    label: 'Rinse',    icon: 'drop',     group: 'Prep' },
   { id: 'drain',    label: 'Drain',    icon: 'colander', group: 'Prep' },
-  { id: 'measure',  label: 'Measure',  icon: 'spoon',    group: 'Prep' },
+  { id: 'marinate', label: 'Marinate', icon: 'hourglass', group: 'Prep', passive: true },
   // Mix
   { id: 'add',      label: 'Add',      icon: 'plus',     group: 'Mix' },
   { id: 'mix',      label: 'Mix',      icon: 'bowl',     group: 'Mix' },
-  { id: 'stir',     label: 'Stir',     icon: 'spoon',    group: 'Mix' },
-  { id: 'whisk',    label: 'Whisk',    icon: 'whisk',    group: 'Mix' },
-  { id: 'fold',     label: 'Fold',     icon: 'spoon',    group: 'Mix' },
   { id: 'season',   label: 'Season',   icon: 'salt',     group: 'Mix' },
-  { id: 'pour',     label: 'Pour',     icon: 'pitcher',  group: 'Mix' },
   { id: 'blend',    label: 'Blend',    icon: 'blender',  group: 'Mix' },
   { id: 'mash',     label: 'Mash',     icon: 'masher',   group: 'Mix' },
+  { id: 'shred',    label: 'Shred',    icon: 'fork',     group: 'Mix' },
   { id: 'knead',    label: 'Knead',    icon: 'dough',    group: 'Mix' },
-  { id: 'marinate', label: 'Marinate', icon: 'hourglass', group: 'Mix', passive: true },
   // Stove
   { id: 'heat',     label: 'Heat',     icon: 'flame',    group: 'Stove' },
   { id: 'saute',    label: 'Sauté',    icon: 'pan',      group: 'Stove' },
-  { id: 'fry',      label: 'Fry',      icon: 'pan',      group: 'Stove' },
-  { id: 'sear',     label: 'Sear',     icon: 'pan',      group: 'Stove' },
-  { id: 'cook',     label: 'Cook',     icon: 'pan',      group: 'Stove' },
+  { id: 'deglaze',  label: 'Deglaze',  icon: 'pitcher',  group: 'Stove' },
+  { id: 'cook',     label: 'Cook',     icon: 'pot',      group: 'Stove' },
   { id: 'boil',     label: 'Boil',     icon: 'pot',      group: 'Stove', passive: true },
   { id: 'simmer',   label: 'Simmer',   icon: 'pot',      group: 'Stove', passive: true },
   { id: 'pressure', label: 'Pressure cook', icon: 'ip',  group: 'Stove', passive: true },
-  { id: 'steam',    label: 'Steam',    icon: 'pot',      group: 'Stove', passive: true },
-  { id: 'melt',     label: 'Melt',     icon: 'butter',   group: 'Stove' },
   // Oven
   { id: 'preheat',  label: 'Preheat',  icon: 'thermo',   group: 'Oven', passive: true },
   { id: 'bake',     label: 'Bake',     icon: 'oven',     group: 'Oven', passive: true },
-  { id: 'roast',    label: 'Roast',    icon: 'oven',     group: 'Oven', passive: true },
   { id: 'broil',    label: 'Broil',    icon: 'flame',    group: 'Oven', passive: true },
   { id: 'grill',    label: 'Grill',    icon: 'grill',    group: 'Oven' },
-  { id: 'toast',    label: 'Toast',    icon: 'toast',    group: 'Oven' },
   // Finish
   { id: 'rest',     label: 'Rest',     icon: 'hourglass', group: 'Finish', passive: true },
   { id: 'chill',    label: 'Chill',    icon: 'snow',     group: 'Finish', passive: true },
-  { id: 'cool',     label: 'Cool',     icon: 'snow',     group: 'Finish', passive: true },
-  { id: 'spread',   label: 'Spread',   icon: 'butter',   group: 'Finish' },
   { id: 'top',      label: 'Top',      icon: 'sparkle',  group: 'Finish' },
-  { id: 'garnish',  label: 'Garnish',  icon: 'herb',     group: 'Finish' },
   { id: 'serve',    label: 'Serve',    icon: 'cloche',   group: 'Finish' },
 ];
-App.verb = id => App.VERBS.find(v => v.id === id) || { id, label: id, icon: 'cloche' };
+// Actions from the longer, older list still show up right: each one maps to the action that replaced it.
+App.VERB_ALIASES = {
+  dice: 'chop', mince: 'chop', slice: 'chop', peel: 'chop', measure: 'add', pour: 'add',
+  stir: 'mix', whisk: 'mix', fold: 'mix', fry: 'saute', sear: 'saute', brown: 'saute', steam: 'boil',
+  melt: 'heat', roast: 'bake', toast: 'bake', cool: 'rest', spread: 'top', garnish: 'top',
+};
+App.verb = id => App.VERBS.find(v => v.id === (App.VERB_ALIASES[id] || id)) || { id, label: id, icon: 'cloche' };
 
 // Keyword → icon name (see js/icons.js). Checked in order, so put specific phrases first.
 App.ING_ICONS = [
-  ['butternut', 'squash'], ['squash', 'squash'], ['pumpkin seed', 'seeds'], ['pumpkin', 'pumpkin'], ['sweet potato', 'spud'], ['green onion', 'scallion'], ['scallion', 'scallion'],
+  ['butternut', 'squash'], ['celery', 'celery'], ['red potato', 'redpotato'], ['bouillon', 'bouillon'], ['bullion', 'bouillon'], ['boullion', 'bouillon'], ['bouillion', 'bouillon'], ['boulion', 'bouillon'], ['bouleon', 'bouillon'], ['better than bouillon', 'bouillon'], ['white wine', 'wine'], ['cooking wine', 'wine'], ['squash', 'squash'], ['pumpkin seed', 'seeds'], ['pumpkin', 'pumpkin'], ['sweet potato', 'spud'], ['green onion', 'scallion'], ['scallion', 'scallion'],
   ['bell pepper', 'bellpep'], ['red pepper flake', 'chili'], ['black pepper', 'pepper'], ['coconut milk', 'can'],
   ['chili powder', 'jar'], ['black bean', 'bean'], ['olive oil', 'oil'], ['sour cream', 'tub'],
   ['cornbread', 'bread'], ['soy sauce', 'bottle'], ['maple', 'maple'], ['peanut', 'peanut'],
   ['diced tomato', 'can'], ['crushed tomato', 'can'], ['tomato paste', 'can'], ['tomato sauce', 'can'],
   ['ketchup', 'bottle'], ['tomato', 'tomato'], ['mustard', 'mustard'], ['onion', 'onion'], ['garlic', 'garlic'], ['shallot', 'onion'], ['potato', 'potato'],
   ['avocado', 'avo'], ['cilantro', 'herb'], ['parsley', 'herb'], ['basil', 'herb'], ['thyme', 'herb'],
-  ['rosemary', 'herb'], ['sage', 'herb'], ['oregano', 'herb'], ['mint', 'herb'], ['dill', 'herb'],
+  ['rosemary', 'herb'], ['sage', 'herb'], ['oregano', 'herb'], ['mint', 'herb'], ['dill', 'herb'], ['tyme', 'herb'], ['bay leaf', 'herb'], ['bay leaves', 'herb'],
   ['jalapeño', 'chili'], ['jalapeno', 'chili'], ['chili', 'chili'], ['paprika', 'jar'], ['cayenne', 'jar'],
   ['salt', 'salt'], ['cumin', 'jar'], ['cinnamon', 'jar'], ['nutmeg', 'jar'], ['turmeric', 'jar'], ['curry', 'jar'], ['vanilla', 'bottle'], ['pepper', 'pepper'], ['bean', 'bean'], ['lentil', 'bean'], ['chickpea', 'bean'],
   ['broth', 'carton'], ['stock', 'carton'], ['water', 'drop'], ['oil', 'oil'],

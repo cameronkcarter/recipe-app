@@ -33,7 +33,7 @@ App.edit = (() => {
       const g = ing(r, u.ing);
       if (!g) return '';
       const first = !usedBefore.has(g.id);
-      const amt = first && g.qty != null ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
+      const amt = first && (g.qty != null || g.unit) ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
       return `<li class="bubble" data-ing="${g.id}" style="--i:${(i + k) % 5}">
         ${U.ingIconHtml(g)}
         ${first ? inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt' + (amt ? '' : ' empty')) : ''}
@@ -48,10 +48,10 @@ App.edit = (() => {
       <div class="body">
         <div class="s-grid">
           <label class="s-verb verb-pick ${v.label.length > 7 ? 'long' : ''}"><span class="vi">${App.icon(v.icon)}</span><span class="vl">${U.esc(v.label)}</span>
-            <select data-verb="${s.id}" aria-label="Action">${verbOptions(s.verb)}</select></label>
+            <select data-verb="${s.id}" aria-label="Action">${verbOptions(App.verb(s.verb).id)}</select></label>
           <div class="s-what">
             ${bubbles ? `<ul class="s-ings">${bubbles}</ul>` : ''}
-            ${inl(`data-add-ing="${s.id}" aria-label="Add ingredient" enterkeyhint="done"`, '', '+ ingredient', 'add-ing')}
+            ${inl(`data-add-ing="${s.id}" aria-label="Add ingredient" enterkeyhint="done" list="ing-suggest"`, '', '+ ingredient', 'add-ing')}
             <div class="s-meta">
               <span class="time-field ${s.time ? '' : 'empty'}">${App.icon('clock')}${inl(`data-time="${s.id}" inputmode="numeric" aria-label="Minutes"`, s.time ? s.time + ' min' : '', '+ time', 'time' + (s.time ? '' : ' empty'))}</span>
               ${inl(`data-text="${s.id}" aria-label="Note"`, s.text, '+ note', 'note' + (s.text ? '' : ' empty'))}
@@ -65,7 +65,7 @@ App.edit = (() => {
   }
 
   function ingRowHtml(r, g) {
-    const amt = g.qty != null ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
+    const amt = g.qty != null || g.unit ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
     return `<li class="ing-item">${U.ingIconHtml(g)}
       ${inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt')}
       ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
@@ -84,14 +84,30 @@ App.edit = (() => {
     const p = U.parseIngredientLine(text);
     if (!p) return;
     const s = r.steps.find(x => x.id === stepId);
-    let g = r.ingredients.find(x => x.name.toLowerCase() === p.name.toLowerCase());
+    let g = U.findIngredient(r.ingredients, p.name);
+    if (g && g.qty == null && !g.unit && (p.qty != null || p.unit)) { g.qty = p.qty; g.unit = p.unit; } // typed an amount it didn't have yet
     if (!g) {
       g = p;
       const firstTop = r.ingredients.findIndex(x => x.group);
       if (firstTop < 0) r.ingredients.push(g); else r.ingredients.splice(firstTop, 0, g);
     }
     s.uses ||= [];
-    if (!s.uses.some(u => u.ing === g.id)) s.uses.push({ ing: g.id });
+    if (!s.uses.some(u => u.ing === g.id)) s.uses.push(p.note && g !== p ? { ing: g.id, note: p.note } : { ing: g.id });
+  }
+  // The ingredient list (edit mode) can take ingredients before any step uses them.
+  function addIngredientToList(r, text) {
+    const p = U.parseIngredientLine(text);
+    if (!p) return;
+    const g = U.findIngredient(r.ingredients, p.name);
+    if (g) { if (p.qty != null || p.unit) { g.qty = p.qty; g.unit = p.unit; } if (p.note) g.note = p.note; return; }
+    const firstTop = r.ingredients.findIndex(x => x.group);
+    if (firstTop < 0) r.ingredients.push(p); else r.ingredients.splice(firstTop, 0, p);
+  }
+  // Names the "+ ingredient" boxes suggest: this recipe's ingredients first, then everyday ones.
+  function suggestHtml(r) {
+    const common = [...new Set(App.ING_ICONS.map(([k]) => k).filter(k => k.length > 3 && !/^(berr|nut|oat)$/.test(k)))];
+    const mine = r.ingredients.map(g => g.name);
+    return `<datalist id="ing-suggest">${[...new Set([...mine, ...common])].map(n => `<option value="${U.esc(n)}"></option>`).join('')}</datalist>`;
   }
   // Removing an ingredient from its last step removes it from the recipe too.
   function removeUse(r, stepId, ingId) {
@@ -158,7 +174,7 @@ App.edit = (() => {
     on(root, 'change', e => {
       const t = e.target, d = t.dataset;
       if (d.verb) { r.steps.find(s => s.id === d.verb).verb = t.value; commit(true); }
-      else if (d.amt) { setAmount(ing(r, d.amt), t.value); commit(); }
+      else if (d.amt) { setAmount(ing(r, d.amt), t.value); commit(true); } // the ingredient list shows it too
       else if (d.name) {
         const g = ing(r, d.name);
         if (t.value.trim()) g.name = t.value.trim();
@@ -177,6 +193,7 @@ App.edit = (() => {
         t.value = n > 0 ? n + ' min' : ''; autosize(t); commit();
       }
       else if (d.addIng && t.value.trim()) { addIngredientToStep(r, d.addIng, t.value); commit(true); }
+      else if ('addList' in d && t.value.trim()) { addIngredientToList(r, t.value); commit(true); root.querySelector('[data-add-list]')?.focus(); }
     });
     on(root, 'keydown', e => {
       if (e.key === 'Enter' && e.target.classList.contains('inl')) { e.preventDefault(); e.target.blur(); }
@@ -329,5 +346,5 @@ App.edit = (() => {
   function isCustomSplit(r) { return r.steps.some(s => s.chef === 'A' || s.chef === 'B'); }
   function autoSplit(r, persist = true) { r.steps.forEach(s => delete s.chef); if (persist) save(r); }
 
-  return { autosizeAll, stepHtml, ingRowHtml, bind, newStep, swapChef, autoSplit, isCustomSplit };
+  return { autosizeAll, stepHtml, ingRowHtml, suggestHtml, bind, newStep, swapChef, autoSplit, isCustomSplit };
 })();

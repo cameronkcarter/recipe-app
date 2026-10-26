@@ -63,6 +63,10 @@ const UNIT_ALIASES = {
   bag: ['bag', 'bags'],
   bottle: ['bottle', 'bottles'],
   carton: ['carton', 'cartons'],
+  splash: ['splash', 'splashes'],
+  drizzle: ['drizzle'],
+  sprinkle: ['sprinkle'],
+  stalk: ['stalk', 'stalks', 'rib', 'ribs'],
 };
 const ALIAS = {};
 for (const [k, list] of Object.entries(UNIT_ALIASES)) for (const a of list) ALIAS[a] = k;
@@ -75,7 +79,7 @@ U.UNITS = Object.keys(UNIT_ALIASES);
 
 const VOL = { tsp: 1, tbsp: 3, cup: 48, 'fl oz': 6, ml: 0.202884, l: 202.884 }; // in tsp
 const WT = { g: 1, kg: 1000, oz: 28.3495, lb: 453.592 };                       // in grams
-const PLURAL = new Set(['cup', 'clove', 'can', 'jar', 'bag', 'bottle', 'carton', 'pinch', 'dash', 'bunch', 'package', 'slice', 'stick', 'head', 'sprig', 'handful']);
+const PLURAL = new Set(['cup', 'clove', 'can', 'jar', 'bag', 'bottle', 'carton', 'pinch', 'dash', 'bunch', 'package', 'slice', 'stick', 'head', 'sprig', 'handful', 'stalk']);
 U.fmtUnit = (unit, qty) => {
   if (!unit) return '';
   if (unit === 'box' && qty != null && qty > 1) return 'boxes';
@@ -128,7 +132,21 @@ U.mergeAmounts = items => {
 U.ingIcon = name => {
   const n = String(name).toLowerCase();
   for (const [k, ico] of App.ING_ICONS) if (n.includes(k)) return ico;
+  // close enough: a word that's one letter off (two for long words) from a known ingredient
+  for (const w of n.match(/[a-zé]{4,}/g) || [])
+    for (const [k, ico] of App.ING_ICONS) if (!k.includes(' ') && k.length >= 4 && U.typos(w, k) <= (k.length >= 7 ? 2 : 1)) return ico;
   return null;
+};
+// How many letters you'd change to turn one word into the other (Levenshtein distance).
+U.typos = (a, b) => {
+  if (Math.abs(a.length - b.length) > 2) return 9;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
 };
 // Icon names (js/icons.js); older saved data may still hold an emoji.
 U.iconName = v => !v ? null : App.ICONS[v] ? v : App.EMOJI_ICONS[String(v).replace(/️/g, '')] || null;
@@ -163,6 +181,19 @@ U.tagIcons = r => {
   if (/instant ?pot|insta ?pot|pressure cook/.test(words) || (r.steps || []).some(s => s.verb === 'pressure')) out.push({ icon: 'ip', label: 'Instant Pot' });
   return out;
 };
+// The recipe's own ingredient that a typed name means: "chicken" → "Chicken breast", "onions" → "Yellow onion",
+// "tyme" → "thyme". Exact names win; otherwise a whole-word match, then a near-miss spelling.
+U.findIngredient = (list, name) => {
+  const norm = s => String(s).toLowerCase().trim().replace(/\s+/g, ' ').split(' ').map(w => w.replace(/(es|s)$/, '')).join(' ');
+  const n = norm(name);
+  if (!n) return null;
+  const words = s => new Set(s.split(' ').filter(w => w.length > 2));
+  return list.find(g => norm(g.name) === n)
+    || list.find(g => { const a = words(norm(g.name)), b = words(n); return a.size && b.size && ([...b].every(w => a.has(w)) || [...a].every(w => b.has(w))); })
+    || (n.length >= 5 ? list.find(g => U.typos(norm(g.name), n) <= 1) : null)
+    || null;
+};
+
 U.category = ing => {
   if (ing.cat) return ing.cat;
   const n = String(ing.name).toLowerCase();
