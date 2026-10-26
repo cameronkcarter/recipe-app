@@ -49,8 +49,8 @@ App.verb = id => App.VERBS.find(v => v.id === (App.VERB_ALIASES[id] || id)) || {
 
 // Keyword → icon name (see js/icons.js). Checked in order, so put specific phrases first.
 App.ING_ICONS = [
-  ['eggplant', 'eggplant'], ['pineapple', 'pineapple'], ['ziti', 'noodle'], ['penne', 'noodle'], ['rigatoni', 'noodle'], ['macaroni', 'noodle'], ['fusilli', 'noodle'], ['rotini', 'noodle'],
-  ['farfalle', 'noodle'], ['orzo', 'noodle'], ['linguine', 'noodle'], ['fettuccine', 'noodle'], ['lasagna', 'noodle'], ['tortellini', 'noodle'], ['ravioli', 'noodle'], ['gnocchi', 'noodle'], ['udon', 'noodle'], ['ramen', 'noodle'],
+  ['eggplant', 'eggplant'], ['pineapple', 'pineapple'], ['ziti', 'pasta'], ['penne', 'pasta'], ['rigatoni', 'pasta'], ['macaroni', 'pasta'], ['fusilli', 'pasta'], ['rotini', 'pasta'],
+  ['farfalle', 'pasta'], ['orzo', 'pasta'], ['linguine', 'pasta'], ['fettuccine', 'pasta'], ['lasagna', 'pasta'], ['tortellini', 'pasta'], ['ravioli', 'pasta'], ['gnocchi', 'pasta'], ['udon', 'noodle'], ['ramen', 'noodle'],
   ['parmigiano', 'cheese'], ['pecorino', 'cheese'], ['cotija', 'cheese'], ['gruy', 'cheese'], ['provolone', 'cheese'], ['buttermilk', 'milk'], ['peanut butter', 'jar'], ['cornstarch', 'jar'], ['corn starch', 'jar'], ['cornmeal', 'wheat'],
   ['grapefruit', 'orange'], ['grapeseed', 'oil'], ['pepperoni', 'sausage'], ['rice vinegar', 'bottle'], ['wine vinegar', 'bottle'], ['vinegar', 'bottle'], ['rice noodle', 'noodle'],
   ['thai chil', 'chili'], ['chile', 'chili'], ['serrano', 'chili'], ['poblano', 'bellpep'], ['cauliflower', 'cauliflower'], ['snow pea', 'peas'], ['snap pea', 'peas'], ['peas', 'peas'],
@@ -76,7 +76,7 @@ App.ING_ICONS = [
   ['lemon', 'lemon'], ['lime', 'lime'], ['orange', 'orange'], ['apple', 'apple'], ['banana', 'banana'], ['berr', 'berries'],
   ['chicken', 'drum'], ['turkey', 'drum'], ['beef', 'steak'], ['steak', 'steak'], ['pork', 'bacon'], ['bacon', 'bacon'], ['sausage', 'sausage'],
   ['salmon', 'fish'], ['fish', 'fish'], ['tuna', 'fish'], ['shrimp', 'shrimp'], ['tofu', 'tofu'],
-  ['rice', 'rice'], ['pasta', 'noodle'], ['spaghetti', 'noodle'], ['noodle', 'noodle'], ['tortilla', 'tortilla'], ['bread', 'bread'],
+  ['rice', 'rice'], ['pasta', 'pasta'], ['spaghetti', 'pasta'], ['noodle', 'noodle'], ['tortilla', 'tortilla'], ['bread', 'bread'],
   ['corn', 'corn'], ['carrot', 'carrot'], ['mushroom', 'mushroom'], ['broccoli', 'broccoli'], ['spinach', 'greens'], ['kale', 'greens'],
   ['lettuce', 'greens'], ['cabbage', 'greens'], ['cucumber', 'cucumber'], ['zucchini', 'cucumber'], ['eggplant', 'eggplant'], ['ginger', 'ginger'],
   ['coconut', 'coconut'], ['chocolate', 'choc'], ['wine', 'wine'], ['vinegar', 'bottle'], ['almond', 'nut'], ['walnut', 'nut'], ['pecan', 'nut'], ['nut', 'nut'],
@@ -146,6 +146,17 @@ App.STEP_PRESETS = [
   { label: 'Shred chicken', icon: 'fork', verb: 'shred', ings: ['chicken'], text: 'lift out, shred, stir back in', for: ['instant pot', 'slow cooker', 'stovetop'] },
   { label: 'Season to taste', icon: 'salt', verb: 'season', ings: ['salt', 'black pepper'], text: 'to taste', for: 'all' },
   { label: 'Serve', icon: 'cloche', verb: 'serve', for: 'all' },
+];
+
+// The ingredient icons, grouped, for changing one by hand (edit mode: tap an ingredient's icon).
+App.ING_ICON_GROUPS = [
+  ['Vegetables', ['onion', 'garlic', 'scallion', 'tomato', 'carrot', 'celery', 'potato', 'redpotato', 'spud', 'bellpep', 'chili', 'greens', 'broccoli', 'cauliflower',
+    'mushroom', 'corn', 'cucumber', 'eggplant', 'peas', 'greenbean', 'asparagus', 'beet', 'squash', 'pumpkin', 'avo', 'ginger', 'herb']],
+  ['Fruit', ['lemon', 'lime', 'orange', 'apple', 'banana', 'berries', 'strawberry', 'grapes', 'pear', 'pineapple', 'coconut', 'olive']],
+  ['Meat, fish & more', ['drum', 'steak', 'bacon', 'sausage', 'fish', 'shrimp', 'tofu', 'egg', 'bean']],
+  ['Dairy', ['milk', 'butter', 'cheese', 'tub']],
+  ['Pasta, grains & bread', ['pasta', 'noodle', 'rice', 'bread', 'tortilla', 'wheat']],
+  ['Pantry', ['can', 'carton', 'jar', 'mustard', 'bottle', 'oil', 'salt', 'pepper', 'bouillon', 'honey', 'maple', 'sugar', 'peanut', 'nut', 'seeds', 'choc', 'wine', 'drop']],
 ];
 
 // Everyday tags offered when you add a tag to a recipe (alongside ones that fit it, and ones already in use).

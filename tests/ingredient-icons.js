@@ -23,7 +23,7 @@ const expect = {
   'parmesan cheese': 'cheese', 'parmesan': 'cheese', 'mozzarella': 'cheese', 'goat cheese': 'cheese', 'butter': 'butter', 'buttermilk': 'milk', 'heavy cream': 'milk',
   'sour cream': 'tub', 'greek yogurt': 'tub', 'eggs': 'egg',
   // pantry
-  'olive oil': 'oil', 'sesame oil': 'oil', 'ziti': 'noodle', '16 oz ziti pasta noodles': 'noodle', 'penne': 'noodle', 'spaghetti': 'noodle', 'basmati rice': 'rice',
+  'olive oil': 'oil', 'sesame oil': 'oil', 'ziti': 'pasta', '16 oz ziti pasta noodles': 'pasta', 'penne': 'pasta', 'spaghetti': 'pasta', 'ramen noodles': 'noodle', 'rice noodles': 'noodle', 'basmati rice': 'rice',
   'rice vinegar': 'bottle', 'soy sauce': 'bottle', 'fish sauce': 'bottle', 'coconut milk': 'can', 'diced tomatoes': 'can', 'tomato paste': 'can', 'black beans': 'bean',
   'chickpeas': 'bean', 'vegetable broth': 'carton', 'flour': 'wheat', 'rolled oats': 'wheat', 'cornstarch': 'jar', 'sugar': 'sugar', 'honey': 'honey', 'maple syrup': 'maple',
   'peanut butter': 'jar', 'walnuts': 'nut', 'white wine': 'wine', 'water': 'drop', 'tofu': 'tofu',

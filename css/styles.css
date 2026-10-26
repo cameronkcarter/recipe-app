@@ -721,3 +721,11 @@ body.dragging-now .ins-step { visibility: hidden; }
 .recipe-card .who .cook { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .recipe-card .time { flex: none; white-space: nowrap; }
 .icon-picker .pick-head { grid-column: 1 / -1; font: 500 .74rem var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin: 6px 2px -2px; }
+
+/* edit mode: tap an ingredient's icon to choose another */
+.ico-pick { border: none; background: none; padding: 0; display: grid; place-items: center; border-radius: 50%; }
+.ico-pick:hover .ing-ico, .step.edit.active .bubble .ing-ico { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 50%; }
+.pop .ico-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.pop .ico { border: 2px solid transparent; background: var(--surface-2); border-radius: 12px; padding: 4px; aspect-ratio: 1; display: grid; place-items: center; }
+.pop .ico .ic { width: 28px; height: 28px; }
+.pop .ico.on, .pop .sug.on { border-color: var(--accent); background: var(--accent-soft); }

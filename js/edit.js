@@ -68,10 +68,19 @@ App.edit = (() => {
 
   function ingRowHtml(r, g) {
     const amt = g.qty != null || g.unit ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
-    return `<li class="ing-item">${U.ingIconHtml(g)}
+    return `<li class="ing-item"><button type="button" class="ico-pick" data-ing-icon="${g.id}" aria-label="Change the icon for ${U.esc(g.name)}">${U.ingIconHtml(g)}</button>
       ${inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt')}
       ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
       <button class="x" data-rm-ing="${g.id}" aria-label="Delete ${U.esc(g.name)}">${App.glyph('x')}</button></li>`;
+  }
+
+  // The ingredient icon menu: "Automatic" (follow the name) first, then every icon in small groups.
+  function ingIconMenu(r, g, anchor, done) {
+    const cur = U.iconName(g.icon);
+    const auto = U.ingIcon(g.name);
+    const html = `<button class="sug ${cur ? '' : 'on'}" data-pick="">${auto ? `<span class="ing-ico">${App.icon(auto)}</span>` : '<span class="ing-ico letter">A</span>'}Automatic<small>from the name</small></button>` +
+      App.ING_ICON_GROUPS.map(([label, ics]) => `<div class="pop-head">${label}</div><div class="ico-grid">${ics.map(ic => `<button class="ico ${ic === cur ? 'on' : ''}" data-pick="${ic}" aria-label="${ic}">${App.icon(ic)}</button>`).join('')}</div>`).join('');
+    App.ui.popover(anchor, html, ic => { if (ic) g.icon = ic; else delete g.icon; done(); });
   }
 
   // ---------- Changes ----------
@@ -229,7 +238,8 @@ App.edit = (() => {
       const t = e.target.closest('button');
       if (!t) return;
       const d = t.dataset;
-      if (d.pickVerb) {
+      if (d.ingIcon) { const g = ing(r, d.ingIcon); if (g) ingIconMenu(r, g, t, () => commit(true)); }
+      else if (d.pickVerb) {
         const s = r.steps.find(x => x.id === d.pickVerb);
         App.ui.popover(t, verbMenuHtml(App.verb(s.verb).id), v => { s.verb = v; commit(true); });
       }
@@ -328,7 +338,8 @@ App.edit = (() => {
       const p = pending; pending = null;
       if (!drag) {
         // a tap on a bubble's word → start typing in it
-        if (p?.kind === 'ing' && p.tapTarget.matches('input')) { p.tapTarget.focus(); p.tapTarget.select(); }
+        if (p?.kind === 'ing' && p.tapTarget.closest('.ing-ico')) { const g = ing(r, p.ingId); if (g) ingIconMenu(r, g, p.tapTarget.closest('.ing-ico'), () => commit(true)); }
+        else if (p?.kind === 'ing' && p.tapTarget.matches('input')) { p.tapTarget.focus(); p.tapTarget.select(); }
         else if (p?.kind === 'ing' && p.tapTarget.isContentEditable) {
           p.tapTarget.focus();
           const sel = getSelection(); sel.selectAllChildren(p.tapTarget); sel.collapseToEnd(); // cursor at the end
