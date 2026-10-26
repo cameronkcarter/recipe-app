@@ -10,6 +10,8 @@ App.views.recipe = (root, { id, edit = false }) => {
   const r = edit && stored ? JSON.parse(JSON.stringify(stored)) : stored;
   if (!r) { root.innerHTML = `<div class="empty"><p>Recipe not found.</p><a href="#/">Back to recipes</a></div>`; return; }
   const enc = U.recipeKey(r);
+  // opened by an old link (its id)? show the readable one in the address bar
+  if (!edit && decodeURIComponent(enc) !== id) history.replaceState(null, '', location.pathname + '#/r/' + enc);
 
   // Only the person who added a recipe can edit it; everyone else can save it (the heart).
   const mine = r.author && r.author === S.me()?.id;
