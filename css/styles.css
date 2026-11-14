@@ -766,3 +766,9 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .shop-recipe .stepper button.val.changed { background: var(--accent); color: #fff; }
 .topbar .btn.small { white-space: nowrap; }
 .topbar .btn.small .gl { width: 15px; height: 15px; }
+.mv-row { display: flex; gap: 6px; padding: 2px 0 8px; }
+.mv-row .sug { width: auto; flex: 1; justify-content: center; background: var(--surface-2); }
+.mv-row .sug:disabled { opacity: .35; }
+.mv-row .sug .gl { width: 16px; height: 16px; }
+.step.edit .s-ings li.mix-use .x.mv .gl { width: 15px; height: 15px; }
+.step.edit:not(.active) .mix-use .x { display: none; }

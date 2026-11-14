@@ -32,8 +32,10 @@ App.edit = (() => {
   function stepHtml(r, s, i, chefCls, chef) {
     const v = App.verb(s.verb);
     const usedBefore = new Set(r.steps.slice(0, i).flatMap(x => (x.uses || []).map(u => u.ing)));
+    const canMove = (s.uses || []).length > 1 || r.steps.length > 1;
+    const mvBtn = (k, name) => canMove ? `<button class="x mv" data-mv-use="${k}" aria-label="Move ${U.esc(name)}">${App.glyph('move')}</button>` : '';
     const bubbles = (s.uses || []).map((u, k) => {
-      if (u.from) return App.ui.mixtureHtml(r, u.from, `<button class="x" data-rm-from="${u.from}" aria-label="Remove">${App.glyph('x')}</button>`);
+      if (u.from) return App.ui.mixtureHtml(r, u.from, `${mvBtn(k, 'mixture')}<button class="x" data-rm-from="${u.from}" aria-label="Remove">${App.glyph('x')}</button>`);
       const g = ing(r, u.ing);
       if (!g) return '';
       const first = !usedBefore.has(g.id);
@@ -43,7 +45,7 @@ App.edit = (() => {
         ${first ? inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt' + (amt ? '' : ' empty')) : ''}
         ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
         <span class="inl un ${u.note ? '' : 'empty'}" contenteditable="true" role="textbox" data-unote="${g.id}" data-ph="+ prep" aria-label="How it's prepped (diced, drained…)">${U.esc(u.note || '')}</span>
-        ${r.steps.length > 1 ? `<button class="x mv" data-mv-use="${g.id}" aria-label="Move ${U.esc(g.name)} to another step">${App.glyph('move')}</button>` : ''}
+        ${mvBtn(k, g.name)}
         <button class="x" data-rm-use="${g.id}" aria-label="Remove ${U.esc(g.name)}">${App.glyph('x')}</button>
       </li>`;
     }).join('');
@@ -263,13 +265,27 @@ App.edit = (() => {
         root.querySelector(`[data-step="${id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
       else if (d.mvUse) {
-        const from = t.closest('[data-step]').dataset.step;
-        const html = `<div class="pop-head">Move to step</div><div class="mv-grid">${r.steps.map((x, k) =>
-          `<button class="mv-n" data-pick="${x.id}" ${x.id === from ? 'disabled' : ''}>${k + 1}</button>`).join('')}</div>
-          <button class="sug" data-pick="@new">${App.glyph('plus')}New step</button>`;
+        // one menu for everything in a step (ingredients and mixtures): up/down within it, or to another step
+        const from = t.closest('[data-step]').dataset.step, st = r.steps.find(x => x.id === from);
+        const k = +d.mvUse, use = st.uses[k], n = st.uses.length;
+        const srcAt = use.from ? r.steps.findIndex(x => x.id === use.from) : -1; // a mixture can only go after the step that makes it
+        const html = (n > 1 ? `<div class="pop-head">In this step</div><div class="mv-row">
+            <button class="sug" data-pick="@up" ${k ? '' : 'disabled'}>${App.glyph('up')}Up</button>
+            <button class="sug" data-pick="@down" ${k < n - 1 ? '' : 'disabled'}>${App.glyph('down')}Down</button></div>` : '') +
+          (r.steps.length > 1 ? `<div class="pop-head">Move to step</div><div class="mv-grid">${r.steps.map((x, j) =>
+            `<button class="mv-n" data-pick="${x.id}" ${x.id === from || j <= srcAt ? 'disabled' : ''}>${j + 1}</button>`).join('')}</div>
+          <button class="sug" data-pick="@new">${App.glyph('plus')}New step</button>` : '');
         App.ui.popover(t, html, to => {
+          if (to === '@up' || to === '@down') {
+            const j = k + (to === '@up' ? -1 : 1);
+            [st.uses[k], st.uses[j]] = [st.uses[j], st.uses[k]];
+            return commit(true);
+          }
           if (to === '@new') to = newStep(r).id;
-          moveUse(r, from, to, d.mvUse); active = to; commit(true);
+          const dest = r.steps.find(x => x.id === to);
+          if (use.from) { st.uses = st.uses.filter(u => u !== use); U.useMixture(r, dest, use.from); }
+          else moveUse(r, from, to, use.ing);
+          active = to; commit(true);
           root.querySelector(`[data-step="${to}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         });
       }
