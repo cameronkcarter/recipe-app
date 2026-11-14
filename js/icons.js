@@ -257,6 +257,9 @@ window.App = window.App || {};
   // Small line glyphs for buttons (back, edit, search…). They follow the text color.
   const G2 = {
     back: 'M14.5 5.5L8 12l6.5 6.5',
+    up: 'M6 14.5L12 8.5l6 6',
+    down: 'M6 9.5l6 6 6-6',
+    move: 'M8 9l4-4.5L16 9M8 15l4 4.5 4-4.5',
     pencil: 'M5 19l1-4.5L16 4.5a2.1 2.1 0 0 1 3 3L9 17.5zM14 6.5l3 3',
     search: 'M15 15l4.5 4.5M10.5 4.5a6 6 0 1 0 0 12 6 6 0 0 0 0-12z',
     x: 'M7 7l10 10M17 7L7 17',

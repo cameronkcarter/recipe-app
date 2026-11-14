@@ -1,6 +1,6 @@
 // Inline edit mode for the recipe page. No pop-ups: steps look the same as when cooking, but
-//   • each ingredient is a bubble — drag it onto another step, tap its words to type
-//   • drag a step (by its number, or press-and-hold anywhere on it) to move it up or down
+//   • each ingredient is a bubble — tap its words to type; its ⇅ button moves it to another step
+//   • the tapped step shows ↑ ↓ to move it (with a mouse you can also drag steps and bubbles)
 //   • tap the action to pick another from an icon menu; tap note / time to type; tap heat to cycle
 //   • typing an ingredient suggests matches (with icons), this recipe's own ingredients first
 //   • the + between steps adds a step right there
@@ -43,6 +43,7 @@ App.edit = (() => {
         ${first ? inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt' + (amt ? '' : ' empty')) : ''}
         ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
         <span class="inl un ${u.note ? '' : 'empty'}" contenteditable="true" role="textbox" data-unote="${g.id}" data-ph="+ prep" aria-label="How it's prepped (diced, drained…)">${U.esc(u.note || '')}</span>
+        ${r.steps.length > 1 ? `<button class="x mv" data-mv-use="${g.id}" aria-label="Move ${U.esc(g.name)} to another step">${App.glyph('move')}</button>` : ''}
         <button class="x" data-rm-use="${g.id}" aria-label="Remove ${U.esc(g.name)}">${App.glyph('x')}</button>
       </li>`;
     }).join('');
@@ -65,6 +66,8 @@ App.edit = (() => {
         </div>
       </div>
       <button class="step-x" data-rm-step="${s.id}" aria-label="Delete step">${App.glyph('x')}</button>
+      <button class="step-mv up" data-step-mv="-1" aria-label="Move step up" ${i ? '' : 'disabled'}>${App.glyph('up')}</button>
+      <button class="step-mv down" data-step-mv="1" aria-label="Move step down" ${i < r.steps.length - 1 ? '' : 'disabled'}>${App.glyph('down')}</button>
     </div>`;
   }
 
@@ -253,6 +256,23 @@ App.edit = (() => {
       }
       else if (d.heat) { const s = r.steps.find(x => x.id === d.heat); s.heat = ((s.heat || 0) + 1) % 4 || undefined; commit(true); }
       else if (d.rmFrom) { const st = r.steps.find(x => x.id === t.closest('[data-step]').dataset.step); st.uses = st.uses.filter(u => u.from !== d.rmFrom); commit(true); }
+      else if (d.stepMv) {
+        const id = t.closest('[data-step]').dataset.step, at = r.steps.findIndex(x => x.id === id) + +d.stepMv;
+        if (at < 0 || at >= r.steps.length) return;
+        moveStep(r, id, at); active = id; commit(true);
+        root.querySelector(`[data-step="${id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+      else if (d.mvUse) {
+        const from = t.closest('[data-step]').dataset.step;
+        const html = `<div class="pop-head">Move to step</div><div class="mv-grid">${r.steps.map((x, k) =>
+          `<button class="mv-n" data-pick="${x.id}" ${x.id === from ? 'disabled' : ''}>${k + 1}</button>`).join('')}</div>
+          <button class="sug" data-pick="@new">${App.glyph('plus')}New step</button>`;
+        App.ui.popover(t, html, to => {
+          if (to === '@new') to = newStep(r).id;
+          moveUse(r, from, to, d.mvUse); active = to; commit(true);
+          root.querySelector(`[data-step="${to}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
+      }
       else if (d.rmUse) { removeUse(r, t.closest('[data-step]').dataset.step, d.rmUse); commit(true); }
       else if (d.chefSwap) { swapChef(r, d.chefSwap, false); commit(true); }
       else if (d.rmIng) { removeIngredient(r, d.rmIng); commit(true); }
@@ -267,12 +287,14 @@ App.edit = (() => {
   }
 
   // ---------- Dragging ----------
-  // Ingredient bubbles: drag onto another step (or "+ Add step"). A tap still edits the word.
-  // Steps: drag by the number right away, or press-and-hold anywhere on the step (on touch).
+  // With a mouse: drag a bubble onto another step (or "+ Add step"); drag a step by its number or body.
+  // On a phone dragging fought scrolling and typing, so only the step number drags there; bubbles and
+  // steps move with their ⇅ / ↑ ↓ buttons instead, and a tap on a bubble just types.
   function bindDrag(root, r, commit, on) {
-    let pending = null, drag = null, holdTimer = null;
+    let pending = null, drag = null;
 
     const isControl = el => el.closest('select, button, .add-ing, .s-meta, .verb-pick');
+    const mouse = e => e.pointerType === 'mouse';
     const startDrag = (p, e) => {
       const el = p.el, rect = el.getBoundingClientRect();
       const ghost = el.cloneNode(true);
@@ -336,20 +358,19 @@ App.edit = (() => {
       if (bubble) {
         if (e.target === document.activeElement) return;      // already typing in it
         e.preventDefault();                                     // don't focus yet — might be a drag
-        pending = { kind: 'ing', el: bubble, from: card.dataset.step, ingId: bubble.dataset.ing, x: e.clientX, y: e.clientY, tapTarget: e.target };
+        pending = { kind: 'ing', el: bubble, from: card.dataset.step, ingId: bubble.dataset.ing, x: e.clientX, y: e.clientY, tapTarget: e.target, noDrag: !mouse(e) };
       } else if (e.target.closest('.step-handle')) {
         e.preventDefault();
         pending = { kind: 'step', el: card, x: e.clientX, y: e.clientY, now: true };
-      } else if (!isControl(e.target) && !e.target.closest('input')) {
-        pending = { kind: 'step', el: card, x: e.clientX, y: e.clientY, now: e.pointerType === 'mouse' };
-        if (e.pointerType !== 'mouse') holdTimer = setTimeout(() => { if (pending) startDrag(pending, e); }, 350);
+      } else if (mouse(e) && !isControl(e.target) && !e.target.closest('input')) {
+        pending = { kind: 'step', el: card, x: e.clientX, y: e.clientY, now: true };
       }
     });
 
     on(window, 'pointermove', e => {
       if (pending && !drag) {
         const moved = Math.hypot(e.clientX - pending.x, e.clientY - pending.y);
-        if (pending.kind === 'step' && !pending.now) { if (moved > 8) { clearTimeout(holdTimer); pending = null; } return; } // scrolling
+        if (pending.noDrag) { if (moved > 8) pending = null; return; } // scrolling, not a tap
         if (moved > 5) startDrag(pending, e);
         return;
       }
@@ -375,10 +396,10 @@ App.edit = (() => {
     // stop the page scrolling while something is being dragged (touch)
     on(window, 'touchmove', e => { if (drag) e.preventDefault(); }, { passive: false });
 
-    const end = () => {
-      clearTimeout(holdTimer);
+    const end = e => {
       const p = pending; pending = null;
       if (!drag) {
+        if (e.type === 'pointercancel') return; // the page scrolled instead
         // a tap on a bubble's word → start typing in it
         if (p?.kind === 'ing' && p.tapTarget.closest('.ing-ico')) { const g = ing(r, p.ingId); if (g) ingIconMenu(r, g, p.tapTarget.closest('.ing-ico'), () => commit(true)); }
         else if (p?.kind === 'ing' && p.tapTarget.matches('input')) { p.tapTarget.focus(); p.tapTarget.select(); }

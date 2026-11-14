@@ -16,6 +16,7 @@ App.views.shopping = root => {
     return;
   }
 
+  L.hidden ||= {}; // cleared (bought) items stay off the list while their recipe is on it
   const keyOf = name => String(name).toLowerCase().trim().replace(/\s+/g, ' ').replace(/(es|s)$/, '');
 
   function build() {
@@ -32,7 +33,7 @@ App.views.shopping = root => {
         row.from.add(r.title);
       }
     }
-    return [...map.values()];
+    return [...map.values()].filter(row => !L.hidden[row.key]);
   }
 
   function render() {
@@ -42,14 +43,16 @@ App.views.shopping = root => {
     const doneCount = rows.filter(r => L.checked[r.key]).length + L.extras.filter(x => x.checked).length;
 
     root.innerHTML = `
-      ${App.ui.topbar('<h1>Shopping</h1>', total ? `<button class="icon-btn" data-act="copy" aria-label="Copy list">${App.glyph('copy')}</button>` : '')}
+      ${App.ui.topbar('<h1>Shopping</h1>', (doneCount ? `<button class="btn small" data-act="clear-checked">${App.glyph('check')}Clear ${doneCount}</button>` : '') +
+        (total ? `<button class="icon-btn" data-act="copy" aria-label="Copy list">${App.glyph('copy')}</button>` : ''))}
 
       <div class="section-label">Recipes <button class="btn small" data-act="pick">${App.glyph('plus')}Add recipes</button></div>
       ${L.recipes.length ? `<div class="shop-recipes">${L.recipes.map(e => {
         const r = S.recipe(e.id);
         if (!r) return '';
+        const std = r.servings || 1, changed = e.servings !== std;
         return `<span class="shop-recipe">${App.icon(U.recipeIcon(r))}${U.esc(r.title)}
-          <span class="stepper"><button data-act="serv" data-id="${U.esc(e.id)}" data-d="-1" aria-label="Fewer servings">${App.glyph('minus')}</button><span class="val">${App.icon('cloche')}${e.servings}</span><button data-act="serv" data-id="${U.esc(e.id)}" data-d="1" aria-label="More servings">${App.glyph('plus')}</button></span>
+          <span class="stepper"><button data-act="serv" data-id="${U.esc(e.id)}" data-d="-1" aria-label="Fewer servings">${App.glyph('minus')}</button><button class="val ${changed ? 'changed' : ''}" data-act="serv-reset" data-id="${U.esc(e.id)}" aria-label="${e.servings} servings${changed ? `, recipe makes ${std}. Tap to reset` : ''}">${App.icon('cloche')}${e.servings}</button><button data-act="serv" data-id="${U.esc(e.id)}" data-d="1" aria-label="More servings">${App.glyph('plus')}</button></span>
           <button class="rm" data-act="rm-recipe" data-id="${U.esc(e.id)}" aria-label="Remove recipe">${App.glyph('x')}</button></span>`;
       }).join('')}</div>` : `<div style="color:var(--muted);font-size:.9rem">Pick a few recipes and their ingredients get combined here.</div>`}
 
@@ -70,10 +73,7 @@ App.views.shopping = root => {
         <input class="input" name="extra" placeholder="Add an item (paper towels, coffee…)">
         <button class="btn">Add</button>
       </form>
-
-      ${total ? `<div style="display:flex;gap:8px;margin-top:24px">
-        <button class="btn small" data-act="clear-checked" ${doneCount ? '' : 'disabled'}>Clear checked (${doneCount})</button>
-        <button class="btn small danger" data-act="clear-all">Clear list</button></div>` : ''}`;
+`;
   }
 
   root.onclick = e => {
@@ -83,10 +83,10 @@ App.views.shopping = root => {
     if (t) {
       const act = t.dataset.act;
       if (act === 'serv') { const en = L.recipes.find(x => x.id === t.dataset.id); en.servings = Math.max(1, en.servings + +t.dataset.d); }
-      else if (act === 'rm-recipe') L.recipes = L.recipes.filter(x => x.id !== t.dataset.id);
+      else if (act === 'rm-recipe') { L.recipes = L.recipes.filter(x => x.id !== t.dataset.id); if (!L.recipes.length) { L.checked = {}; L.hidden = {}; } }
       else if (act === 'rm-extra') { L.extras = L.extras.filter(x => x.id !== t.dataset.id); }
       else if (act === 'clear-checked') { L.extras = L.extras.filter(x => !x.checked); hideChecked(); }
-      else if (act === 'clear-all') { if (!confirm('Clear the whole list?')) return; L.recipes = []; L.checked = {}; L.extras = []; }
+      else if (act === 'serv-reset') { const en = L.recipes.find(x => x.id === t.dataset.id); en.servings = S.recipe(en.id)?.servings || 1; }
       else if (act === 'pick') return pickSheet();
       else if (act === 'copy') return copyList(t);
       S.save(); render(); return;
@@ -104,13 +104,15 @@ App.views.shopping = root => {
     root.querySelector('[name=extra]').focus();
   };
 
-  // "Clear checked": drop recipes that are fully checked off; partly-checked ones stay.
+  // "Clear checked": checked items leave the list; a recipe with nothing left to buy leaves too.
   function hideChecked() {
+    for (const k of Object.keys(L.checked)) L.hidden[k] = true;
+    L.checked = {};
     L.recipes = L.recipes.filter(en => {
       const r = S.recipe(en.id);
-      return r && r.ingredients.some(i => !L.checked[keyOf(i.name)]);
+      return r && r.ingredients.some(i => !L.hidden[keyOf(i.name)]);
     });
-    if (!L.recipes.length) L.checked = {};
+    if (!L.recipes.length) L.hidden = {};
   }
 
   function copyList(btn) {
@@ -139,7 +141,11 @@ App.views.shopping = root => {
         el.querySelector('[data-done]').onclick = () => {
           const ids = [...el.querySelectorAll('input:checked')].map(i => i.value);
           L.recipes = L.recipes.filter(x => ids.includes(x.id));
-          for (const id of ids) if (!L.recipes.some(x => x.id === id)) L.recipes.push({ id, servings: S.recipe(id).servings || 1 });
+          for (const id of ids) if (!L.recipes.some(x => x.id === id)) {
+            L.recipes.push({ id, servings: S.recipe(id).servings || 1 });
+            for (const i of S.recipe(id).ingredients) delete L.hidden[keyOf(i.name)]; // a newly added recipe needs all its items
+          }
+          if (!L.recipes.length) { L.checked = {}; L.hidden = {}; }
           S.save(); close(); render();
         };
       });

@@ -746,3 +746,23 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .step.edit .s-ings li.mix-use { display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px 3px 4px; border-radius: 999px; background: var(--surface-2); border: 2px dashed color-mix(in srgb, var(--good) 45%, var(--line)); }
 .step.edit .s-ings li.mix-use .x { border: none; background: none; color: var(--muted); padding: 0 4px; opacity: .6; display: grid; place-items: center; }
 .b-ings li.mix-use { border: 2px dashed color-mix(in srgb, var(--good) 45%, var(--line)); }
+
+/* moving things in edit mode without dragging (phones) */
+.step-mv { position: absolute; right: 5px; width: 28px; height: 28px; border: none; border-radius: 50%; background: var(--surface-2); color: var(--text); display: grid; place-items: center; padding: 0; }
+.step-mv.up { top: 40px; }
+.step-mv.down { top: 74px; }
+.step-mv:disabled { opacity: .3; }
+.step-mv .gl { width: 16px; height: 16px; stroke-width: 3; }
+.step.edit:not(.active) .step-mv { display: none; }
+.step.edit.active { min-height: 112px; }
+.mv-grid { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 2px 8px; max-width: 260px; }
+.mv-n { width: 38px; height: 38px; border-radius: 50%; border: none; background: var(--surface-2); color: var(--text); font: 600 .95rem/1 var(--font-head); }
+.mv-n:disabled { background: var(--accent-soft); color: var(--accent-deep); opacity: .6; }
+.bubble .x.mv .gl { width: 15px; height: 15px; }
+.source-link { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 22px auto 4px; color: var(--muted); font-weight: 700; font-size: .9rem; text-decoration: none; }
+.source-link .gl { width: 16px; height: 16px; }
+.source-link:hover { color: var(--accent); }
+.shop-recipe .stepper button.val { width: auto; height: 26px; border-radius: 999px; background: none; padding: 0 4px; font-weight: 800; color: var(--text); }
+.shop-recipe .stepper button.val.changed { background: var(--accent); color: #fff; }
+.topbar .btn.small { white-space: nowrap; }
+.topbar .btn.small .gl { width: 15px; height: 15px; }

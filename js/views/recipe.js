@@ -106,14 +106,14 @@ App.views.recipe = (root, { id, edit = false }) => {
       ${ingOpen ? (edit ? `<ul class="card ing-list edit">${ingHtml}<li class="ing-item"><input class="inl add-ing" data-add-list placeholder="+ ingredient (like 2 carrots)" aria-label="Add an ingredient" enterkeyhint="done" autocomplete="off"></li></ul>`
         : r.ingredients.length ? `<ul class="card ing-list">${ingHtml}</ul>` : `<div class="muted">No ingredients yet.</div>`) : ''}
 
-      <div class="section-label">Steps <span class="hint">${edit ? 'drag to move · tap to change' : 'swipe when done'}</span></div>
+      <div class="section-label">Steps <span class="hint">${edit ? 'tap to change' : 'swipe when done'}</span></div>
       <div class="steps">${stepHtml || (edit ? '' : '<div class="muted">No steps yet.</div>')}</div>
       ${edit ? `<button class="btn block add-step" data-act="add-step">+ Add step</button>` : ''}
 
       ${edit ? `
         <div class="section-label">More</div>
         <label class="field"><span>Source link</span><input class="input" data-f="source" value="${U.esc(r.source || '')}" placeholder="https://"></label>
-        <button class="btn danger block" data-act="delete" style="margin-top:20px">Delete recipe</button>` : ''}`;
+        <button class="btn danger block" data-act="delete" style="margin-top:20px">Delete recipe</button>` : sourceHtml()}`;
     if (edit) E.autosizeAll(root);
     window.scrollTo(0, y);
   }
@@ -141,6 +141,15 @@ App.views.recipe = (root, { id, edit = false }) => {
       <div class="swatches">${App.BLOB_COLORS.map(c => `<button class="sw ${c === bg ? 'on' : ''}" data-bg="${c}" style="--sw:${c}" aria-label="Background color"></button>`).join('')}</div>
       <div class="pick-head">Suggested</div>${btn(sugg)}${cur !== sugg ? btn(cur) : ''}
       ${App.RECIPE_ICON_GROUPS.map(([label, ics]) => `<div class="pick-head">${label}</div>${ics.map(btn).join('')}`).join('')}</div>`;
+  }
+
+  // The site the recipe came from, at the bottom of the cooking view.
+  function sourceHtml() {
+    const src = (r.source || '').trim();
+    if (!/^https?:\/\//i.test(src)) return '';
+    let host = src;
+    try { host = new URL(src).hostname.replace(/^www\./, ''); } catch (e) {}
+    return `<a class="source-link" href="${U.esc(src)}" target="_blank" rel="noopener">${App.glyph('link')}${U.esc(host)}</a>`;
   }
 
   // "by Ellen Moffatt" under the title, linking to their profile.
