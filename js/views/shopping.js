@@ -27,10 +27,9 @@ App.views.shopping = root => {
       const sc = (entry.servings || r.servings || 1) / (r.servings || 1);
       for (const ing of r.ingredients) {
         const key = keyOf(ing.name);
-        if (!map.has(key)) map.set(key, { key, name: ing.name, cat: U.category(ing), icon: U.ingIconHtml(ing), items: [], from: new Set() });
+        if (!map.has(key)) map.set(key, { key, name: ing.name, cat: U.category(ing), icon: U.ingIconHtml(ing), items: [] });
         const row = map.get(key);
         row.items.push({ qty: ing.qty != null ? ing.qty * sc : null, unit: ing.unit });
-        row.from.add(r.title);
       }
     }
     return [...map.values()].filter(row => !L.hidden[row.key]);
@@ -62,7 +61,7 @@ App.views.shopping = root => {
           return `<li class="${L.checked[r.key] ? 'done' : ''}" data-check="${U.esc(r.key)}">
             <span class="box">${L.checked[r.key] ? App.glyph('check') : ''}</span>${r.icon}
             <span class="lbl">${amt ? `<span class="amt">${U.esc(amt)}</span> ` : ''}${U.esc(r.name)}
-              ${r.from.size > 1 ? `<div class="from">${[...r.from].map(U.esc).join(' · ')}</div>` : ''}</span></li>`;
+              </span></li>`;
         }).join('')}</ul>`).join('')}
 
       <div class="section-label">Extras</div>
