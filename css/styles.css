@@ -782,7 +782,7 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .bub-line { display: flex; align-items: center; gap: 3px; min-width: 0; min-height: 28px; }
 .bubble .bub-line .inl { flex: none; padding: 1px 2px; }
 .bubble .bub-line .inl.amt { min-width: 0; }
-.bubble .bub-line .inl.nm { flex: 1 1 auto; min-width: 3em; width: auto !important; }
+.step.edit.active .bubble .bub-line .inl.nm { flex: 1 1 auto; min-width: 3em; width: auto !important; }
 .bubble .inl.un, .bubble [data-unote] { display: block; width: 100%; max-width: 100%; min-width: 0; padding: 0 2px; line-height: 1.3; text-align: left; }
 .step.edit:not(.active) .bubble .inl.un.empty { display: none; }
 .bub-ctl { flex: none; display: flex; align-items: center; gap: 0; margin-top: 0; }
@@ -824,3 +824,33 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .section-label { flex-wrap: wrap; }
 .lab-btns { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: auto; }
 .btn.small.clear-checked { background: var(--surface-2); color: var(--text); }
+
+/* ============ Nov 23c: compact rows, unused tray, undo, source ============ */
+/* steps you aren't working on read as one line each: "2 cloves garlic · minced" */
+.step.edit:not(.active) .s-ings li.bubble { padding: 4px 8px 4px 6px; align-items: center; }
+.step.edit:not(.active) .bub-main { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 6px; }
+.step.edit:not(.active) .bub-line { min-height: 0; }
+.step.edit:not(.active) .bubble [data-unote] { display: inline; width: auto; padding: 0; }
+.step.edit:not(.active) .bubble [data-unote]:not(:empty)::before { content: "· "; }
+
+/* edit mode: ingredients no step uses yet */
+.unused-tray { padding: 10px 12px 12px; margin-bottom: 10px; border-style: dashed; border-bottom-width: 2px; }
+.tray-head { font: 500 .78rem var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.tray-head .hint { text-transform: none; letter-spacing: 0; }
+.tray-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tray-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px 4px 4px; border-radius: var(--radius-sm);
+  background: var(--surface-2); border: 1.5px solid var(--line); color: var(--text); font: 700 .9rem var(--font-body); }
+.tray-chip .ing-ico { width: 24px; height: 24px; }
+.tray-chip .gl { width: 14px; height: 14px; color: var(--muted); }
+.tray-chip:hover { border-color: var(--accent); }
+
+/* edit mode: Undo beside Save */
+.topbar .undo-btn { background: var(--surface-2); color: var(--text); white-space: nowrap; }
+.topbar .undo-btn .gl { width: 15px; height: 15px; }
+.topbar .undo-btn:disabled { opacity: .4; }
+
+/* the recipe's original page, at the bottom of the recipe */
+.source-box { margin: 24px 0 6px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--surface-2); }
+.source-head { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: .88rem; color: var(--muted); margin-bottom: 4px; }
+.source-head .gl { width: 16px; height: 16px; }
+.source-url { color: var(--accent); font-size: .9rem; word-break: break-all; text-decoration: underline; text-underline-offset: 2px; }

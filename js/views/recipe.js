@@ -26,6 +26,31 @@ App.views.recipe = (root, { id, edit = false }) => {
   const servings = () => edit ? (r.servings || 1) : (App.session.servings[r.id] || r.servings || 1);
   const scale = () => servings() / (r.servings || 1);
 
+  // Edit mode: Undo steps back through every change on this visit. A change is noticed after each
+  // redraw, and typing is grouped (half a second after you stop).
+  const hist = [];
+  let last = edit ? JSON.stringify(r) : null, histTimer = 0;
+  const track = () => {
+    if (!edit) return;
+    clearTimeout(histTimer);
+    const now = JSON.stringify(r);
+    if (now !== last) { hist.push(last); if (hist.length > 200) hist.shift(); last = now; }
+    const b = root.querySelector('[data-act="undo"]');
+    if (b) b.disabled = !hist.length;
+  };
+  const trackSoon = () => { clearTimeout(histTimer); histTimer = setTimeout(track, 500); };
+  const undo = () => {
+    track(); // a change still being typed counts as the last one
+    const prev = hist.pop();
+    if (prev == null) return;
+    const o = JSON.parse(prev);
+    for (const k of Object.keys(r)) delete r[k];
+    Object.assign(r, o);
+    last = prev;
+    App.ui.closePopover();
+    render();
+  };
+
   function render() {
     const y = window.scrollY;
     const total = U.schedule(r).total;
@@ -57,6 +82,7 @@ App.views.recipe = (root, { id, edit = false }) => {
 
     root.innerHTML = `
       ${edit ? `<header class="topbar"><a class="btn small" href="#/r/${enc}" data-cancel>Cancel</a><span class="title-sm"></span>
+          <button class="btn small undo-btn" data-act="undo" aria-label="Undo the last change" ${hist.length ? '' : 'disabled'}>${App.glyph('undo')}Undo</button>
           <a class="btn primary small" href="#/r/${enc}" data-done>Save</a></header>`
         : App.ui.topbar(`<a class="icon-btn" href="${back}" aria-label="Back">${App.glyph('back')}</a><span class="title-sm"></span>`,
           `<button class="icon-btn" data-act="share" aria-label="Share recipe">${App.glyph('share')}</button>` +
@@ -65,7 +91,7 @@ App.views.recipe = (root, { id, edit = false }) => {
         // ingredients no step uses are the usual thing an import gets wrong, so say which
         const used = new Set(r.steps.flatMap(s => (s.uses || []).map(u => u.ing)));
         const left = r.ingredients.filter(g => !used.has(g.id)).map(g => g.name);
-        return `<div class="import-banner">${App.icon('sparkle')}<span>Imported. Tap any word to fix it.${left.length ? ` Not in a step yet: ${U.esc(left.join(', '))}.` : ''}</span></div>`;
+        return `<div class="import-banner">${App.icon('sparkle')}<span>Imported. Tap any word to fix it.${left.length ? ' Ingredients that aren\'t in a step yet are listed just above the steps.' : ''}</span></div>`;
       })() : ''}
       <div class="hero">
         ${edit
@@ -93,6 +119,7 @@ App.views.recipe = (root, { id, edit = false }) => {
         : r.ingredients.length ? `<ul class="card ing-list">${ingHtml}</ul>` : `<div class="muted">No ingredients yet.</div>`) : ''}
 
       <div class="section-label">Steps <span class="hint">${edit ? 'tap to change' : 'swipe when done'}</span></div>
+      ${edit ? unusedHtml() : ''}
       <div class="steps">${stepHtml || (edit ? '' : '<div class="muted">No steps yet.</div>')}</div>
       ${edit ? `<button class="btn block add-step" data-act="add-step">+ Add step</button>` : ''}
 
@@ -102,6 +129,29 @@ App.views.recipe = (root, { id, edit = false }) => {
         <button class="btn danger block delete-recipe" data-act="delete">Delete recipe</button>` : sourceHtml()}`;
     if (edit) E.autosizeAll(root);
     window.scrollTo(0, y);
+    track();
+  }
+
+  // Edit mode: ingredients no step uses yet, above the steps. Tap one to put it in a step.
+  function unusedHtml() {
+    const used = new Set(r.steps.flatMap(s => (s.uses || []).map(u => u.ing)));
+    const left = r.ingredients.filter(g => !used.has(g.id));
+    if (!left.length) return '';
+    return `<div class="card unused-tray"><div class="tray-head">Not in a step yet <span class="hint">tap to add</span></div>
+      <div class="tray-chips">${left.map(g => `<button class="tray-chip" data-place="${g.id}">${U.ingIconHtml(g)}<span>${U.esc(g.name)}</span>${App.glyph('plus')}</button>`).join('')}</div></div>`;
+  }
+  function placeMenu(btn) {
+    const id = btn.dataset.place;
+    const html = (r.steps.length ? `<div class="pop-head">Add to step</div><div class="mv-grid">${r.steps.map((x, j) =>
+      `<button class="mv-n" data-pick="${x.id}">${j + 1}</button>`).join('')}</div>` : '') +
+      `<button class="sug" data-pick="@new">${App.glyph('plus')}New step</button>`;
+    App.ui.popover(btn, html, to => {
+      const st = to === '@new' ? E.newStep(r) : r.steps.find(x => x.id === to);
+      if (!st) return;
+      (st.uses ||= []).push({ ing: id });
+      render();
+      root.querySelector(`[data-step="${st.id}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
   }
 
   // Tags under the title. Cooking view: vegan / Instant Pot with their icons; any other tags sit behind
@@ -135,7 +185,8 @@ App.views.recipe = (root, { id, edit = false }) => {
     if (!/^https?:\/\//i.test(src)) return '';
     let host = src;
     try { host = new URL(src).hostname.replace(/^www\./, ''); } catch (e) {}
-    return `<a class="source-link" href="${U.esc(src)}" target="_blank" rel="noopener">${App.glyph('link')}${U.esc(host)}</a>`;
+    return `<div class="source-box"><div class="source-head">${App.glyph('link')}Original recipe on ${U.esc(host)}</div>
+      <a class="source-url" href="${U.esc(src)}" target="_blank" rel="noopener">${U.esc(src.replace(/^https?:\/\/(www\.)?/i, ''))}</a></div>`;
   }
 
   // "by Ellen Moffatt" under the title, linking to their profile.
@@ -160,6 +211,8 @@ App.views.recipe = (root, { id, edit = false }) => {
     const t = e.target.closest('button');
     if (!t) return;
     const d = t.dataset;
+    if (d.act === 'undo') return undo();
+    if (d.place) return placeMenu(t);
     if (d.act === 'pick-icon') { picking = !picking; render(); }
     else if (d.icon) { r.icon = d.icon; picking = false; render(); }
     else if (d.bg) { r.iconBg = d.bg; render(); }
@@ -229,6 +282,7 @@ App.views.recipe = (root, { id, edit = false }) => {
   };
 
   const unbind = edit ? E.bind(root, r, render) : bindSwipe();
+  if (edit) { root.addEventListener('input', trackSoon); root.addEventListener('change', trackSoon); }
 
   // Swipe a step either way to mark it done; swipe again to unmark. Vertical scrolling is left alone.
   function bindSwipe() {
@@ -282,6 +336,8 @@ App.views.recipe = (root, { id, edit = false }) => {
   ui.keepAwake(!edit); // keep the phone screen on while cooking
   return () => {
     unbind?.();
+    clearTimeout(histTimer);
+    root.removeEventListener('input', trackSoon); root.removeEventListener('change', trackSoon);
     root.removeEventListener('focus', onFocus, true);
     App.ui.closePopover();
     root.classList.remove('wiggle', 'settling');
