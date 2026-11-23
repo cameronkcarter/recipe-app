@@ -1,4 +1,4 @@
-// Helpers: formatting, units, ingredient parsing, and the co-op scheduler.
+// Helpers: formatting, units, ingredient parsing, aisles, and the recipe's total time.
 window.App = window.App || {};
 const U = App.util = {};
 
@@ -168,7 +168,8 @@ U.suggestIcon = r => {
 // The icon you picked, else an old emoji, else the suggestion.
 U.recipeIcon = r => U.iconName(r.icon) || U.iconName(r.emoji) || U.suggestIcon(r);
 // Blob color behind the icon: the one you picked, else the icon's own main color.
-U.recipeBlob = r => r.iconBg || App.iconColor(U.recipeIcon(r));
+// Only a plain #hex color is used (it goes into a style attribute).
+U.recipeBlob = r => /^#[0-9a-f]{3,8}$/i.test(r.iconBg || '') ? r.iconBg : App.iconColor(U.recipeIcon(r));
 U.recipeIconHtml = (r, cls = '') =>
   `<span class="r-ico ${cls}" style="--blob:${U.esc(U.recipeBlob(r))}">${App.icon(U.recipeIcon(r))}</span>`;
 // A profile picture: one of the food icons in a round colored blob.
@@ -262,7 +263,7 @@ U.fittingTags = r => {
   const out = [];
   const verbs = new Set((r.steps || []).map(s => App.verb(s.verb).id));
   if (verbs.has('pressure')) out.push('instant pot');
-  if (r.steps?.length && U.schedule(r, 1).total <= 30) out.push('quick');
+  if (r.steps?.length && U.schedule(r).total <= 30) out.push('quick');
   const icons = (r.ingredients || []).filter(g => !/\bvegan\b|plant|vegetable broth|coconut milk|almond milk|oat milk/i.test(g.name)).map(g => U.ingIcon(g.name));
   const meat = ['drum', 'steak', 'bacon', 'sausage', 'fish', 'shrimp'], animal = [...meat, 'milk', 'butter', 'cheese', 'egg', 'tub', 'honey'];
   if (r.ingredients?.length) {
@@ -300,12 +301,33 @@ U.useMixture = (r, step, fromId) => {
   else step.after = [...U.stepDeps(r, r.steps.indexOf(step)), fromId];
 };
 
+// Which aisle an ingredient is in. Whole words only ("eggplant" isn't "egg", "unsalted butter"
+// isn't "salt"), the longest matching phrase wins ("fish sauce" over "fish"), and on a tie the
+// last word wins, since that's the thing itself ("onion powder" is a powder, "chicken broth" is broth).
+const catWord = w => /(?:ch|sh|ss|x|o)es$/.test(w) ? w.slice(0, -2) : /ies$/.test(w) ? w.slice(0, -3) + 'y' : /[^su]s$/.test(w) ? w.slice(0, -1) : w;
+const catWords = s => (String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(/[a-z]+/g) || []).map(catWord);
 U.category = ing => {
   if (ing.cat) return ing.cat;
-  const n = String(ing.name).toLowerCase();
+  const words = catWords(ing.name);
+  if (words.includes('frozen')) return 'frozen';
   if (U.normUnit(ing.unit) === 'can') return 'pantry';
-  for (const [cat, words] of App.CAT_KEYWORDS) if (words.some(w => n.includes(w))) return cat;
-  return 'other';
+  if (!U._catIndex) {
+    U._catIndex = new Map();
+    for (const [cat, list] of Object.entries(App.CAT_WORDS)) for (const p of list) U._catIndex.set(catWords(p).join(' '), cat);
+  }
+  let best = null;
+  for (let len = Math.min(4, words.length); len >= 1 && !best; len--) {
+    for (let i = words.length - len; i >= 0; i--) { // from the end, so the last word wins a tie
+      const cat = U._catIndex.get(words.slice(i, i + len).join(' '));
+      if (cat) { best = { cat, word: words[i + len - 1] }; break; }
+    }
+  }
+  if (!best) return 'other';
+  // dried or ground herbs and spices are in the spice aisle, not with the fresh ones
+  if (best.cat === 'produce' && words.some(w => w === 'dried' || w === 'ground')) return 'spices';
+  // a plain "pepper" measured by the spoon is black pepper; "2 peppers" are bell peppers
+  if (best.word === 'pepper' && words.length === 1 && (!ing.qty || ['tsp', 'tbsp', 'pinch', 'dash'].includes(U.normUnit(ing.unit)))) return 'spices';
+  return best.cat;
 };
 
 // "2 (15-ounce) cans black beans, drained" → {qty:2, unit:'can', name:'black beans', note:'15-ounce'}
@@ -352,7 +374,7 @@ U.stepDeps = (recipe, i) => {
   return i > 0 ? [recipe.steps[i - 1].id] : [];
 };
 // Minutes a step takes. Only timed steps (simmer 20 min, sauté 4 min) store a time and show it;
-// everything else gets a rough estimate here so co-op can still split the work sensibly.
+// everything else gets a rough estimate here so the total time is sensible.
 U.stepTime = s => {
   if (s.time != null && s.time !== '') return +s.time;
   const v = App.verb(s.verb), n = Math.max(1, (s.uses || []).length);
@@ -363,128 +385,34 @@ U.stepTime = s => {
   return 1;
 };
 
-// Splits steps between chefs. Returns { byId: {stepId: {chef, start, end}}, total } (minutes).
-// 1. Start from a few guesses: everything on Chef A, a quick "whoever is free" split,
-//    and one prep cook + one stove cook.
-// 2. Try moving steps to the other chef, keeping a move when it makes the meal faster,
-//    or same speed with more even work and fewer pot hand-offs.
-// Passive steps (simmer, bake...) only keep the chef busy for ~1 minute.
-U.schedule = (recipe, chefs = 2) => {
-  const steps = recipe.steps;
-  const n = steps.length;
+// When each step happens for one cook, and the total time (minutes). Passive steps (simmer,
+// bake...) only keep you busy for about a minute, so other steps can happen while they run.
+// Returns { byId: {stepId: {start, end, passive}}, total }.
+U.schedule = recipe => {
+  const steps = recipe.steps || [];
   const idx = {}; steps.forEach((s, i) => idx[s.id] = i);
   const deps = steps.map((_, i) => U.stepDeps(recipe, i).map(id => idx[id]));
   const dur = steps.map(U.stepTime);
   const passive = steps.map(s => !!App.verb(s.verb).passive);
   const busy = steps.map((_, i) => passive[i] ? Math.min(1, dur[i]) : dur[i]);
-  const pinned = steps.map(s => chefs === 2 && (s.chef === 'A' || s.chef === 'B') ? s.chef : null);
-
-  // tail[i] = time from the start of step i to the end of the meal along its longest chain
-  const tail = new Array(n).fill(0);
-  for (let i = n - 1; i >= 0; i--) {
-    const kids = deps.map((d, j) => j).filter(j => deps[j].includes(i));
-    tail[i] = dur[i] + Math.max(0, ...kids.map(j => tail[j]));
-  }
-  // The step whose pot/pan this step continues: its latest non-prep dependency, else its last one.
-  const parent = deps.map(ds => {
-    const cook = [...ds].reverse().find(d => App.verb(steps[d].verb).group !== 'Prep');
-    return cook ?? (ds.length ? Math.max(...ds) : null);
-  });
-
-  // Given who does what, work out when each step happens.
-  function simulate(assign) {
-    const free = { A: 0, B: 0 }, start = [], end = [];
-    const left = new Set(steps.map((_, i) => i));
-    while (left.size) {
-      let pick = -1, pickStart = Infinity;
-      for (const i of left) {
-        if (!deps[i].every(d => end[d] != null)) continue;
-        const st = Math.max(free[assign[i]], ...deps[i].map(d => end[d]));
-        if (st < pickStart || (st === pickStart && tail[i] > tail[pick])) { pick = i; pickStart = st; }
-      }
-      if (pick < 0) break; // only if dependencies loop, which the editor prevents
-      start[pick] = pickStart; end[pick] = pickStart + dur[pick];
-      free[assign[pick]] = pickStart + busy[pick];
-      left.delete(pick);
+  let free = 0;
+  const start = [], end = [];
+  const left = new Set(steps.map((_, i) => i));
+  while (left.size) {
+    let pick = -1, pickStart = Infinity;
+    for (const i of left) {
+      if (!deps[i].every(d => end[d] != null)) continue;
+      const st = Math.max(free, ...deps[i].map(d => end[d]));
+      if (st < pickStart) { pick = i; pickStart = st; }
     }
-    return { start, end, total: Math.max(0, ...end.filter(x => x != null)) };
+    if (pick < 0) break; // only if dependencies loop, which the editor prevents
+    start[pick] = pickStart; end[pick] = pickStart + dur[pick];
+    free = pickStart + busy[pick];
+    left.delete(pick);
   }
-  function cost(assign) {
-    const { total } = simulate(assign);
-    let a = 0, b = 0, handoffs = 0;
-    steps.forEach((_, i) => {
-      if (assign[i] === 'A') a += busy[i]; else b += busy[i];
-      if (parent[i] != null && assign[parent[i]] !== assign[i] && App.verb(steps[i].verb).group !== 'Prep') handoffs++;
-    });
-    return total * 10 + Math.abs(a - b) + handoffs * 5;
-  }
-
-  let assign = steps.map((_, i) => pinned[i] || 'A');
-  if (chefs === 2) {
-    // A step plus every later step that continues in the same pot (so a whole stove run can move at once).
-    const chain = i => {
-      const out = [i];
-      for (let j = i + 1; j < n; j++) if (out.includes(parent[j]) && App.verb(steps[j].verb).group !== 'Prep') out.push(j);
-      return out;
-    };
-    // Improve a split by moving single steps or whole pot-chains to the other chef.
-    const climb = start => {
-      let cur = start, best = cost(cur), improved = true, rounds = 0;
-      while (improved && rounds++ < 20) {
-        improved = false;
-        for (let i = 0; i < n; i++) {
-          for (const group of [[i], chain(i)]) {
-            const movable = group.filter(j => !pinned[j]);
-            if (!movable.length) continue;
-            const to = cur[i] === 'A' ? 'B' : 'A';
-            const trial = cur.slice();
-            movable.forEach(j => trial[j] = to);
-            const c = cost(trial);
-            if (c < best) { best = c; cur = trial; improved = true; }
-          }
-        }
-      }
-      return { assign: cur, cost: best };
-    };
-    // Second starting guess: hand each step to whoever is free first, but keep a pot with
-    // the chef already working it if that costs 3 minutes or less.
-    const greedy = () => {
-      const a = [], free = { A: 0, B: 0 }, end = [];
-      const left = new Set(steps.map((_, i) => i));
-      const at = (i, c) => Math.max(free[c], ...deps[i].map(d => end[d]));
-      const ok = i => pinned[i] ? [pinned[i]] : ['A', 'B'];
-      while (left.size) {
-        let pick = -1, ps = Infinity;
-        for (const i of left) {
-          if (!deps[i].every(d => end[d] != null)) continue;
-          const st = Math.min(...ok(i).map(c => at(i, c)));
-          if (st < ps || (st === ps && tail[i] > tail[pick])) { pick = i; ps = st; }
-        }
-        if (pick < 0) break;
-        let c = ok(pick).reduce((b, x) => at(pick, x) < at(pick, b) ? x : b);
-        const own = parent[pick] != null && App.verb(steps[pick].verb).group !== 'Prep' ? a[parent[pick]] : null;
-        if (own && own !== c && ok(pick).includes(own) && at(pick, own) <= at(pick, c) + 3) c = own;
-        a[pick] = c;
-        const s = at(pick, c);
-        end[pick] = s + dur[pick]; free[c] = s + busy[pick];
-        left.delete(pick);
-      }
-      return steps.map((_, i) => a[i] || 'A');
-    };
-    // Third guess: one prep cook, one stove cook.
-    const prepVsStove = steps.map((st, i) => pinned[i] || (App.verb(st.verb).group === 'Prep' ? 'A' : 'B'));
-    const tries = [climb(assign), climb(greedy()), climb(prepVsStove)];
-    assign = tries.reduce((b, t) => t.cost < b.cost ? t : b).assign;
-    // Whoever has the first step is Chef A.
-    const st = simulate(assign).start;
-    const first = steps.map((_, i) => i).sort((x, y) => st[x] - st[y] || x - y)[0];
-    if (first != null && assign[first] === 'B' && !pinned.some(Boolean)) assign = assign.map(c => c === 'A' ? 'B' : 'A');
-  }
-
-  const { start, end, total } = simulate(assign);
   const byId = {};
-  steps.forEach((s, i) => byId[s.id] = { chef: assign[i], start: start[i], end: end[i], passive: passive[i] });
-  return { byId, total };
+  steps.forEach((s, i) => byId[s.id] = { start: start[i], end: end[i], passive: passive[i] });
+  return { byId, total: Math.max(0, ...end.filter(x => x != null)) };
 };
 
 U.fmtMins = m => {

@@ -1,7 +1,7 @@
 // Recipe page. Same screen for cooking and editing: the pencil switches to edit mode, where the
 // words on each step can be tapped and changed in place (see js/edit.js).
 App.views = App.views || {};
-App.session = App.session || { servings: {}, mode: 'solo', ingOpen: false };
+App.session = App.session || { servings: {}, ingOpen: false, done: {} };
 
 App.views.recipe = (root, { id, edit = false }) => {
   const U = App.util, S = App.store, ui = App.ui, E = App.edit;
@@ -18,22 +18,17 @@ App.views.recipe = (root, { id, edit = false }) => {
   if (edit && !mine) { location.replace('#/r/' + enc); return; }
   const back = App.session.from || '#/'; // the list you came from
 
-  // Steps swiped off as done while cooking. Lives only while the recipe is open.
-  const done = new Set();
+  // Steps swiped off as done while cooking. Kept for this visit (not saved), so a redraw from
+  // another device's change doesn't bring them back.
+  const done = ((App.session.done ||= {})[r.id] ||= new Set());
   let picking = false; // edit mode: the icon picker is open
-  let lastDuo = null;   // the co-op split as last drawn
   let tagsOpen = false; // cooking view: the extra tags are shown
   const servings = () => edit ? (r.servings || 1) : (App.session.servings[r.id] || r.servings || 1);
   const scale = () => servings() / (r.servings || 1);
 
   function render() {
     const y = window.scrollY;
-    const coop = App.session.mode === 'coop';
-    // Co-op: the recipe's split (chosen in edit mode, saved with the recipe), with any swaps made while
-    // cooking on top — those last only for now and are never saved.
-    const tweaks = !edit && App.session.split?.[r.id];
-    const asCooked = tweaks ? { ...r, steps: r.steps.map(s => tweaks[s.id] ? { ...s, chef: tweaks[s.id] } : s) } : r;
-    const solo = U.schedule(r, 1), duo = lastDuo = U.schedule(asCooked, 2);
+    const total = U.schedule(r).total;
     const sc = scale();
     const ingOpen = !!App.session.ingOpen;
     const imported = edit && App.session.justImported === r.id;
@@ -49,16 +44,11 @@ App.views.recipe = (root, { id, edit = false }) => {
     }).join('');
 
     const stepHtml = r.steps.map((s, i) => {
-      const chef = duo.byId[s.id].chef;
-      const chefCls = coop ? 'chef-' + chef : '';
       // edit mode: a + before each step adds a new step right there (the first one says so)
-      if (edit) return `<button class="ins-step ${i ? '' : 'first'}" data-insert="${i}" aria-label="Add a step ${i ? 'here' : 'at the start'}">${App.glyph('plus')}${i ? '' : '<span>Add step</span>'}</button>` + E.stepHtml(r, s, i, chefCls, coop ? chef : null);
+      if (edit) return `<button class="ins-step ${i ? '' : 'first'}" data-insert="${i}" aria-label="Add a step ${i ? 'here' : 'at the start'}">${App.glyph('plus')}${i ? '' : '<span>Add step</span>'}</button>` + E.stepHtml(r, s, i);
       const isDone = done.has(s.id), label = isDone ? App.glyph('check') : i + 1;
-      const num = coop
-        ? `<button class="num ${chefCls}" data-swap="${s.id}" aria-label="Step ${i + 1}: Chef ${chef}. Tap to switch chef">${label}</button>`
-        : `<div class="num">${label}</div>`;
-      return `<div class="card step swipe ${chefCls} ${isDone ? 'done' : ''}" data-sid="${s.id}" aria-label="Step ${i + 1}${isDone ? ', done' : ''}">
-        ${num}
+      return `<div class="card step swipe ${isDone ? 'done' : ''}" data-sid="${s.id}" aria-label="Step ${i + 1}${isDone ? ', done' : ''}">
+        <div class="num">${label}</div>
         <div class="body">
           ${ui.step(r, s, sc)}
         </div>
@@ -82,26 +72,17 @@ App.views.recipe = (root, { id, edit = false }) => {
       ${tagRowHtml()}
 
       <div class="meta-row">
-        <div class="seg">
-          <button data-mode="solo" class="${coop ? '' : 'on'}">${App.icon('person')}Solo</button>
-          <button data-mode="coop" class="${coop ? 'on' : ''}">${App.icon('people')}Co-op</button>
-        </div>
+        <span class="time">${App.icon('clock')}~${U.fmtMins(total)}</span>
         <div class="stepper" aria-label="Servings">
           <button data-serv="-1" aria-label="Fewer servings">${App.glyph('minus')}</button>
           <span class="val">${App.icon('cloche')}${servings()}</span>
           <button data-serv="1" aria-label="More servings">${App.glyph('plus')}</button>
         </div>
       </div>
-      <div class="coop-line">
-        ${coop
-          ? `<span class="a">● A</span> <span class="b">● B</span> · ~${U.fmtMins(duo.total)}<span class="muted"> · ${edit ? 'tap A / B to set who does each step' : 'tap a number to swap, just for now'}</span>
-             ${tweaks ? `<button class="link" data-act="reset-split">${App.glyph('undo')}Reset</button>` : ''}`
-          : `<span class="time">${App.icon('clock')}~${U.fmtMins(solo.total)}</span>`}
-      </div>
 
       <div class="section-label">
         <button class="ing-toggle" data-act="toggle-ings" aria-expanded="${ingOpen}">${App.glyph('chevron')} Ingredients <span class="count">${r.ingredients.length}</span></button>
-        ${edit ? '' : `<button class="btn small" data-act="to-list">${App.icon('basket')}Add to list</button>`}
+        <button class="btn small" data-act="to-list">${App.icon('basket')}Add to list</button>
       </div>
       ${ingOpen ? (edit ? `<ul class="card ing-list edit">${ingHtml}<li class="ing-item"><input class="inl add-ing" data-add-list placeholder="+ ingredient (like 2 carrots)" aria-label="Add an ingredient" enterkeyhint="done" autocomplete="off"></li></ul>`
         : r.ingredients.length ? `<ul class="card ing-list">${ingHtml}</ul>` : `<div class="muted">No ingredients yet.</div>`) : ''}
@@ -113,7 +94,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       ${edit ? `
         <div class="section-label">More</div>
         <label class="field"><span>Source link</span><input class="input" data-f="source" value="${U.esc(r.source || '')}" placeholder="https://"></label>
-        <button class="btn danger block" data-act="delete" style="margin-top:20px">Delete recipe</button>` : sourceHtml()}`;
+        <button class="btn danger block delete-recipe" data-act="delete">Delete recipe</button>` : sourceHtml()}`;
     if (edit) E.autosizeAll(root);
     window.scrollTo(0, y);
   }
@@ -174,8 +155,7 @@ App.views.recipe = (root, { id, edit = false }) => {
     const t = e.target.closest('button');
     if (!t) return;
     const d = t.dataset;
-    if (d.mode) { App.session.mode = d.mode; render(); }
-    else if (d.act === 'pick-icon') { picking = !picking; render(); }
+    if (d.act === 'pick-icon') { picking = !picking; render(); }
     else if (d.icon) { r.icon = d.icon; picking = false; render(); }
     else if (d.bg) { r.iconBg = d.bg; render(); }
     else if (d.rmTag) { r.tags.splice(+d.rmTag, 1); render(); }
@@ -185,14 +165,6 @@ App.views.recipe = (root, { id, edit = false }) => {
       else App.session.servings[r.id] = Math.max(1, servings() + +d.serv);
       render();
     }
-    else if (d.swap) {
-      // cooking view: swap a step to the other chef for now (the recipe's saved split stays as it is)
-      const t = ((App.session.split ||= {})[r.id] ||= {});
-      if (!Object.keys(t).length) for (const s of r.steps) t[s.id] = lastDuo.byId[s.id].chef; // keep the rest where they are
-      t[d.swap] = t[d.swap] === 'A' ? 'B' : 'A';
-      render();
-    }
-    else if (d.act === 'reset-split') { delete App.session.split[r.id]; render(); }
     else if ('insert' in d) { const n = E.newStep(r, +d.insert); render(); root.querySelector(`[data-add-ing="${n.id}"]`)?.focus(); }
     else if (d.act === 'add-step') { E.newStep(r); render(); root.querySelector('.step.edit:last-child [data-add-ing]')?.focus(); }
     else if (d.act === 'delete') {
@@ -208,6 +180,8 @@ App.views.recipe = (root, { id, edit = false }) => {
     else if (d.act === 'to-list') {
       if (App.needLogin()) return;
       const list = S.myList();
+      list.hidden ||= {};
+      for (const g of r.ingredients) delete list.hidden[String(g.name).toLowerCase().trim().replace(/\s+/g, ' ').replace(/(es|s)$/, '')]; // its items come back
       const ex = list.recipes.find(x => x.id === r.id);
       if (ex) ex.servings = servings(); else list.recipes.push({ id: r.id, servings: servings() });
       S.save();
@@ -309,6 +283,6 @@ App.views.recipe = (root, { id, edit = false }) => {
     ui.keepAwake(false);
     if (edit && App.session.justImported === r.id) delete App.session.justImported;
     const saved = S.recipe(r.id);
-    if (edit && saved && !saved.title.trim() && !saved.ingredients.length && !saved.steps.length) S.deleteRecipe(id); // abandoned blank recipe
+    if (edit && saved && !String(saved.title || '').trim() && !(saved.ingredients || []).length && !(saved.steps || []).length) S.deleteRecipe(saved.id); // abandoned blank recipe
   };
 };

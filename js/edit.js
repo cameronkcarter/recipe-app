@@ -28,8 +28,7 @@ App.edit = (() => {
       .map(v => `<button class="act ${v.id === sel ? 'on' : ''}" data-pick="${v.id}">${App.icon(v.icon)}${v.label}</button>`).join('')}</div>`).join('');
 
   // ---------- Rendering ----------
-  // chef: "A"/"B" when co-op is on, so the step shows a tag you can tap to switch chefs.
-  function stepHtml(r, s, i, chefCls, chef) {
+  function stepHtml(r, s, i) {
     const v = App.verb(s.verb);
     const usedBefore = new Set(r.steps.slice(0, i).flatMap(x => (x.uses || []).map(u => u.ing)));
     const canMove = (s.uses || []).length > 1 || r.steps.length > 1;
@@ -42,16 +41,15 @@ App.edit = (() => {
       const amt = first && (g.qty != null || g.unit) ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
       return `<li class="bubble" data-ing="${g.id}" style="--i:${(i + k) % 5}">
         ${U.ingIconHtml(g)}
-        ${first ? inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt' + (amt ? '' : ' empty')) : ''}
+        ${first ? inl(`data-amt="${g.id}" aria-label="Amount, like 1 1/2 cups" enterkeyhint="done"`, amt, 'amt', 'amt' + (amt ? '' : ' empty')) : ''}
         ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
         <span class="inl un ${u.note ? '' : 'empty'}" contenteditable="true" role="textbox" data-unote="${g.id}" data-ph="+ prep" aria-label="How it's prepped (diced, drained…)">${U.esc(u.note || '')}</span>
         ${mvBtn(k, g.name)}
         <button class="x" data-rm-use="${g.id}" aria-label="Remove ${U.esc(g.name)}">${App.glyph('x')}</button>
       </li>`;
     }).join('');
-    return `<div class="card step edit ${chefCls} ${s.id === active ? 'active' : ''}" data-step="${s.id}">
-      <div class="num step-handle ${chefCls}" title="Drag to move">${i + 1}</div>
-      ${chef ? `<button class="chef-pill pill-${chef}" data-chef-swap="${s.id}" aria-label="Chef ${chef} — tap to switch">${chef}</button>` : ''}
+    return `<div class="card step edit ${s.id === active ? 'active' : ''}" data-step="${s.id}">
+      <div class="num step-handle" title="Drag to move">${i + 1}</div>
       <div class="body">
         <div class="s-grid">
           <button type="button" class="s-verb verb-pick ${v.label.length > 7 ? 'long' : ''}" data-pick-verb="${s.id}" aria-label="Action: ${U.esc(v.label)}. Tap to change"><span class="vi">${App.icon(v.icon)}</span><span class="vl">${U.esc(v.label)}</span></button>
@@ -76,7 +74,7 @@ App.edit = (() => {
   function ingRowHtml(r, g) {
     const amt = g.qty != null || g.unit ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
     return `<li class="ing-item" data-ing-row="${g.id}"><button type="button" class="ico-pick" data-ing-icon="${g.id}" aria-label="Change the icon for ${U.esc(g.name)}">${U.ingIconHtml(g)}</button>
-      ${inl(`data-amt="${g.id}" inputmode="decimal" aria-label="Amount"`, amt, 'amt', 'amt')}
+      ${inl(`data-amt="${g.id}" aria-label="Amount, like 1 1/2 cups" enterkeyhint="done"`, amt, 'amt', 'amt')}
       ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
       <span class="ing-grip" aria-label="Drag to move ${U.esc(g.name)}" title="Drag to move">${App.glyph('grip')}</span>
       <button class="x" data-rm-ing="${g.id}" aria-label="Delete ${U.esc(g.name)}">${App.glyph('x')}</button></li>`;
@@ -166,7 +164,6 @@ App.edit = (() => {
     const s = { id: U.uid('s'), verb: 'add', uses: [], after: prev ? [prev.id] : [] };
     if (prev && next && Array.isArray(next.after) && next.after.includes(prev.id)) next.after = next.after.map(x => x === prev.id ? s.id : x);
     active = s.id;
-    if (isCustomSplit(r)) s.chef = 'A';
     r.steps.splice(at, 0, s);
     return s;
   }
@@ -212,7 +209,15 @@ App.edit = (() => {
     on(root, 'change', e => {
       const t = e.target, d = t.dataset;
       if (d.verb) { r.steps.find(s => s.id === d.verb).verb = t.value; commit(true); }
-      else if (d.amt) { setAmount(ing(r, d.amt), t.value); commit(true); } // the ingredient list shows it too
+      else if (d.amt) {
+        // The ingredient list and the step both show the amount: update both in place. Redrawing the
+        // page here would close the phone keyboard while you're moving to the next box.
+        const g = ing(r, d.amt);
+        setAmount(g, t.value);
+        const shown = g.qty != null || g.unit ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
+        root.querySelectorAll(`[data-amt="${d.amt}"]`).forEach(x => { x.value = shown; x.classList.toggle('empty', !shown); autosize(x); });
+        commit();
+      }
       else if (d.name) {
         const g = ing(r, d.name);
         if (t.value.trim()) g.name = t.value.trim();
@@ -290,12 +295,12 @@ App.edit = (() => {
         });
       }
       else if (d.rmUse) { removeUse(r, t.closest('[data-step]').dataset.step, d.rmUse); commit(true); }
-      else if (d.chefSwap) { swapChef(r, d.chefSwap, false); commit(true); }
       else if (d.rmIng) { removeIngredient(r, d.rmIng); commit(true); }
       else if (d.rmStep) {
-        const s = r.steps.find(x => x.id === d.rmStep);
-        if ((s.uses || []).length && !confirm('Delete this step?')) return;
+        // no "are you sure?": the step goes, with Undo on the message at the bottom
+        const before = JSON.stringify(r.steps), n = r.steps.findIndex(x => x.id === d.rmStep) + 1;
         deleteStep(r, d.rmStep); commit(true);
+        App.ui.toast(`Step ${n} deleted`, () => { r.steps = JSON.parse(before); commit(true); });
       }
     });
     bindDrag(root, r, commit, on);
@@ -446,20 +451,5 @@ App.edit = (() => {
     on(window, 'pointercancel', end);
   }
 
-  // ---------- Co-op ----------
-  // First manual change freezes the current split, so only the tapped step moves.
-  // persist=false in edit mode: the change stays on the working copy until Done.
-  function swapChef(r, stepId, persist = true) {
-    if (!isCustomSplit(r)) {
-      const duo = U.schedule(r, 2);
-      r.steps.forEach(s => { s.chef = duo.byId[s.id].chef; });
-    }
-    const s = r.steps.find(x => x.id === stepId);
-    s.chef = s.chef === 'A' ? 'B' : 'A';
-    if (persist) save(r);
-  }
-  function isCustomSplit(r) { return r.steps.some(s => s.chef === 'A' || s.chef === 'B'); }
-  function autoSplit(r, persist = true) { r.steps.forEach(s => delete s.chef); if (persist) save(r); }
-
-  return { autosizeAll, stepHtml, ingRowHtml, bind, newStep, swapChef, autoSplit, isCustomSplit };
+  return { autosizeAll, stepHtml, ingRowHtml, bind, newStep };
 })();

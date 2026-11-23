@@ -30,7 +30,7 @@ App.ui = {};
       ${U.recipeIconHtml(r)}
       <div class="name">${U.esc(r.title)}</div>
       <div class="meta">${mine ? '<span></span>' : `<span class="who">${App.ui.heart(r.id)}${by ? `<span class="cook">${U.esc(U.firstName(by))}</span>` : ''}</span>`}
-        <span class="time">${App.icon('clock')}${U.fmtMinsShort(U.schedule(r, 1).total)}</span></div></a>`;
+        <span class="time">${App.icon('clock')}${U.fmtMinsShort(U.schedule(r).total)}</span></div></a>`;
   };
   // Filled when it's in your recipe book. Works inside a card link (see the click handler in app.js).
   App.ui.heart = id => {

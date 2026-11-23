@@ -2,7 +2,7 @@
 window.App = window.App || {};
 
 // Each verb has an icon. "passive" verbs (simmer, bake, rest...) run on their own,
-// so in co-op mode the chef is free to do something else while they happen.
+// so the cook is free to do something else while they happen (it counts in the total time).
 // A short list on purpose: one word per thing your hands actually do. How exactly (diced, minced,
 // peeled, browned…) goes in the ingredient's note, not in a separate action.
 App.VERBS = [
@@ -174,20 +174,43 @@ App.CATEGORIES = [
   { id: 'frozen',  icon: 'snow',   label: 'Frozen' },
   { id: 'other',   icon: 'basket', label: 'Other' },
 ];
-App.CAT_KEYWORDS = [
-  ['spices', ['chili powder', 'powder', 'cumin', 'paprika', 'cayenne', 'cinnamon', 'oregano dried', 'salt', 'pepper flakes', 'black pepper', 'olive oil', 'oil', 'vinegar', 'vanilla', 'nutmeg', 'turmeric', 'curry']],
-  ['pantry',  ['broth', 'stock', 'diced tomatoes', 'crushed tomatoes', 'tomato paste', 'tomato sauce', 'canned', 'bean', 'lentil', 'chickpea', 'rice', 'pasta', 'noodle', 'flour', 'sugar', 'honey', 'maple', 'soy sauce', 'oat', 'nut', 'coconut milk', 'chocolate']],
-  ['dairy',   ['sour cream', 'butter', 'cheese', 'parmesan', 'mozzarella', 'cheddar', 'feta', 'ricotta', 'milk', 'cream', 'yogurt', 'egg', 'tofu']],
-  ['bakery',  ['cornbread', 'bread', 'tortilla', 'bun', 'roll', 'bagel']],
-  ['protein', ['chicken', 'beef', 'pork', 'bacon', 'sausage', 'turkey', 'salmon', 'fish', 'shrimp', 'steak']],
-  ['frozen',  ['frozen']],
-  ['produce', ['potato', 'onion', 'garlic', 'shallot', 'tomato', 'avocado', 'cilantro', 'parsley', 'basil', 'thyme', 'rosemary', 'mint', 'lemon', 'lime', 'pepper', 'jalapeño', 'carrot', 'celery', 'mushroom', 'broccoli', 'spinach', 'kale', 'lettuce', 'cabbage', 'cucumber', 'zucchini', 'ginger', 'apple', 'banana', 'berr', 'corn', 'scallion']],
-];
+// Words and phrases → aisle (see U.category). Whole words only, plurals match too ("tomato" covers
+// "tomatoes"). A longer phrase beats a shorter one, so "coconut milk" is pantry though "milk" is dairy.
+App.CAT_WORDS = {
+  produce: ['potato', 'sweet potato', 'yam', 'onion', 'red onion', 'yellow onion', 'white onion', 'green onion', 'spring onion', 'scallion', 'shallot', 'leek', 'garlic', 'ginger',
+    'tomato', 'cherry tomato', 'plum tomato', 'roma tomato', 'tomatillo', 'avocado', 'cilantro', 'coriander', 'parsley', 'basil', 'thyme', 'rosemary', 'mint', 'dill', 'chive', 'sage', 'oregano', 'tarragon', 'lemongrass',
+    'lemon', 'lime', 'orange', 'grapefruit', 'bell pepper', 'pepper', 'jalapeno', 'serrano', 'poblano', 'habanero', 'chile', 'chili pepper', 'thai chile', 'carrot', 'celery', 'mushroom', 'portobello', 'shiitake',
+    'broccoli', 'broccolini', 'cauliflower', 'spinach', 'kale', 'chard', 'collard', 'arugula', 'lettuce', 'romaine', 'greens', 'mixed greens', 'cabbage', 'red cabbage', 'bok choy', 'brussels sprout',
+    'cucumber', 'zucchini', 'squash', 'butternut squash', 'acorn squash', 'spaghetti squash', 'pumpkin', 'eggplant', 'asparagus', 'green bean', 'snap pea', 'snow pea', 'pea', 'edamame', 'corn', 'corn on the cob',
+    'beet', 'radish', 'turnip', 'parsnip', 'fennel', 'artichoke', 'okra', 'jicama', 'sprout', 'bean sprout', 'microgreen',
+    'apple', 'banana', 'berry', 'strawberry', 'blueberry', 'raspberry', 'blackberry', 'cranberry', 'cherry', 'grape', 'mango', 'pineapple', 'peach', 'nectarine', 'plum', 'pear', 'kiwi', 'melon', 'watermelon', 'cantaloupe',
+    'pomegranate', 'fig', 'date', 'lemon juice', 'lime juice', 'orange juice', 'lemon zest', 'lime zest', 'fresh herb'],
+  protein: ['chicken', 'chicken breast', 'chicken thigh', 'beef', 'ground beef', 'steak', 'pork', 'pork chop', 'pork shoulder', 'bacon', 'ham', 'prosciutto', 'pancetta', 'sausage', 'chorizo', 'pepperoni', 'salami',
+    'turkey', 'ground turkey', 'lamb', 'veal', 'duck', 'salmon', 'tuna', 'cod', 'tilapia', 'halibut', 'trout', 'fish', 'white fish', 'shrimp', 'prawn', 'scallop', 'crab', 'lobster', 'clam', 'mussel', 'anchovy', 'tempeh', 'seitan'],
+  dairy: ['milk', 'whole milk', 'buttermilk', 'cream', 'heavy cream', 'whipping cream', 'half and half', 'sour cream', 'creme fraiche', 'butter', 'ghee', 'cheese', 'cream cheese', 'parmesan', 'mozzarella', 'cheddar',
+    'feta', 'ricotta', 'goat cheese', 'gruyere', 'swiss', 'provolone', 'monterey jack', 'pepper jack', 'cotija', 'queso fresco', 'paneer', 'halloumi', 'mascarpone', 'brie', 'blue cheese', 'yogurt', 'greek yogurt',
+    'egg', 'egg yolk', 'egg white', 'tofu', 'hummus', 'tortellini', 'pesto', 'oat milk', 'almond milk', 'soy milk', 'plant milk', 'vegan butter', 'vegan cheese', 'dairy free cheese', 'vegan sour cream'],
+  bakery: ['bread', 'naan', 'naan bread', 'pita', 'baguette', 'sourdough', 'cornbread', 'tortilla', 'tortilla chip', 'tostada', 'taco shell', 'bun', 'hamburger bun', 'roll', 'dinner roll', 'bagel', 'english muffin', 'croissant', 'brioche', 'ciabatta', 'flatbread', 'wrap', 'lavash'],
+  pantry: ['broth', 'stock', 'bouillon', 'diced tomato', 'crushed tomato', 'whole tomato', 'canned tomato', 'tomato paste', 'tomato sauce', 'passata', 'marinara', 'salsa', 'sun dried tomato', 'bean', 'black bean', 'pinto bean', 'kidney bean',
+    'cannellini bean', 'white bean', 'refried bean', 'lentil', 'chickpea', 'garbanzo', 'split pea', 'rice', 'brown rice', 'quinoa', 'couscous', 'farro', 'barley', 'bulgur', 'oat', 'rolled oat', 'oatmeal', 'grits', 'polenta',
+    'pasta', 'spaghetti', 'penne', 'macaroni', 'noodle', 'ramen', 'udon', 'rice noodle', 'lasagna', 'orzo', 'flour', 'bread flour', 'almond flour', 'cornstarch', 'corn starch', 'cornmeal', 'breadcrumb', 'panko', 'cracker',
+    'sugar', 'brown sugar', 'powdered sugar', 'honey', 'maple', 'maple syrup', 'agave', 'molasses', 'syrup', 'baking powder', 'baking soda', 'yeast', 'cocoa', 'cocoa powder', 'chocolate', 'chocolate chip', 'vanilla',
+    'soy sauce', 'tamari', 'fish sauce', 'oyster sauce', 'hoisin', 'sriracha', 'hot sauce', 'worcestershire', 'ketchup', 'mustard', 'dijon', 'mayo', 'mayonnaise', 'bbq sauce', 'barbecue sauce', 'teriyaki',
+    'curry paste', 'miso', 'tahini', 'peanut butter', 'almond butter', 'jam', 'jelly', 'nut', 'peanut', 'almond', 'walnut', 'pecan', 'cashew', 'pistachio', 'pine nut', 'hazelnut', 'seed', 'chia seed', 'flax',
+    'sesame seed', 'pumpkin seed', 'pepita', 'sunflower seed', 'raisin', 'dried cranberry', 'coconut', 'coconut milk', 'coconut cream', 'shredded coconut', 'olive', 'kalamata olive', 'caper', 'pickle', 'artichoke heart',
+    'roasted red pepper', 'chipotle in adobo', 'green chile', 'nutritional yeast', 'water', 'wine', 'white wine', 'red wine', 'beer', 'juice', 'gelatin', 'condensed milk', 'evaporated milk', 'gochujang', 'harissa'],
+  spices: ['salt', 'kosher salt', 'sea salt', 'salt and pepper', 'black pepper', 'white pepper', 'peppercorn', 'red pepper flake', 'pepper flake', 'chili flake', 'crushed red pepper', 'powder', 'chili powder', 'chilli powder', 'cayenne pepper', 'aleppo pepper', 'lemon pepper', 'garlic powder',
+    'onion powder', 'curry powder', 'chili', 'cumin', 'paprika', 'smoked paprika', 'cayenne', 'cinnamon', 'nutmeg', 'clove', 'allspice', 'cardamom', 'turmeric', 'curry', 'garam masala', 'masala', 'tandoori masala',
+    'italian seasoning', 'seasoning', 'cajun seasoning', 'taco seasoning', 'herbes de provence', 'bay leaf', 'mustard seed', 'fennel seed', 'coriander seed', 'cumin seed', 'sesame oil', 'oil', 'olive oil',
+    'vegetable oil', 'canola oil', 'avocado oil', 'coconut oil', 'cooking spray', 'vinegar', 'balsamic', 'balsamic vinegar', 'red wine vinegar', 'rice vinegar', 'apple cider vinegar', 'extract', 'vanilla extract',
+    'saffron', 'sumac', 'za atar', 'everything bagel seasoning', 'msg'],
+  frozen: ['frozen', 'ice cream', 'ice'],
+};
+
 
 // ---------- Starter recipe ----------
 // Imported from https://www.noracooks.com/vegan-sweet-potato-black-bean-chili/
 // "after" lists which steps must be done first (empty = can start any time).
-// That's what lets co-op mode split the work between two chefs.
 // Bump when the starter recipe changes so existing browsers pick up the new version.
 App.SEED_VERSION = 3;
 App.SEED_RECIPES = [
