@@ -17,6 +17,10 @@
   --good-soft: #e3f2de;
   --good-deep: #3c7a39;
   --danger: #d9483b;
+  --serv-up: #3c7a39;
+  --serv-up-bg: #e3f2de;
+  --serv-down: #c23d2b;
+  --serv-down-bg: #fbe3de;
   --radius: 20px;
   --radius-sm: 9px;  /* edit-mode boxes: ingredient bubbles, time/heat/note, step buttons */
   --nav-h: 72px;
@@ -38,6 +42,10 @@
   --accent-ink: #2a1d15;
   --good-soft: #263b24;
   --good-deep: #9ad696;
+  --serv-up: #9ad696;
+  --serv-up-bg: #263b24;
+  --serv-down: #ff9a85;
+  --serv-down-bg: #46241e;
   color-scheme: dark;
 }
 
@@ -727,7 +735,6 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .source-link .gl { width: 16px; height: 16px; }
 .source-link:hover { color: var(--accent); }
 .shop-recipe .stepper button.val { width: auto; height: 26px; border-radius: 999px; background: none; padding: 0 4px; font-weight: 800; color: var(--text); }
-.shop-recipe .stepper button.val.changed { background: var(--accent); color: var(--accent-ink); }
 .topbar .btn.small { white-space: nowrap; }
 .topbar .btn.small .gl { width: 15px; height: 15px; }
 .mv-row { display: flex; gap: 6px; padding: 2px 0 8px; }
@@ -881,3 +888,16 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .b-ings .b-mv .x { margin-left: 0; padding: 4px; }
 .b-ings .b-mv .x:disabled { opacity: .25; }
 .b-ings li.mix-use > span:not(.ing-ico):not(.b-mv) { flex: 1; min-width: 0; }
+
+/* ============ Nov 23e: servings show if you've changed them ============ */
+/* gray at the recipe's own number; green with an up arrow when more; red with a down arrow when less */
+.stepper .val { border-radius: 999px; padding: 0 8px; height: 30px; transition: background-color .15s, color .15s; }
+.stepper .val.serv-same { color: var(--muted); }
+.stepper .val.serv-same .ic { filter: grayscale(1); opacity: .7; }
+.stepper .val.serv-up { color: var(--serv-up); background: var(--serv-up-bg); }
+.stepper .val.serv-down { color: var(--serv-down); background: var(--serv-down-bg); }
+.stepper .val .serv-arrow { width: 15px; height: 15px; stroke-width: 3.4; }
+.shop-recipe .stepper button.val { height: 26px; padding: 0 7px; }
+.shop-recipe .stepper button.val.serv-same { color: var(--muted); background: none; }
+.shop-recipe .stepper button.val.serv-up { color: var(--serv-up); background: var(--serv-up-bg); }
+.shop-recipe .stepper button.val.serv-down { color: var(--serv-down); background: var(--serv-down-bg); }

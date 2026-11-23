@@ -106,7 +106,7 @@ App.views.recipe = (root, { id, edit = false }) => {
         <span class="time">${App.icon('clock')}~${U.fmtMins(total)}</span>
         <div class="stepper" aria-label="Servings">
           <button data-serv="-1" aria-label="Fewer servings">${App.glyph('minus')}</button>
-          <span class="val">${App.icon('cloche')}${servings()}</span>
+          <span class="val serv-${edit ? 'same' : App.ui.servState(servings(), r.servings || 1)}">${edit ? App.icon('cloche') + servings() : App.ui.servInner(servings(), r.servings || 1)}</span>
           <button data-serv="1" aria-label="More servings">${App.glyph('plus')}</button>
         </div>
       </div>

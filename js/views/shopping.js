@@ -63,7 +63,7 @@ App.views.shopping = root => {
         if (!r) return '';
         const std = r.servings || 1, changed = e.servings !== std;
         return `<span class="shop-recipe">${App.icon(U.recipeIcon(r))}${U.esc(r.title)}
-          <span class="stepper"><button data-act="serv" data-id="${U.esc(e.id)}" data-d="-1" aria-label="Fewer servings">${App.glyph('minus')}</button><button class="val ${changed ? 'changed' : ''}" data-act="serv-reset" data-id="${U.esc(e.id)}" aria-label="${e.servings} servings${changed ? `, recipe makes ${std}. Tap to reset` : ''}">${App.icon('cloche')}${e.servings}</button><button data-act="serv" data-id="${U.esc(e.id)}" data-d="1" aria-label="More servings">${App.glyph('plus')}</button></span>
+          <span class="stepper"><button data-act="serv" data-id="${U.esc(e.id)}" data-d="-1" aria-label="Fewer servings">${App.glyph('minus')}</button><button class="val serv-${App.ui.servState(e.servings, std)}" data-act="serv-reset" data-id="${U.esc(e.id)}" aria-label="${e.servings} servings${changed ? `, recipe makes ${std}. Tap to reset` : ''}">${App.ui.servInner(e.servings, std)}</button><button data-act="serv" data-id="${U.esc(e.id)}" data-d="1" aria-label="More servings">${App.glyph('plus')}</button></span>
           <button class="rm" data-act="rm-recipe" data-id="${U.esc(e.id)}" aria-label="Remove recipe">${App.glyph('x')}</button></span>`;
       }).join('')}</div>` : `<div class="muted">Pick a few recipes and their ingredients get combined here.</div>`}
 
@@ -164,18 +164,19 @@ App.views.shopping = root => {
       () => alert(lines.join('\n')));
   }
 
-  // Your recipes and saved ones first, then everyone else's.
+  // Only your recipe book: recipes you added and ones you saved (the heart). Anything already on
+  // the list stays in the picker too, so Done never drops it without you unticking it.
   function pickable() {
-    const first = [...S.mine(), ...S.saved()];
-    const ids = new Set(first.map(r => r.id));
-    return [...first, ...S.recipes().filter(r => !ids.has(r.id))];
+    const out = [], ids = new Set();
+    for (const r of [...S.mine(), ...S.saved(), ...L.recipes.map(x => S.recipe(x.id)).filter(Boolean)]) if (!ids.has(r.id)) { ids.add(r.id); out.push(r); }
+    return out;
   }
 
   function pickSheet() {
     const picked = new Set(L.recipes.map(x => x.id));
     ui.sheet(`<h3>Add recipes to the list</h3>
       <div class="pick-list">${pickable().map(r => `<label><input type="checkbox" value="${U.esc(r.id)}" ${picked.has(r.id) ? 'checked' : ''}>
-        ${App.icon(U.recipeIcon(r))}${U.esc(r.title)}</label>`).join('') || '<p>No recipes yet.</p>'}</div>
+        ${App.icon(U.recipeIcon(r))}${U.esc(r.title)}</label>`).join('') || '<p>Nothing in My Recipes yet. Add one, or tap the heart on a recipe in Search.</p>'}</div>
       <button class="btn primary block sheet-done" data-done>Done</button>`,
       (el, close) => {
         el.querySelector('[data-done]').onclick = () => {

@@ -212,6 +212,14 @@ App.ui = {};
 
   // One line under the ingredients: time first, then its cue, then heat —
   // "5 min · until softened · medium heat", each with its little icon.
+  // Servings next to the stepper: gray at the recipe's own number, green with an up arrow when
+  // you've made more, red with a down arrow when you've made less.
+  App.ui.servState = (n, std) => n > std ? 'up' : n < std ? 'down' : 'same';
+  App.ui.servInner = (n, std) => {
+    const st = App.ui.servState(n, std);
+    return `${st === 'same' ? App.icon('cloche') : App.glyph(st, 'serv-arrow')}${n}`;
+  };
+
   // A mixture used in a step: a bowl, its name, and which step made it.
   App.ui.mixtureHtml = (recipe, fromId, extra = '') => {
     const src = recipe.steps.find(s => s.id === fromId);
