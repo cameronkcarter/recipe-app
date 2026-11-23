@@ -216,7 +216,7 @@ App.ui = {};
   App.ui.mixtureHtml = (recipe, fromId, extra = '') => {
     const src = recipe.steps.find(s => s.id === fromId);
     if (!src) return '';
-    return `<li class="mix-use"><span class="ing-ico">${App.icon('bowl')}</span><span>${U.esc(src.makes || 'mixture')} <span class="un">· from step ${recipe.steps.indexOf(src) + 1}</span></span>${extra}</li>`;
+    return `<li class="mix-use"><span class="ing-ico">${App.icon('bowl')}</span><span><b class="mix-nm">${U.esc(src.makes || 'mixture')}</b> <span class="un">from step ${recipe.steps.indexOf(src) + 1}</span></span>${extra}</li>`;
   };
 
   App.ui.stepMeta = (step, recipe, opts = {}) => {

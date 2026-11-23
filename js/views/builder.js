@@ -119,10 +119,13 @@ App.views.builder = root => {
       const lastVerb = id => { const s = [...before()].reverse().find(x => (x.uses || []).some(u => u.ing === id)); return DONE[App.verb(s?.verb).id] || ''; };
       compose = `
         <button class="b-verb" data-act="more-verbs" aria-label="Change the action">${icoFor(c.verb)}<b>${App.verb(c.verb).label}</b><span class="muted">change</span></button>
-        <ul class="b-ings">${c.uses.map(u => { if (u.from) return App.ui.mixtureHtml(r, u.from, `<button class="x" data-rm-from="${u.from}" aria-label="Remove">${App.glyph('x')}</button>`); const g = ing(u.ing); if (!g) return ''; const first = !prior.has(g.id);
+        <ul class="b-ings">${c.uses.map((u, k) => {
+          // up / down arrows to put things in the order you add them (no dragging on a phone)
+          const mv = c.uses.length > 1 ? `<span class="b-mv"><button class="x" data-b-mv="${k}" data-d="-1" ${k ? '' : 'disabled'} aria-label="Move up">${App.glyph('up')}</button><button class="x" data-b-mv="${k}" data-d="1" ${k < c.uses.length - 1 ? '' : 'disabled'} aria-label="Move down">${App.glyph('down')}</button></span>` : '';
+          if (u.from) return App.ui.mixtureHtml(r, u.from, `${mv}<button class="x" data-rm-from="${u.from}" aria-label="Remove">${App.glyph('x')}</button>`); const g = ing(u.ing); if (!g) return ''; const first = !prior.has(g.id);
           return `<li>${U.ingIconHtml(g)}${first ? `<input class="inl amt" data-amt="${g.id}" value="${U.esc(g.qty != null || g.unit ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '')}" placeholder="amount" inputmode="decimal" aria-label="Amount">` : ''}
             <span class="nm">${U.esc(g.name)}</span><input class="inl un" data-unote="${g.id}" value="${U.esc(u.note || '')}" placeholder="+ prep (diced…)" aria-label="How it's prepped">
-            <button class="x" data-rm-use="${g.id}" aria-label="Remove">${App.glyph('x')}</button></li>`; }).join('')}</ul>
+            ${mv}<button class="x" data-rm-use="${g.id}" aria-label="Remove">${App.glyph('x')}</button></li>`; }).join('')}</ul>
         ${ready.length || mixes.length ? `<div class="b-tray"><div class="b-label">Ready to add <button class="link" data-act="add-all">Add all</button></div>
           <div class="b-chips">${mixes.map(s => `<button class="chip pick" data-ready-from="${s.id}">${App.icon('bowl')}${U.esc(s.makes)}<small>step ${r.steps.indexOf(s) + 1}</small></button>`).join('')}${ready.map(id => { const g = ing(id), d = lastVerb(id); return `<button class="chip pick" data-ready="${id}">${U.ingIconHtml(g)}${U.esc(g.name)}${d ? `<small>${d}</small>` : ''}</button>`; }).join('')}</div></div>` : ''}
         <input class="input b-add" data-b-add placeholder="${c.uses.length ? '+ ingredient' : '+ ingredient, or leave empty'}" autocomplete="off" enterkeyhint="done" aria-label="Add an ingredient">
@@ -130,7 +133,7 @@ App.views.builder = root => {
           <label class="opt">${App.icon('clock')}<input class="inl" data-b-time inputmode="numeric" value="${c.time ? c.time + ' min' : ''}" placeholder="time" aria-label="Minutes"></label>
           <button class="opt ${c.heat ? '' : 'off'}" data-act="heat">${App.icon('flame')}${c.heat ? U.HEAT[c.heat].toLowerCase() + ' heat' : 'heat'}</button>
           ${c.temp !== undefined || App.verb(c.verb).group === 'Oven' ? `<label class="opt">${App.icon('thermo')}<input class="inl" data-b-temp value="${U.esc(c.temp || '')}" placeholder="temp" aria-label="Oven temperature"></label>` : ''}
-          ${c.uses.length > 1 || c.makes ? `<label class="opt wide">${App.icon('bowl')}<input class="inl" data-b-makes value="${U.esc(c.makes)}" placeholder="makes… (spice mix, sauce)" aria-label="What this step makes"></label>` : ''}
+          ${c.uses.length > 1 || c.makes ? `<label class="opt wide">${App.icon('bowl')}<input class="inl" data-b-makes value="${U.esc(c.makes)}" placeholder="makes… (spice mix, sauce)" aria-label="What this step makes"></label>${!c.makes && U.suggestMix(r, c) ? `<button class="opt mix-sug" data-act="mix-sug">${App.glyph('plus')}Call it ${U.esc(U.suggestMix(r, c))}</button>` : ''}` : ''}
           <label class="opt wide">${App.glyph('pencil')}<input class="inl" data-b-text value="${U.esc(c.text)}" placeholder="note (until…, then…)" aria-label="Note for this step"></label>
         </div>`;
     }
@@ -194,6 +197,8 @@ App.views.builder = root => {
     else if (d.ready) st.cur.uses.push({ ing: d.ready });
     else if (d.readyFrom) st.cur.uses.push({ from: d.readyFrom });
     else if (d.rmFrom) st.cur.uses = st.cur.uses.filter(u => u.from !== d.rmFrom);
+    else if (d.bMv) { const k = +d.bMv, j = k + +d.d, us = st.cur.uses; if (j < 0 || j >= us.length) return; [us[k], us[j]] = [us[j], us[k]]; }
+    else if (d.act === 'mix-sug') st.cur.makes = U.suggestMix(r, st.cur);
     else if (d.act === 'add-all') [...usedBefore()].filter(id => !st.cur.uses.some(u => u.ing === id)).forEach(id => st.cur.uses.push({ ing: id }));
     else if (d.rmUse) st.cur.uses = st.cur.uses.filter(u => u.ing !== d.rmUse);
     else if (d.act === 'heat') st.cur.heat = ((st.cur.heat || 0) + 1) % 4 || undefined;

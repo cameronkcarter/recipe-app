@@ -15,6 +15,7 @@
   --accent-ink: #ffffff;
   --good: #5daa5a;
   --good-soft: #e3f2de;
+  --good-deep: #3c7a39;
   --danger: #d9483b;
   --radius: 20px;
   --radius-sm: 9px;  /* edit-mode boxes: ingredient bubbles, time/heat/note, step buttons */
@@ -36,6 +37,7 @@
   --accent-soft: #4a3628;
   --accent-ink: #2a1d15;
   --good-soft: #263b24;
+  --good-deep: #9ad696;
   color-scheme: dark;
 }
 
@@ -854,3 +856,28 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .source-head { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: .88rem; color: var(--muted); margin-bottom: 4px; }
 .source-head .gl { width: 16px; height: 16px; }
 .source-url { color: var(--accent); font-size: .9rem; word-break: break-all; text-decoration: underline; text-underline-offset: 2px; }
+
+/* ============ Nov 23d: mixes stand out ============ */
+/* a mix used in a later step: a green pill, so it never reads as one more ingredient */
+.s-ings li.mix-use, .b-ings li.mix-use, .step.edit .s-ings li.mix-use {
+  background: var(--good-soft); border: 1.5px dashed color-mix(in srgb, var(--good) 60%, transparent);
+  border-radius: var(--radius-sm); padding: 4px 10px 4px 4px; margin: 3px 0;
+}
+.s-ings li.mix-use { width: fit-content; max-width: 100%; }
+.mix-use .ing-ico { background: var(--surface); color: var(--good-deep); border-radius: 50%; display: grid; place-items: center; }
+.mix-use .mix-nm { color: var(--good-deep); font-weight: 800; }
+.mix-use .un { color: var(--muted); font-size: .85rem; }
+.step.edit .s-ings li.mix-use { padding: 6px 4px 6px 6px; margin: 0; }
+.step.edit:not(.active) .s-ings li.mix-use { padding: 4px 8px 4px 6px; }
+.step.done .s-ings li.mix-use { opacity: .7; }
+/* the step that makes a mix says so in the same green */
+.s-meta .makes { color: var(--good-deep); font-weight: 700; }
+/* "Call it Spice mix" when a step looks like a mix */
+.opt.mix-sug { border: 1.5px dashed color-mix(in srgb, var(--good) 60%, transparent); background: var(--good-soft); color: var(--good-deep); font-weight: 700; }
+.opt.mix-sug .gl { width: 14px; height: 14px; }
+/* builder: up / down arrows on each row */
+.b-mv { display: inline-flex; margin-left: auto; }
+.b-mv + .x, .b-ings li.mix-use .b-mv + .x { margin-left: 0; }
+.b-ings .b-mv .x { margin-left: 0; padding: 4px; }
+.b-ings .b-mv .x:disabled { opacity: .25; }
+.b-ings li.mix-use > span:not(.ing-ico):not(.b-mv) { flex: 1; min-width: 0; }

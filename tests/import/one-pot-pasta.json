@@ -37,7 +37,8 @@
     },
     "steps": [
       { "verb": "chop", "uses": ["chicken breast", "yellow onion", "green onions"] },
-      { "verb": "mix", "uses": ["chicken breast", "smoked paprika", "onion powder", "salt"] },
+      { "verb": "mix", "uses": ["smoked paprika", "onion powder", "salt"], "makes": "Spice mix" },
+      { "verb": "mix", "only": ["chicken breast"], "mixes": ["Spice mix"] },
       { "verb": "heat", "uses": ["olive oil", "butter"], "heat": 3 },
       { "verb": "saute", "uses": ["chicken breast"], "time": 2, "text": "browned" },
       { "verb": "add", "uses": ["yellow onion"], "time": 3, "text": "softened" },

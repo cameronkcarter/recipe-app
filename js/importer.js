@@ -369,10 +369,10 @@ App.importer = (() => {
       if ((v === 'add' || v === 'pour') && allFat && heat) v = 'heat';
       if ((v === 'add' || v === 'stir') && uses.length && uses.every(id => U.category(byId[id]) === 'spices' && !/oil/.test(byId[id].name))) v = 'season';
       // "Add the garlic and cook 2 minutes" in a hot pan is a sauté too.
-      if (v === 'add' && /\b(cook|saut|fry|stir)\w*/i.test(text.replace(/^.*?\badd\b/i, '')) && (time || /\buntil\b/i.test(text)) && atStove(null) && instr[instr.length - 1]?.verb !== 'saute') v = 'saute'; // already sautéing → it's just "Add"
+      if (v === 'add' && !/\bpour\b/i.test(text) && /\b(cook|saut|fry|stir)\w*/i.test(text.replace(/^.*?\badd\b/i, '')) && (time || /\buntil\b/i.test(text)) && atStove(null) && instr[instr.length - 1]?.verb !== 'saute') v = 'saute'; // already sautéing → it's just "Add"
       const vd = App.verb(v);
       instr.push({
-        id: U.uid('s'), verb: v, uses: uses.map(ing => ({ ing })),
+        id: U.uid('s'), verb: v, uses: uses.map(ing => ({ ing })), _text: text,
         text: v === 'preheat' ? undefined : v === 'season' && /taste/i.test(text) && !uses.length ? 'to taste' : findShort(text) || (uses.length ? undefined : objectOf(text, v0)),
         parallel, time: time || undefined, heat, temp: vd.group === 'Oven' ? temp : undefined,
       });
@@ -384,6 +384,7 @@ App.importer = (() => {
       // a timed step, or one that goes "until …", is its own stage
       if (a.verb !== b.verb || b.parallel || App.verb(a.verb).passive || a.time || b.time || /until/.test((a.text || '') + (b.text || ''))) continue;
       for (const u of b.uses) if (!a.uses.some(x => x.ing === u.ing)) a.uses.push(u);
+      a._text += ' ' + b._text;
       a.text = [...new Set([a.text, b.text].filter(Boolean))].join(', ') || undefined;
       a.time = a.time || b.time; a.heat = a.heat || b.heat;
       instr.splice(k, 1);
@@ -394,7 +395,7 @@ App.importer = (() => {
     const cue = t => t && /covered|until|overnight/.test(t) ? t : undefined;
     for (let k = instr.length - 1; k > 0; k--) {
       const a = instr[k - 1], b = instr[k];
-      const take = () => { b.uses = [...a.uses, ...b.uses.filter(u => !a.uses.some(x => x.ing === u.ing))]; b.parallel = a.parallel; b.heat ??= a.heat; instr.splice(k - 1, 1); };
+      const take = () => { b._text = a._text + ' ' + b._text; b.uses = [...a.uses, ...b.uses.filter(u => !a.uses.some(x => x.ing === u.ing))]; b.parallel = a.parallel; b.heat ??= a.heat; instr.splice(k - 1, 1); };
       if (a.verb === 'add' && b.verb === 'heat' && same(a, b)) take();
       else if (a.verb === 'boil' && b.verb === 'simmer' && !a.time) { b.text = cue(b.text) || cue(a.text); take(); }
       else if (a.verb === 'simmer' && b.verb === 'simmer' && !a.time && !b.uses.length) { b.text = [cue(a.text), cue(b.text)].filter(Boolean).join(', ') || undefined; take(); }
@@ -413,30 +414,89 @@ App.importer = (() => {
 
     // 4) ONE knife step for everything that needs prep. The action is the shared cut if they all
     //    match (all diced → "Dice"), otherwise "Chop"; each ingredient's note says how.
+    //    The exception is a Veggie mix: three or more vegetables cut and then added together get
+    //    their own Chop step that "makes Veggie mix", and the later step uses the mix.
     const knife = ordered.filter(i => i._prep.length && knifeOk(i));
-    let knifeStep = null;
-    if (knife.length) {
+    const firstStep = {};
+    instr.forEach(s => s.uses.forEach(u => { firstStep[u.ing] ??= s; }));
+    const veg = new Map(); // instr step → the vegetables cut for it
+    for (const i of knife) {
+      const s = firstStep[i.id];
+      if (s && U.category(i) === 'produce' && !['serve', 'top', 'garnish'].includes(s.verb)) veg.set(s, [...(veg.get(s) || []), i]);
+    }
+    for (const [s, list] of veg) if (list.length < 3) veg.delete(s);
+    const knifeStepFor = (items, makes) => {
       const cutOf = i => CUT_VERB[i._prep.find(d => CUT_VERB[d] && d !== 'peeled') || (i._prep.includes('peeled') ? 'peeled' : '')] || null;
-      const cuts = [...new Set(knife.map(cutOf))];
+      const cuts = [...new Set(items.map(cutOf))];
       const verb = cuts.length === 1 && cuts[0] ? cuts[0] : 'chop';
       // the step says Chop, so "chopped" goes without saying; "minced", "cubed", "2 wedges" stay as notes
       const bare = verb === 'grate' ? ['grated'] : ['chopped'];
-      knifeStep = {
-        id: U.uid('s'), verb, after: [],
-        uses: knife.map(i => {
+      return {
+        id: U.uid('s'), verb, after: [], makes,
+        uses: items.map(i => {
           const note = [...i._size, ...i._prep.filter(d => !bare.includes(d))].join(', ');
           return note ? { ing: i.id, note } : { ing: i.id };
         }),
       };
-    }
+    };
+    const mixNames = new Set();
+    const nameMix = base => { let n = base, k = 2; while (mixNames.has(n)) n = `${base} ${k++}`; mixNames.add(n); return n; };
+    const knifeSteps = [];
+    const inMix = new Set([...veg.values()].flat().map(i => i.id));
+    const rest = knife.filter(i => !inMix.has(i.id));
+    if (rest.length) knifeSteps.push(knifeStepFor(rest));
+    const vegSteps = new Map();
+    for (const [s, list] of veg) { const k = knifeStepFor(list, nameMix('Veggie mix')); vegSteps.set(s, k); knifeSteps.push(k); }
+    // in the order they're needed
+    const firstAt = k => Math.min(...k.uses.map(u => instr.indexOf(firstStep[u.ing])).filter(n => n >= 0), 1e9);
+    knifeSteps.sort((a, b) => firstAt(a) - firstAt(b));
+    const knifeOf = id => knifeSteps.find(k => k.uses.some(u => u.ing === id));
+
     // Everyone else gets their size / drained note on the first step that uses them.
-    const noted = new Set(knifeStep ? knifeStep.uses.map(u => u.ing) : []);
+    const noted = new Set(knifeSteps.flatMap(k => k.uses.map(u => u.ing)));
     for (const s of instr) for (const u of s.uses) {
       const g = byId[u.ing];
       if (noted.has(g.id)) continue;
       noted.add(g.id);
       const note = [...g._size, ...(knifeOk(g) ? [] : g._prep.filter(d => d !== 'grated')), ...g._drain].join(', ');
       if (note) u.note = note;
+    }
+
+    // 4b) Mixes, the way people actually cook: measure the spices into a bowl, chop the veg into
+    //     one pile, whisk the sauce ahead. A later step then uses "Spice mix", in the place the
+    //     recipe adds it, instead of listing everything again.
+    const useMix = (s, ids, mix) => {
+      const at = Math.max(0, s.uses.findIndex(u => ids.includes(u.ing)));
+      s.uses = s.uses.filter(u => !ids.includes(u.ing));
+      s.uses.splice(at, 0, { from: mix.id });
+    };
+    for (const [s, k] of vegSteps) useMix(s, k.uses.map(u => u.ing), k);
+    // Spice mix: three or more dry spices that go in together (not "season to taste" at the end).
+    const dry = id => { const g = byId[id]; return U.category(g) === 'spices' && !/\b(oil|vinegar|sauce|wine|broth|stock|paste|extract)\b/.test(g.name); };
+    const extraDry = id => /\b(cocoa|brown sugar|cornstarch)\b/.test(byId[id].name);
+    const mixSteps = [];
+    for (const s of instr) {
+      if (s.verb === 'season' && /\btaste\b|\badjust\b/i.test(s._text)) continue;
+      const spices = s.uses.filter(u => u.ing && dry(u.ing));
+      if (spices.length < 3) continue;
+      const ids = s.uses.filter(u => u.ing && (dry(u.ing) || extraDry(u.ing))).map(u => u.ing);
+      // a step that is only the spices, in a bowl, already is the mix
+      if (s.uses.every(u => ids.includes(u.ing)) && ['mix', 'season'].includes(s.verb) && !atStove(s)) { s.verb = 'mix'; s.makes = nameMix('Spice mix'); continue; }
+      const m = { id: U.uid('s'), verb: 'mix', after: [], makes: nameMix('Spice mix'), uses: s.uses.filter(u => ids.includes(u.ing)) };
+      mixSteps.push(m);
+      useMix(s, ids, m);
+    }
+    // A sauce, dressing or marinade whisked in a bowl, that a later step pours in as "the sauce".
+    const MIX_WORD = /\b(sauce|dressing|marinade|glaze|batter|slurry)\b/i;
+    const REF = /\b(?:the|that|this)\s+(?:\w+\s+)?(sauce|dressing|marinade|glaze|batter|slurry|mixture)\b/i;
+    for (const [n, s] of instr.entries()) {
+      if (s.makes || s.verb !== 'mix' || s.uses.length < 2 || !/\b(bowl|jar|jug|whisk|together)\b/i.test(s._text) || atStove(s)) continue;
+      if (s.uses.some(u => u.ing && ['protein', 'produce'].includes(U.category(byId[u.ing])) && !/\b(garlic|ginger|lemon|lime|orange)\b/.test(byId[u.ing].name))) continue;
+      const later = instr.slice(n + 1).filter(t => REF.test(t._text));
+      if (!later.length) continue;
+      const word = (s._text.match(MIX_WORD) || later[0]._text.match(REF))[1].toLowerCase();
+      s.makes = nameMix(word === 'mixture' ? (s.uses.every(u => u.ing && dry(u.ing)) ? 'Spice mix' : 'Sauce') : word[0].toUpperCase() + word.slice(1));
+      for (const t of later) { const ids = s.uses.map(u => u.ing); if (t.uses.some(u => ids.includes(u.ing))) useMix(t, ids, s); else t.uses.push({ from: s.id }); }
     }
 
     // 5) Dependencies: each step follows the one before it, plus the knife step if it needs it.
@@ -449,12 +509,13 @@ App.importer = (() => {
       // Also wait for the last earlier step that used any of the same ingredients (e.g. the drained pasta).
       const before = instr.slice(0, instr.indexOf(s));
       for (const u of s.uses) {
+        if (u.from) { if (!after.includes(u.from)) after.push(u.from); continue; }
         const prev = [...before].reverse().find(p => touch[p.id]?.has(u.ing));
         if (prev && !after.includes(prev.id)) after.push(prev.id);
       }
-      touch[s.id] = s.uses.length ? new Set(s.uses.map(u => u.ing)) : new Set(s.parallel ? [] : touch[chainPrev] || []);
+      touch[s.id] = s.uses.some(u => u.ing) ? new Set(s.uses.map(u => u.ing).filter(Boolean)) : new Set(s.parallel ? [] : touch[chainPrev] || []);
       if (preheat && ['bake', 'roast', 'broil'].includes(s.verb)) after.push(preheat);
-      if (knifeStep && s.uses.some(u => knifeStep.uses.some(k => k.ing === u.ing))) after.push(knifeStep.id);
+      for (const u of s.uses) { const k = u.ing && knifeOf(u.ing); if (k && !after.includes(k.id)) after.push(k.id); }
       s.after = after;
       delete s.parallel;
       chainPrev = s.id;
@@ -465,12 +526,12 @@ App.importer = (() => {
     if (serve && toppingIds.size && (!serve.uses.length || serve.uses.every(u => toppingIds.has(u.ing)))) {
       serve.uses = [...serve.uses, ...[...toppingIds].filter(id => !serve.uses.some(u => u.ing === id)).map(ing => ({ ing }))];
       serve.text = /toppings/.test(serve.text || '') ? undefined : serve.text;
-      if (knifeStep && !serve.after.includes(knifeStep.id)) serve.after.push(knifeStep.id);
+      for (const u of serve.uses) { const k = knifeOf(u.ing); if (k && !serve.after.includes(k.id)) serve.after.push(k.id); }
     }
 
     // "Float a slice on each bowl": a Top with nothing on it says nothing
-    const steps = [knifeStep, ...instr.filter(st => !(st.verb === 'top' && !st.uses.length))].filter(Boolean);
-    steps.forEach(s => Object.keys(s).forEach(k => s[k] === undefined && delete s[k]));
+    const steps = [...knifeSteps, ...mixSteps, ...instr.filter(st => !(st.verb === 'top' && !st.uses.length))];
+    steps.forEach(s => { delete s._text; Object.keys(s).forEach(k => s[k] === undefined && delete s[k]); });
     return {
       title: data.name || 'Imported recipe',
       icon: U.suggestIcon({ title: data.name || '', ingredients: ordered }),

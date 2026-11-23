@@ -38,7 +38,12 @@ for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort()) 
   for (const want of x.steps || []) {
     const match = s => {
       if (s.verb !== want.verb) return false;
-      const names = (s.uses || []).map(u => nameOf(u.ing));
+      const names = (s.uses || []).filter(u => u.ing).map(u => nameOf(u.ing));
+      const mixes = (s.uses || []).filter(u => u.from).map(u => r.steps.find(x => x.id === u.from)?.makes);
+      if ('makes' in want && s.makes !== want.makes) return false;
+      if (want.mixes && !(mixes.length === want.mixes.length && want.mixes.every(n => mixes.includes(n)))) return false;
+      // a mix sits where the recipe adds it: "after" names the ingredient it comes right after
+      if (want.mixAfter) { const k = (s.uses || []).findIndex(u => u.from); if (k < 1 || nameOf(s.uses[k - 1].ing) !== want.mixAfter) return false; }
       if (want.uses && !want.uses.every(n => names.includes(n))) return false;
       if (want.only && !(names.length === want.only.length && want.only.every(n => names.includes(n)))) return false;
       if ('time' in want && s.time !== want.time) return false;
@@ -62,7 +67,7 @@ for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort()) 
   if (verbose || fails.length) {
     console.log(`\n${fails.length ? '✗' : '✓'} ${file}: ${r.title}`);
     for (const g of r.ingredients) console.log(`    ${U.fmtAmount(g.qty, U.normUnit(g.unit)) || '—'} ${g.name}${g.note ? ' (' + g.note + ')' : ''}`);
-    r.steps.forEach((s, i) => console.log(`  ${i + 1}. ${App.verb(s.verb).label}: ${(s.uses || []).map(u => nameOf(u.ing) + (u.note ? ' · ' + u.note : '')).join(', ') || '—'}${[s.time && s.time + ' min', s.text, s.heat && ['', 'low', 'medium', 'high'][s.heat], s.temp].filter(Boolean).map(t => '  [' + t + ']').join('')}`));
+    r.steps.forEach((s, i) => console.log(`  ${i + 1}. ${App.verb(s.verb).label}: ${(s.uses || []).map(u => u.from ? `[${r.steps.find(x => x.id === u.from)?.makes}]` : nameOf(u.ing) + (u.note ? ' · ' + u.note : '')).join(', ') || '—'}${s.makes ? '  → makes ' + s.makes : ''}${[s.time && s.time + ' min', s.text, s.heat && ['', 'low', 'medium', 'high'][s.heat], s.temp].filter(Boolean).map(t => '  [' + t + ']').join('')}`));
     for (const f of fails) console.log('    ✗ ' + f);
   }
   bad += fails.length;

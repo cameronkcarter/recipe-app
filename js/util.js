@@ -300,6 +300,27 @@ U.findMixture = (r, beforeIndex, name) => {
   const n = String(name).toLowerCase().replace(/\bmixture\b/, 'mix').trim();
   return U.mixtures(r, beforeIndex).find(m => { const x = m.name.toLowerCase().replace(/\bmixture\b/, 'mix'); return x === n || x.includes(n) || n.includes(x); }) || null;
 };
+// A name for what a step makes, when it looks like a mix: spices in a bowl → "Spice mix",
+// vegetables cut for one pot → "Veggie mix", liquids whisked together → "Sauce". '' when it doesn't.
+U.suggestMix = (r, step) => {
+  const ings = (step.uses || []).map(u => r.ingredients.find(g => g.id === u.ing)).filter(Boolean);
+  if (ings.length < 2 || ings.length !== (step.uses || []).length) return '';
+  // when later steps use these one by one, it isn't a mix
+  const later = r.steps.slice(r.steps.indexOf(step) + 1);
+  const next = ings.map(g => later.find(x => (x.uses || []).some(u => u.ing === g.id)));
+  if (next.some(Boolean) && !(next.every(x => x === next[0]))) return '';
+  const cats = ings.map(g => U.category(g));
+  const v = App.verb(step.verb), taken = new Set(U.mixtures(r).map(m => m.name));
+  const fresh = base => { let n = base, k = 2; while (taken.has(n)) n = `${base} ${k++}`; return n; };
+  const dry = g => !/\b(oil|vinegar|sauce|wine|broth|stock)\b/.test(g.name);
+  // two spices to season at the end isn't a mix; three, or spices stirred in a bowl, is
+  if (cats.every((c, i) => c === 'spices' && dry(ings[i])) && (ings.length >= 3 || v.id === 'mix') && !/taste/.test(step.text || '')) return fresh('Spice mix');
+  if (v.group === 'Prep' && cats.every(c => c === 'produce')) return fresh('Veggie mix');
+  // a sauce is whisked ahead, before anything is on the stove (later "mix" steps are usually in the pot)
+  const cooking = r.steps.slice(0, Math.max(0, r.steps.indexOf(step))).some(x => ['Stove', 'Oven'].includes(App.verb(x.verb).group) && x.verb !== 'preheat');
+  if (['mix', 'blend'].includes(v.id) && !cooking && ings.some((g, i) => cats[i] !== 'produce' && /\b(sauce|vinegar|oil|honey|syrup|juice|broth|stock|mayo|yogurt|milk|cream|mustard)\b/.test(g.name))) return fresh('Sauce');
+  return '';
+};
 // Using a mixture means waiting for the step that makes it.
 U.useMixture = (r, step, fromId) => {
   step.uses ||= [];

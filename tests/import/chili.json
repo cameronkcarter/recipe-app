@@ -40,10 +40,12 @@
       "unsweetened cocoa powder": {}
     },
     "steps": [
-      { "verb": "chop", "uses": ["yellow onion", "red bell peppers", "sweet potatoes", "garlic"], "notes": { "garlic": "minced", "sweet potatoes": "peeled", "yellow onion": "!chopped" } },
+      { "verb": "chop", "only": ["yellow onion", "red bell peppers", "sweet potatoes"], "makes": "Veggie mix", "notes": { "sweet potatoes": "peeled", "yellow onion": "!chopped" } },
+      { "verb": "chop", "uses": ["garlic"], "notes": { "garlic": "minced" } },
+      { "verb": "mix", "only": ["chili powder", "ground cumin", "unsweetened cocoa powder", "kosher salt", "cayenne pepper"], "makes": "Spice mix" },
       { "verb": "heat", "uses": ["extra-virgin olive oil"], "heat": 2 },
-      { "verb": "saute", "uses": ["yellow onion", "red bell peppers", "sweet potatoes"], "time": 10 },
-      { "verb": "add", "uses": ["garlic", "unsweetened cocoa powder", "cayenne pepper"], "time": 1, "heat": 1 },
+      { "verb": "saute", "time": 10, "mixes": ["Veggie mix"] },
+      { "verb": "add", "uses": ["garlic", "tomato paste"], "time": 1, "heat": 1, "mixes": ["Spice mix"], "mixAfter": "tomato paste" },
       { "verb": "mix", "uses": ["diced tomatoes", "black beans", "low-sodium vegetable broth"] },
       { "verb": "simmer", "time": 30, "text": "covered" },
       { "verb": "season", "only": ["kosher salt", "cayenne pepper"] },
