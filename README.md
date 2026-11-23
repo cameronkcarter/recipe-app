@@ -13,11 +13,11 @@ Simple, symbol-based recipes, your own recipe book, and a shopping list.
 ## Checks
 - `node tests/ingredient-icons.js` checks that ~90 everyday ingredients get the right icon. Run it after changing App.ING_ICONS.
 - `node tests/ingredient-aisles.js` checks that ~95 everyday ingredients land in the right shopping aisle. Run it after changing App.CAT_WORDS.
-- `node tests/import.js` runs the importer on saved real recipes (`tests/import/`) and checks the result. Run it after changing the importer.
+- `node tests/import.js` runs the importer on test recipes (`tests/import/`, written in the styles real sites use) and checks every ingredient lands in a step. Run it after changing the importer (`-v` prints each result).
 
 ## Files
 - `index.html` — page shell + bottom nav
-- `css/styles.css` — all styling: kawaii theme (Fredoka + Nunito), night mode, a page tint per tab
+- `css/styles.css` — all styling: kawaii theme (Fredoka + Nunito), cream with one brown accent, night mode
 - `js/icons.js` — the app's own kawaii icon set (SVG), the made-it seal, and small button glyphs
 - `js/data.js` — which icon each verb / ingredient / dish uses, store sections, starter recipe
 - `js/util.js` — amounts/units, ingredient-line parser, shopping aisles, total time
@@ -39,7 +39,7 @@ can edit it. Saving, adding recipes and the shopping list ask you to log in firs
 
 ## Style rules (the whole point of the app)
 - Few words: no "more" paragraphs; steps read at a glance.
-- ONE knife step: chop/dice/mince/peel together; each ingredient's note says how ("peeled, 1" cubes", "minced").
+- ONE knife step: chop/dice/mince/peel together; each ingredient's note says how ("peeled, 1" cubes", "minced", "2 wedges, 2 chopped").
 - Size / drained / prep notes live on the ingredient in the step ("2 cans black beans · drained, rinsed").
 - Back-to-back same steps are combined; tips, options and storage advice are dropped.
 
