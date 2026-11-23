@@ -60,6 +60,9 @@ for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort()) 
     ok(k >= 0, `no ${App.verb(want.verb).label} step like ${JSON.stringify(want)} after step ${at}`);
     if (k >= 0) at += k + 1;
   }
+  // knife work stays in one step; a second Chop step is only for one that makes a mix (Cam, Nov 23)
+  const knifeSteps = r.steps.filter(s => ['chop', 'grate'].includes(s.verb) && (s.uses || []).every(u => u.ing));
+  ok(knifeSteps.filter(s => !s.makes).length <= 1, `more than one knife step that makes no mix`);
   for (const v of x.noVerb || []) ok(!r.steps.some(s => s.verb === v), `has a ${v} step it shouldn't`);
   const all = JSON.stringify(r);
   for (const t of x.noText || []) ok(!all.includes(t), `kept "${t}"`);
