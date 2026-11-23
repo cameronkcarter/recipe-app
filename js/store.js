@@ -8,7 +8,6 @@ App.store = (() => {
 
   const fresh = () => ({
     recipes: JSON.parse(JSON.stringify(App.SEED_RECIPES)),
-    log: [],                                  // [{id, recipeId, date, mode}]
     lists: {},                                // shopping lists, one per person: { profileId: {recipes, checked, extras} }
     profiles: JSON.parse(JSON.stringify(App.SEED_PROFILES)), // [{id, name, avatar, color}]
     seedVersion: App.SEED_VERSION,
@@ -22,7 +21,8 @@ App.store = (() => {
     } catch (e) {
       state = fresh();
     }
-    state.recipes ||= []; state.log ||= []; state.profiles ||= JSON.parse(JSON.stringify(App.SEED_PROFILES)); state.lists ||= {}; delete state.list;
+    state.recipes ||= []; delete state.log; // the cooked calendar is gone
+    state.profiles ||= JSON.parse(JSON.stringify(App.SEED_PROFILES)); state.lists ||= {}; delete state.list;
     // The old example friend notes ("Sam (example)") are gone from the app; drop them from saved data.
     state.recipes.forEach(r => { if (r.notes) r.notes = r.notes.filter(n => !/\(example\)/.test(n.author || '')); });
     // Steps don't carry "more" paragraphs any more — the app is meant to be read at a glance.
@@ -52,16 +52,21 @@ App.store = (() => {
   function saveLocal() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { console.warn('Could not save', e); }
   }
-  // Cook log and shopping list are changed from several screens, so every save sends whichever
+  // Shopping lists and profiles are changed from several screens, so every save sends whichever
   // of them actually changed (shortly after, so quick taps become one write).
+  // sent[name] = the JSON last sent or received. While a send is waiting, a copy arriving from the
+  // server is older than what's on screen, so it's ignored (see applyRemote) instead of undoing the tap.
+  const META = ['lists', 'profiles'];
   const sent = {};
   let metaTimer = null;
+  const unsent = name => metaTimer && JSON.stringify(state[name]) !== sent[name];
   function save() {
     saveLocal();
     if (!App.sync?.enabled) return;
     clearTimeout(metaTimer);
     metaTimer = setTimeout(() => {
-      for (const name of ['log', 'lists', 'profiles']) {
+      metaTimer = null;
+      for (const name of META) {
         const json = JSON.stringify(state[name]);
         if (sent[name] !== json) { sent[name] = json; App.sync.meta(name, state[name]); }
       }
@@ -112,7 +117,7 @@ App.store = (() => {
     },
     deleteRecipe(id) {
       state.recipes = state.recipes.filter(r => r.id !== id);
-      for (const l of Object.values(state.lists)) l.recipes = l.recipes.filter(x => x.id !== id);
+      for (const l of Object.values(state.lists)) if (l?.recipes) l.recipes = l.recipes.filter(x => x.id !== id);
       save();
       if (App.sync?.enabled) App.sync.removeRecipe(id);
     },
@@ -150,6 +155,7 @@ App.store = (() => {
     applyRemote(patch) {
       let changed = false;
       for (const [k, v] of Object.entries(patch)) {
+        if (k !== 'recipes' && unsent(k)) continue; // your newer change is about to be sent
         const json = JSON.stringify(v);
         if (json === JSON.stringify(state[k])) continue;
         state[k] = v; changed = true;

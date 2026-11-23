@@ -3,7 +3,10 @@ App.views = App.views || {};
 
 App.views.shopping = root => {
   const U = App.util, S = App.store, ui = App.ui;
-  const L = S.myList();
+  // Always the list as it is in the store right now: a sync from another device replaces the
+  // stored object, and a copy kept from when this screen opened would quietly stop saving.
+  let L = S.myList();
+  const fresh = () => { L = S.myList() || L; L.hidden ||= {}; L.cats ||= {}; return L; };
   if (!L) {
     root.innerHTML = `${App.ui.topbar('<h1>Shopping</h1>')}
       <div class="card logged-out">
@@ -16,7 +19,9 @@ App.views.shopping = root => {
     return;
   }
 
-  L.hidden ||= {}; // cleared (bought) items stay off the list while their recipe is on it
+  // L.hidden: cleared (bought) items stay off the list while their recipe is on it.
+  // L.cats: aisles you picked yourself for an item ({ key: categoryId }).
+  fresh();
   const keyOf = name => String(name).toLowerCase().trim().replace(/\s+/g, ' ').replace(/(es|s)$/, '');
 
   function build() {
@@ -27,7 +32,7 @@ App.views.shopping = root => {
       const sc = (entry.servings || r.servings || 1) / (r.servings || 1);
       for (const ing of r.ingredients) {
         const key = keyOf(ing.name);
-        if (!map.has(key)) map.set(key, { key, name: ing.name, cat: U.category(ing), icon: U.ingIconHtml(ing), items: [] });
+        if (!map.has(key)) map.set(key, { key, name: ing.name, cat: L.cats[key] || U.category(ing), icon: U.ingIconHtml(ing), items: [] });
         const row = map.get(key);
         row.items.push({ qty: ing.qty != null ? ing.qty * sc : null, unit: ing.unit });
       }
@@ -36,6 +41,7 @@ App.views.shopping = root => {
   }
 
   function render() {
+    fresh();
     const rows = build();
     const byCat = App.CATEGORIES.map(c => ({ ...c, rows: rows.filter(r => r.cat === c.id).sort((a, b) => a.name.localeCompare(b.name)) })).filter(c => c.rows.length);
     const total = rows.length + L.extras.length;
@@ -53,7 +59,7 @@ App.views.shopping = root => {
         return `<span class="shop-recipe">${App.icon(U.recipeIcon(r))}${U.esc(r.title)}
           <span class="stepper"><button data-act="serv" data-id="${U.esc(e.id)}" data-d="-1" aria-label="Fewer servings">${App.glyph('minus')}</button><button class="val ${changed ? 'changed' : ''}" data-act="serv-reset" data-id="${U.esc(e.id)}" aria-label="${e.servings} servings${changed ? `, recipe makes ${std}. Tap to reset` : ''}">${App.icon('cloche')}${e.servings}</button><button data-act="serv" data-id="${U.esc(e.id)}" data-d="1" aria-label="More servings">${App.glyph('plus')}</button></span>
           <button class="rm" data-act="rm-recipe" data-id="${U.esc(e.id)}" aria-label="Remove recipe">${App.glyph('x')}</button></span>`;
-      }).join('')}</div>` : `<div style="color:var(--muted);font-size:.9rem">Pick a few recipes and their ingredients get combined here.</div>`}
+      }).join('')}</div>` : `<div class="muted">Pick a few recipes and their ingredients get combined here.</div>`}
 
       ${byCat.map(c => `<div class="section-label"><span class="lab">${App.icon(c.icon)}${c.label}</span></div>
         <ul class="card check-list">${c.rows.map(r => {
@@ -61,14 +67,14 @@ App.views.shopping = root => {
           return `<li class="${L.checked[r.key] ? 'done' : ''}" data-check="${U.esc(r.key)}">
             <span class="box">${L.checked[r.key] ? App.glyph('check') : ''}</span>${r.icon}
             <span class="lbl">${amt ? `<span class="amt">${U.esc(amt)}</span> ` : ''}${U.esc(r.name)}
-              </span></li>`;
+              </span><button class="rm-x aisle" data-aisle="${U.esc(r.key)}" aria-label="Move ${U.esc(r.name)} to another aisle">${App.glyph('move')}</button></li>`;
         }).join('')}</ul>`).join('')}
 
       <div class="section-label">Extras</div>
-      ${L.extras.length ? `<ul class="card check-list" style="margin-bottom:10px">${L.extras.map(x => `
+      ${L.extras.length ? `<ul class="card check-list extras">${L.extras.map(x => `
         <li class="${x.checked ? 'done' : ''}" data-extra="${x.id}"><span class="box">${x.checked ? App.glyph('check') : ''}</span>
         <span class="lbl">${U.esc(x.name)}</span><button class="rm-x" data-act="rm-extra" data-id="${x.id}" aria-label="Remove">${App.glyph('x')}</button></li>`).join('')}</ul>` : ''}
-      <form data-form="extra" style="display:flex;gap:8px">
+      <form class="add-row" data-form="extra">
         <input class="input" name="extra" placeholder="Add an item (paper towels, coffee…)">
         <button class="btn">Add</button>
       </form>
@@ -76,6 +82,9 @@ App.views.shopping = root => {
   }
 
   root.onclick = e => {
+    fresh();
+    const aisle = e.target.closest('[data-aisle]');
+    if (aisle) return aisleMenu(aisle);
     const li = e.target.closest('[data-check]');
     const ex = e.target.closest('[data-extra]');
     const t = e.target.closest('[data-act]');
@@ -95,6 +104,7 @@ App.views.shopping = root => {
   };
   root.onsubmit = e => {
     e.preventDefault();
+    fresh();
     const inp = e.target.querySelector('[name=extra]');
     const v = inp.value.trim();
     if (!v) return;
@@ -102,6 +112,18 @@ App.views.shopping = root => {
     S.save(); render();
     root.querySelector('[name=extra]').focus();
   };
+
+  // Pick the aisle an item goes under. "Automatic" goes back to the app's guess.
+  function aisleMenu(btn) {
+    const key = btn.dataset.aisle, cur = L.cats[key];
+    ui.popover(btn, `<div class="pop-head">Aisle</div>` + App.CATEGORIES.map(c =>
+      `<button class="sug ${cur === c.id ? 'on' : ''}" data-pick="${c.id}"><span class="ing-ico">${App.icon(c.icon)}</span>${c.label}</button>`).join('') +
+      `<button class="sug ${cur ? '' : 'on'}" data-pick="">Automatic</button>`, id => {
+      fresh();
+      if (id) L.cats[key] = id; else delete L.cats[key];
+      S.save(); render();
+    });
+  }
 
   // "Clear checked": checked items leave the list; a recipe with nothing left to buy leaves too.
   function hideChecked() {
@@ -130,14 +152,22 @@ App.views.shopping = root => {
       () => alert(lines.join('\n')));
   }
 
+  // Your recipes and saved ones first, then everyone else's.
+  function pickable() {
+    const first = [...S.mine(), ...S.saved()];
+    const ids = new Set(first.map(r => r.id));
+    return [...first, ...S.recipes().filter(r => !ids.has(r.id))];
+  }
+
   function pickSheet() {
     const picked = new Set(L.recipes.map(x => x.id));
     ui.sheet(`<h3>Add recipes to the list</h3>
-      <div class="pick-list">${S.recipes().map(r => `<label><input type="checkbox" value="${U.esc(r.id)}" ${picked.has(r.id) ? 'checked' : ''}>
+      <div class="pick-list">${pickable().map(r => `<label><input type="checkbox" value="${U.esc(r.id)}" ${picked.has(r.id) ? 'checked' : ''}>
         ${App.icon(U.recipeIcon(r))}${U.esc(r.title)}</label>`).join('') || '<p>No recipes yet.</p>'}</div>
-      <button class="btn primary block" data-done style="margin-top:14px">Done</button>`,
+      <button class="btn primary block sheet-done" data-done>Done</button>`,
       (el, close) => {
         el.querySelector('[data-done]').onclick = () => {
+          fresh();
           const ids = [...el.querySelectorAll('input:checked')].map(i => i.value);
           L.recipes = L.recipes.filter(x => ids.includes(x.id));
           for (const id of ids) if (!L.recipes.some(x => x.id === id)) {

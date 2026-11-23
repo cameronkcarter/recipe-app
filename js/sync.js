@@ -1,9 +1,8 @@
-// Shares recipes, the cook log and the shopping list across every device through Firebase
+// Shares recipes, profiles and shopping lists across every device through Firebase
 // (Firestore). One shared set of data for the whole site — no sign-in.
 // The browser copy (localStorage) stays as a fast, offline cache; Firestore is the truth.
 //
 //   kitchens/main-shared-recipe-collection/recipes/{recipeId}   one doc per recipe
-//   kitchens/main-shared-recipe-collection/meta/log             { items: [...] }
 //   kitchens/main-shared-recipe-collection/meta/lists           shopping lists { profileId: list }
 //   kitchens/main-shared-recipe-collection/meta/profiles        { items: [...] } people (no sign-in yet)
 window.App = window.App || {};
@@ -65,15 +64,15 @@ App.sync = (() => {
   let firstMeta = true;
   metaRef.onSnapshot(live, snap => {
     if (firstMeta && snap.metadata.fromCache) return;
+    if (snap.metadata.hasPendingWrites) return; // just the echo of this device's own save
     if (firstMeta) {
       firstMeta = false;
       const ids = new Set(snap.docs.map(d => d.id));
-      if (!ids.has('log') && S.state.log.length) api.meta('log', S.state.log);
       if (!ids.has('lists')) api.meta('lists', S.state.lists);
       if (!ids.has('profiles')) api.meta('profiles', S.state.profiles);
     }
     const patch = {};
-    snap.docs.forEach(d => { if (d.id === 'log') patch.log = d.data().items || []; if (d.id === 'lists') patch.lists = d.data(); if (d.id === 'profiles') patch.profiles = d.data().items || []; });
+    snap.docs.forEach(d => { if (d.id === 'lists') patch.lists = d.data(); if (d.id === 'profiles') patch.profiles = d.data().items || []; });
     if (Object.keys(patch).length) S.applyRemote(patch);
   }, warn);
 
