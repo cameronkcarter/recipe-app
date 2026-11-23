@@ -1,0 +1,49 @@
+{
+  "about": "Written for this test: a US budget-blog style card (prices, metric repeats, a spice mix the steps call by one name, a can after a size).",
+  "name": "Smoky Chicken Skillet Pasta",
+  "servings": 4,
+  "ingredients": [
+    "2 tsp smoked paprika ($0.17)",
+    "1 tsp dried oregano ($0.04)",
+    "½ tsp garlic powder ($0.03)",
+    "½ tsp onion powder ($0.03)",
+    "¼ tsp salt ($0.01)",
+    "1 Tbsp olive oil ($0.18*)",
+    "1 Tbsp (15 g) butter ($0.09)",
+    "1 lb. (450 g) chicken breast (boneless & skinless, $2.57**)",
+    "1 yellow onion (diced, $0.95)",
+    "½ lb. (230 g) penne pasta (uncooked, $0.68)",
+    "15 oz. can (400 g) fire roasted diced tomatoes (with juices, $1.23)",
+    "2 cups (500 ml) chicken broth ($0.75)",
+    "2 oz. (60 g) cream cheese ($0.39)",
+    "3 green onions (sliced, $0.37)"
+  ],
+  "steps": [
+    "Cut the chicken breast into ¾ inch pieces and dice the onion.",
+    "Toss the chicken with the smoky spice mix in a bowl until every piece is coated.",
+    "Add the olive oil and butter to a deep skillet. Heat the oil and butter over medium-high until the butter is foamy. Add the chicken and cook for a couple minutes, just until the outside gets some color.",
+    "Add the onion and keep sautéing for about 3 minutes more, until the onion begins to soften.",
+    "Add the pasta, diced tomatoes (with their juices), and chicken broth. Stir until combined, then place a lid on top and let the broth come up to a boil.",
+    "Once boiling, remove the lid, turn the heat down to medium-low and simmer for about ten minutes, until the pasta is tender.",
+    "Add the cream cheese in chunks, then stir until it has melted into the sauce. Top the pasta with the green onions and serve."
+  ],
+  "expect": {
+    "unused": [],
+    "ingredients": {
+      "smoked paprika": { "note": "" },
+      "chicken breast": { "qty": 1, "unit": "lb" },
+      "fire roasted diced tomatoes": { "qty": 1, "unit": "can", "note": "15 oz" },
+      "penne pasta": {}
+    },
+    "steps": [
+      { "verb": "chop", "uses": ["chicken breast", "yellow onion", "green onions"] },
+      { "verb": "mix", "uses": ["chicken breast", "smoked paprika", "onion powder", "salt"] },
+      { "verb": "heat", "uses": ["olive oil", "butter"], "heat": 3 },
+      { "verb": "saute", "uses": ["chicken breast"], "time": 2, "text": "browned" },
+      { "verb": "add", "uses": ["yellow onion"], "time": 3, "text": "softened" },
+      { "verb": "simmer", "uses": ["penne pasta"], "time": 10, "heat": 1 },
+      { "verb": "add", "uses": ["cream cheese"], "text": "until melted" },
+      { "verb": "top", "only": ["green onions"] }
+    ]
+  }
+}

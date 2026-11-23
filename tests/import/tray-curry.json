@@ -1,0 +1,43 @@
+{
+  "about": "Written for this test: a UK-style card (metric with no space, a jar after a size, 'the pastes', 'the spice mix', 'chicken and veg', gas marks, 'or blitz').",
+  "name": "Roast chicken tikka tray",
+  "servings": 6,
+  "ingredients": [
+    "4 tbsp tikka spice powder",
+    "1 tbsp ginger paste",
+    "1 tbsp garlic paste",
+    "400g pot natural yogurt, plus extra to serve",
+    "3 onions, 1 cut into wedges, 2 chopped",
+    "2 peppers, cut into large chunks",
+    "1kg skinless chicken thighs, cut into large chunks",
+    "1 tsp vegetable oil",
+    "500ml jar passata",
+    "rice, to serve"
+  ],
+  "steps": [
+    "In a big bowl, mix half the spice mix, half of the pastes and most of the yogurt. Stir in the onion wedges, peppers and chicken, then leave to marinate overnight in the fridge.",
+    "Fry the chopped onions in the oil until soft. Add the rest of the spice mix and pastes. Cook for 1 min, then stir in the passata. Simmer for 15 mins. Leave chunky or blitz with a stick blender.",
+    "Heat oven to 220C/200C fan/gas 7. Spread the chicken and veg on a baking tray. Roast for 15-20 mins until cooked. Serve with rice and the extra yogurt."
+  ],
+  "expect": {
+    "unused": [],
+    "ingredients": {
+      "natural yogurt": { "qty": 400, "unit": "g" },
+      "passata": { "qty": 1, "unit": "jar" },
+      "onions": { "note": "" }
+    },
+    "steps": [
+      { "verb": "chop", "notes": { "onions": "1 wedges, 2 chopped", "peppers": "large chunks" } },
+      { "verb": "mix", "uses": ["tikka spice powder", "ginger paste", "garlic paste", "natural yogurt", "skinless chicken thighs"] },
+      { "verb": "marinate", "text": "overnight" },
+      { "verb": "saute", "uses": ["onions", "vegetable oil"] },
+      { "verb": "add", "uses": ["tikka spice powder", "ginger paste", "garlic paste"], "time": 1 },
+      { "verb": "simmer", "time": 15 },
+      { "verb": "preheat", "temp": "220°C" },
+      { "verb": "add", "uses": ["skinless chicken thighs", "onions", "peppers"] },
+      { "verb": "bake", "time": 15 },
+      { "verb": "serve", "uses": ["rice"] }
+    ],
+    "noVerb": ["blend"]
+  }
+}

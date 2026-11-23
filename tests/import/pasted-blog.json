@@ -1,0 +1,24 @@
+{
+  "about": "Written for this test: text pasted from a blog post with no headings (a chatty intro, 'Serves 4 (…)', group names, a long bread line, an 'X or Y' stock, 'Make the soup:' labels, asides in brackets, a missing full stop, a make-ahead note).",
+  "text": "Roasted Tomato Soup with Cheese Toast\nWe make this every fall when the tomatoes pile up on the counter, and honestly it is the best way to use them, even better than a sauce.\nServes 4 (or 6 in small mugs)\nSoup\n3 pounds plum tomatoes, halved lengthwise\n2 tablespoons olive oil\n2 large or 4 small cloves garlic, unpeeled\n1 teaspoon finely chopped fresh thyme leaves or 1/4 teaspoon dried\n4 cups chicken or vegetable stock\nToast\n4 1-inch slices from a large loaf of sourdough bread, or bread of your choice (or 12 thin baguette slices), toasted until crisp\n1 cup coarsely grated cheddar (or more to taste)\nMake the soup: Preheat oven to 400°F. Place the tomatoes, cut side up, on a baking sheet. Drizzle the tomatoes with olive oil and tuck the garlic in beside them. Roast until the tomatoes are soft and browned (the garlic will be very soft), about 1 hour.\nPeel the garlic. Transfer the garlic and tomatoes to a blender and pulse until chunky. Pour into a pot and add the thyme and stock and bring to a boil Reduce the heat to a simmer and cook, uncovered, for 20 minutes.\nMake the toast: Top the toasted bread with the cheese and broil until bubbling, about 3 minutes. Float a slice on each bowl and serve.\nDo ahead: The soup keeps for 3 days in the fridge.",
+  "expect": {
+    "title": "Roasted Tomato Soup with Cheese Toast",
+    "servings": 4,
+    "unused": [],
+    "names": ["plum tomatoes", "olive oil", "garlic", "fresh thyme leaves", "chicken stock", "sourdough bread", "cheddar"],
+    "ingredients": {
+      "garlic": { "qty": 2, "unit": "clove" },
+      "chicken stock": { "note": "or vegetable stock" },
+      "sourdough bread": { "qty": 4, "unit": "slice" }
+    },
+    "steps": [
+      { "verb": "preheat", "temp": "400°F" },
+      { "verb": "bake", "uses": ["plum tomatoes"], "time": 60 },
+      { "verb": "blend", "uses": ["plum tomatoes"] },
+      { "verb": "add", "uses": ["fresh thyme leaves", "chicken stock"] },
+      { "verb": "simmer", "time": 20, "text": "uncovered" },
+      { "verb": "top", "uses": ["cheddar"] }
+    ],
+    "noText": ["We make this", "keeps for 3 days"]
+  }
+}

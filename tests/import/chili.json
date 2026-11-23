@@ -1,0 +1,53 @@
+{
+  "about": "Written for this test: a recipe-card style chili (how-to words after names with no comma, 'about' asides, cans, a toppings list at the end).",
+  "name": "Weeknight Bean Chili",
+  "servings": 6,
+  "ingredients": [
+    "1½ tablespoons extra-virgin olive oil",
+    "1 medium yellow onion chopped (about 1½ cups)",
+    "2 red bell peppers chopped (about 2 cups)",
+    "2 medium sweet potatoes peeled and ½-inch diced (about 1 pound)",
+    "3 cloves garlic minced",
+    "1 tablespoon tomato paste",
+    "1 tablespoon chili powder",
+    "2 teaspoons ground cumin",
+    "1½ teaspoons unsweetened cocoa powder",
+    "1 teaspoon kosher salt plus more to taste",
+    "¼ teaspoon cayenne pepper optional",
+    "1 (28-ounce) can diced tomatoes in their juices",
+    "2 (15-ounce) cans black beans, rinsed and drained",
+    "2 cups low-sodium vegetable broth",
+    "Sliced avocado",
+    "Chopped fresh cilantro",
+    "Crushed tortilla chips",
+    "Lime wedges"
+  ],
+  "steps": [
+    "Heat the olive oil in a large pot over medium. Add the onion, bell peppers, and sweet potatoes and cook, stirring now and then, until the onions turn translucent, about 10 minutes.",
+    "Reduce the heat to medium low. Add the garlic, tomato paste, chili powder, cumin, cocoa powder, salt, and cayenne. Cook for 1 minute, until fragrant.",
+    "Stir in the diced tomatoes, beans, and broth. Bring to a boil. Partly cover the pot and reduce the heat to a simmer. Keep cooking for 30 minutes.",
+    "Taste and adjust the seasoning, adding more salt or cayenne if you like.",
+    "Serve with the toppings: avocado, cilantro and lime wedges."
+  ],
+  "expect": {
+    "unused": [],
+    "ingredients": {
+      "yellow onion": { "qty": 1 },
+      "sweet potatoes": { "qty": 2 },
+      "kosher salt": {},
+      "cayenne pepper": {},
+      "diced tomatoes": { "unit": "can" },
+      "unsweetened cocoa powder": {}
+    },
+    "steps": [
+      { "verb": "chop", "uses": ["yellow onion", "red bell peppers", "sweet potatoes", "garlic"], "notes": { "garlic": "minced", "sweet potatoes": "peeled", "yellow onion": "!chopped" } },
+      { "verb": "heat", "uses": ["extra-virgin olive oil"], "heat": 2 },
+      { "verb": "saute", "uses": ["yellow onion", "red bell peppers", "sweet potatoes"], "time": 10 },
+      { "verb": "add", "uses": ["garlic", "unsweetened cocoa powder", "cayenne pepper"], "time": 1, "heat": 1 },
+      { "verb": "mix", "uses": ["diced tomatoes", "black beans", "low-sodium vegetable broth"] },
+      { "verb": "simmer", "time": 30, "text": "covered" },
+      { "verb": "season", "only": ["kosher salt", "cayenne pepper"] },
+      { "verb": "serve", "uses": ["avocado", "fresh cilantro", "lime wedges", "crushed tortilla chips"] }
+    ]
+  }
+}

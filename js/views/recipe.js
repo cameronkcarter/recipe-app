@@ -61,7 +61,12 @@ App.views.recipe = (root, { id, edit = false }) => {
         : App.ui.topbar(`<a class="icon-btn" href="${back}" aria-label="Back">${App.glyph('back')}</a><span class="title-sm"></span>`,
           `<button class="icon-btn" data-act="share" aria-label="Share recipe">${App.glyph('share')}</button>` +
           (mine ? `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">${App.glyph('pencil')}</a>` : `<span class="icon-btn heart-btn">${App.ui.heart(r.id)}</span>`), { account: false })}
-      ${imported ? `<div class="import-banner">${App.icon('sparkle')}Imported. Tap any word to fix it.</div>` : ''}
+      ${imported ? (() => {
+        // ingredients no step uses are the usual thing an import gets wrong, so say which
+        const used = new Set(r.steps.flatMap(s => (s.uses || []).map(u => u.ing)));
+        const left = r.ingredients.filter(g => !used.has(g.id)).map(g => g.name);
+        return `<div class="import-banner">${App.icon('sparkle')}<span>Imported. Tap any word to fix it.${left.length ? ` Not in a step yet: ${U.esc(left.join(', '))}.` : ''}</span></div>`;
+      })() : ''}
       <div class="hero">
         ${edit
           ? `<button class="r-ico pick" data-act="pick-icon" style="--blob:${U.esc(U.recipeBlob(r))}" aria-label="Change icon" aria-expanded="${picking}">${App.icon(U.recipeIcon(r))}<span class="badge">${App.glyph('pencil')}</span></button>

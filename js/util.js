@@ -331,34 +331,71 @@ U.category = ing => {
 };
 
 // "2 (15-ounce) cans black beans, drained" → {qty:2, unit:'can', name:'black beans', note:'15-ounce'}
+// Also tidies what recipe sites add: prices ("$0.17"), metric repeats ("(450 g)"), "about 2 cups" asides,
+// a container after a size ("15 oz. can" → 1 can, note "15 oz"), and how-to words after the name
+// with no comma ("yellow onion chopped", "kosher salt plus more to taste").
+const PRICE = /\s*\$\s*\d+(?:\.\d+)?\**/g;
+const MEASURE_ASIDE = /^(?:about|approx\.?|approximately|roughly|~)?\s*[\d½¼¾⅓⅔⅛.\/\s-]+\s*(?:g|grams?|kg|ml|l|liters?|oz\.?|ounces?|lbs?\.?|pounds?|cups?|tablespoons?|teaspoons?|tbsp|tsp|inch(?:es)?)\b/i;
+const NOTE_WORD = /^(?:(?:finely|roughly|coarsely|thinly|freshly|very|lightly)\s+)?(?:chopped|diced|minced|sliced|grated|shredded|peeled|cubed|crushed|halved|quartered|trimmed|seeded|deseeded|cored|pitted|julienned|drained|rinsed|softened|melted|beaten|torn|cooked|uncooked|toasted|cut|zested|juiced|smashed)$/i;
+const NOTE_START = /^(?:optional|plus|divided|to taste|for serving|for garnish|to serve|at room temperature|room temperature|in (?:their|its) juices?|or more)\b/i;
+const CONTAINER = /^(cans?|tins?|jars?|pots?|tubs?|cartons?|bottles?|bags?|packages?|packets?|packs?|pkgs?|boxe?s?)\s+(?=\S)/i;
 U.parseIngredientLine = line => {
-  let s = String(line).trim().replace(/^[-•*▢□]\s*/, '');
+  let s = String(line).trim().replace(/^[-•*▢□]\s*/, '').replace(PRICE, '').replace(/\*+/g, '');
   if (!s) return null;
   let note = '';
+  const addNote = (t, front) => { t = String(t).trim().replace(/^,|,$/g, '').trim(); if (t) note = !note ? t : front ? t + ', ' + note : note + ', ' + t; };
   s = s.replace(/\(([^)]*)\)/g, (m, inner) => {
-    if (/^\d+$/.test(inner.trim())) return inner; // "(2) cans" → "2 cans"
-    note = note ? note + ', ' + inner : inner; return ' ';
-  }).replace(/\s+/g, ' ').trim();
+    inner = inner.replace(PRICE, '').replace(/,\s*$/, '').trim();
+    if (/^\d+$/.test(inner)) return inner; // "(2) cans" → "2 cans"
+    // keep "15-ounce" can sizes; drop metric repeats, "about 2 cups" and "or more to taste"
+    const parts = inner.split(/,\s*/).filter(x => x && !(MEASURE_ASIDE.test(x) && !/^\d+[- ](?:ounce|oz|inch)/i.test(x)) && !/^or\b/i.test(x));
+    for (const x of parts) addNote(x);
+    return ' ';
+  }).replace(/\s+/g, ' ').replace(/\s+,/g, ',').trim();
   const m = s.match(/^((?:\d+\s+)?\d+\/\d+|\d*\.?\d+(?:\s*[½⅓⅔¼¾⅛⅜⅝⅞])?|[½⅓⅔¼¾⅛⅜⅝⅞])(?:\s*(?:[-–]|to)\s*[\d./½¼¾]+)?\s*(.*)$/);
   let qty = null, rest = s;
   if (m) { qty = U.parseQty(m[1]); rest = m[2]; }
-  // size words like "15-ounce" before the unit
-  const size = rest.match(/^(\d+[- ]?(?:ounce|oz|g|gram)s?)\s+/i);
-  if (size) { note = note ? size[1] + ', ' + note : size[1]; rest = rest.slice(size[0].length); }
+  // "2 large or 4 small cloves garlic" → 2 cloves, note "large"
+  const either = rest.match(/^(large|small|medium|big)\s+or\s+[\d½¼¾⅓⅔]+\s+(?:large|small|medium|big)\s+/i);
+  if (either) { addNote(either[1].toLowerCase()); rest = rest.slice(either[0].length); }
+  // size words like "15-ounce" or "1-inch" before the unit
+  const size = rest.match(/^(\d+[- ]?(?:ounce|oz|g|gram|inch)s?)\s+/i);
+  if (size) { addNote(size[1], true); rest = rest.slice(size[0].length); }
   const sizeWord = rest.match(/^(large|small|medium|big)\s+(?=\S)/i);
-  if (sizeWord && ALIAS[rest.slice(sizeWord[0].length).split(' ')[0].replace(/[.,]$/, '').toLowerCase()]) { note = note ? sizeWord[1] + ', ' + note : sizeWord[1]; rest = rest.slice(sizeWord[0].length); }
+  if (sizeWord && ALIAS[rest.slice(sizeWord[0].length).split(' ')[0].replace(/[.,]$/, '').toLowerCase()]) { addNote(sizeWord[1], true); rest = rest.slice(sizeWord[0].length); }
   let unit = '';
   const words = rest.split(' ');
   for (const len of [2, 1]) {
     const cand = words.slice(0, len).join(' ').replace(/[.,]$/, '');
     if (ALIAS[cand] || ALIAS[cand.toLowerCase()]) { unit = U.normUnit(cand); rest = words.slice(len).join(' '); break; }
   }
-  rest = rest.replace(/^of\s+/i, '');
+  // "15 oz. can tomatoes" is one 15-oz can; "500g pot yogurt" is 500 g of yogurt
+  if (unit && (WT[unit] || VOL[unit]) && rest.match(CONTAINER)) {
+    const c = rest.match(CONTAINER), kind = U.normUnit(c[1].replace(/e?s$/i, '').replace(/^tin$/i, 'can').replace(/^pkg$/i, 'package'));
+    rest = rest.slice(c[0].length);
+    if (ALIAS[kind] && kind !== unit) { addNote(`${U.fmtQty(qty)} ${unit}`, true); qty = 1; unit = kind; }
+  }
+  rest = rest.replace(/^of\s+/i, '').replace(/^(?:from|of)\s+(?:a|an|the)?\s*(?:(?:large|small|medium|big)\s+)?(?:loaf|loaves|bag|package|box|jar|can|head|bunch)\s+of\s+/i, '');
   // "chopped cilantro" → name "cilantro", note "chopped"
-  const prep = rest.match(/^((?:finely |roughly |freshly )?(?:chopped|diced|minced|sliced|grated|shredded|peeled|fresh|large|medium|small))\s+(?=\S)/i);
-  if (prep && !/tomato/i.test(rest)) { note = note ? prep[1] + ', ' + note : prep[1]; rest = rest.slice(prep[0].length); }
+  const prep = rest.match(/^((?:finely |roughly |coarsely |thinly |freshly )?(?:chopped|diced|minced|sliced|grated|shredded|peeled|fresh|large|medium|small))\s+(?=\S)/i);
+  if (prep && !/tomato/i.test(rest)) { addNote(prep[1], true); rest = rest.slice(prep[0].length); }
   const comma = rest.indexOf(',');
-  if (comma > -1) { const after = rest.slice(comma + 1).trim(); note = note ? note + ', ' + after : after; rest = rest.slice(0, comma); }
+  if (comma > -1) { addNote(rest.slice(comma + 1)); rest = rest.slice(0, comma); }
+  // how-to words after the name, without a comma: "yellow onion chopped", "garlic minced",
+  // "sweet potatoes peeled and ¼-inch diced", "kosher salt plus more to taste", "cayenne optional"
+  {
+    const ws = rest.trim().split(' ');
+    for (let i = 1; i < ws.length; i++) {
+      const tail = ws.slice(i).join(' '), next = ws[i + 1];
+      const nextOk = next === undefined || /^(?:(?:and|or|into|in|to|for|very|then|small|fine|finely|thinly|lengthwise|crosswise)$|[\d½¼¾⅓⅔])/i.test(next);
+      const adv = /^(finely|roughly|coarsely|thinly|freshly|lightly)$/i.test(ws[i]) && NOTE_WORD.test(ws[i] + ' ' + (next || ''));
+      if (NOTE_START.test(tail) || (NOTE_WORD.test(ws[i]) && nextOk) || adv) {
+        addNote(tail.replace(/^plus\s+(?:more\s+|extra\s+)?/i, ''));
+        rest = ws.slice(0, i).join(' ');
+        break;
+      }
+    }
+  }
   // "2 garlic cloves" → unit "clove", name "garlic"
   if (!unit) {
     const tail = rest.trim().match(/^(.+?)\s+(cloves?|cans?|sticks?|sprigs?|heads?|bunch(?:es)?|slices?|stalks?)$/i);
