@@ -79,11 +79,11 @@ U.UNITS = Object.keys(UNIT_ALIASES);
 
 const VOL = { tsp: 1, tbsp: 3, cup: 48, 'fl oz': 6, ml: 0.202884, l: 202.884 }; // in tsp
 const WT = { g: 1, kg: 1000, oz: 28.3495, lb: 453.592 };                       // in grams
-const PLURAL = new Set(['cup', 'clove', 'can', 'jar', 'bag', 'bottle', 'carton', 'pinch', 'dash', 'bunch', 'package', 'slice', 'stick', 'head', 'sprig', 'handful', 'stalk']);
+const PLURAL = new Set(['cup', 'clove', 'can', 'jar', 'bag', 'bottle', 'carton', 'pinch', 'dash', 'bunch', 'package', 'slice', 'stick', 'head', 'sprig', 'handful', 'stalk', 'splash']);
 U.fmtUnit = (unit, qty) => {
   if (!unit) return '';
   if (unit === 'box' && qty != null && qty > 1) return 'boxes';
-  if (PLURAL.has(unit) && qty != null && qty > 1) return unit === 'pinch' || unit === 'dash' || unit === 'bunch' ? unit + 'es' : unit + 's';
+  if (PLURAL.has(unit) && qty != null && qty > 1) return unit === 'pinch' || unit === 'dash' || unit === 'bunch' || unit === 'splash' ? unit + 'es' : unit + 's';
   return unit;
 };
 U.fmtAmount = (qty, unit) => {
@@ -93,11 +93,17 @@ U.fmtAmount = (qty, unit) => {
 };
 
 // Merge a list of {qty, unit} into display parts, converting where units are compatible.
+// Amounts that are words, not numbers ("a splash of wine", "a pinch of salt").
+U.WORD_AMOUNT = /^(?:a\s+)?(splash|pinch|dash|drizzle|handful|sprinkle|to taste)$/i;
+const WORD_UNITS = new Set(['splash', 'pinch', 'dash', 'drizzle', 'handful', 'sprinkle']);
 U.mergeAmounts = items => {
   const vol = [], wt = [], other = {};
-  let noQty = false;
+  let noQty = false, toTaste = false;
   for (const it of items) {
     const u = U.normUnit(it.unit);
+    if (u === 'to taste') { toTaste = true; continue; }
+    // "a splash" with no number counts as one splash, so two recipes make "2 splashes"
+    if (it.qty == null && WORD_UNITS.has(u)) { other[u] = (other[u] || 0) + 1; continue; }
     if (it.qty == null) { noQty = true; continue; }
     if (VOL[u]) vol.push({ q: it.qty, u });
     else if (WT[u]) wt.push({ q: it.qty, u });
@@ -123,7 +129,8 @@ U.mergeAmounts = items => {
       else parts.push(g >= 453 ? U.fmtAmount(g / WT.lb, 'lb') : U.fmtAmount(g / WT.oz, 'oz'));
     }
   }
-  for (const [u, q] of Object.entries(other)) parts.push(U.fmtAmount(q, u));
+  for (const [u, q] of Object.entries(other)) parts.push(WORD_UNITS.has(u) && q === 1 ? 'a ' + u : U.fmtAmount(q, u));
+  if (toTaste && !parts.length) parts.push('to taste');
   if (!parts.length && noQty) return '';
   return parts.join(' + ');
 };
@@ -306,6 +313,9 @@ U.useMixture = (r, step, fromId) => {
 // last word wins, since that's the thing itself ("onion powder" is a powder, "chicken broth" is broth).
 const catWord = w => /(?:ch|sh|ss|x|o)es$/.test(w) ? w.slice(0, -2) : /ies$/.test(w) ? w.slice(0, -3) + 'y' : /[^su]s$/.test(w) ? w.slice(0, -1) : w;
 const catWords = s => (String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(/[a-z]+/g) || []).map(catWord);
+const SPICE_HERBS = new Set(['oregano', 'thyme', 'rosemary', 'sage', 'marjoram', 'tarragon', 'basil', 'dill', 'savory']);
+const FRESH_HERBS = new Set(['cilantro', 'parsley', 'mint', 'chive', 'coriander']);
+const FRESH_WORDS = new Set(['fresh', 'freshly', 'sprig', 'bunch', 'handful', 'leaf', 'leave', 'stem', 'stalk']);
 U.category = ing => {
   if (ing.cat) return ing.cat;
   const words = catWords(ing.name);
@@ -321,6 +331,17 @@ U.category = ing => {
       const cat = U._catIndex.get(words.slice(i, i + len).join(' '));
       if (cat) { best = { cat, word: words[i + len - 1] }; break; }
     }
+  }
+  // Herbs: oregano, thyme, basil and the like mean the dried jar in the spice aisle unless the recipe
+  // says fresh (or a sprig, bunch, handful or leaves). Cilantro, parsley, mint and chives are nearly
+  // always bought fresh, so they stay in produce unless they say dried.
+  // the herb has to be the thing itself ("dill", "thyme sprigs"), not a word in front of something else ("dill pickles")
+  const herb = words.find((w, i) => (SPICE_HERBS.has(w) || (w === 'bay' && words[i + 1])) && (i === words.length - 1 || FRESH_WORDS.has(words[i + 1])));
+  if (herb || (best && best.cat === 'produce' && words.some(w => FRESH_HERBS.has(w)))) {
+    const all = [...words, ...catWords(ing.note || ''), ...catWords(ing.unit || '')];
+    if (all.some(w => w === 'dried' || w === 'ground')) return 'spices';
+    if (herb && herb !== 'bay' && all.some(w => FRESH_WORDS.has(w))) return 'produce';
+    if (herb) return 'spices';
   }
   if (!best) return 'other';
   // dried or ground herbs and spices are in the spice aisle, not with the fresh ones

@@ -34,7 +34,14 @@ App.views.shopping = root => {
         const key = keyOf(ing.name);
         if (!map.has(key)) map.set(key, { key, name: ing.name, cat: L.cats[key] || U.category(ing), icon: U.ingIconHtml(ing), items: [] });
         const row = map.get(key);
-        row.items.push({ qty: ing.qty != null ? ing.qty * sc : null, unit: ing.unit });
+        // an ingredient with no amount may still say one in a step ("a splash", "to taste")
+        let unit = ing.unit;
+        if (ing.qty == null && !unit) {
+          const said = [ing.note, ...r.steps.flatMap(s => (s.uses || []).filter(u => u.ing === ing.id).map(u => u.note || u.unit))]
+            .map(t => String(t || '').trim().match(U.WORD_AMOUNT)).find(Boolean);
+          if (said) unit = said[1].toLowerCase();
+        }
+        row.items.push({ qty: ing.qty != null ? ing.qty * sc : null, unit });
       }
     }
     return [...map.values()].filter(row => !L.hidden[row.key]);
