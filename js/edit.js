@@ -64,7 +64,7 @@ App.edit = (() => {
               <label class="opt ${s.time ? '' : 'empty'}">${App.icon('clock')}${inl(`data-time="${s.id}" inputmode="numeric" aria-label="Minutes"`, s.time ? s.time + ' min' : '', 'time', 'time')}</label>
               <button class="opt heat-btn ${s.heat ? '' : 'off empty'}" data-heat="${s.id}">${App.icon('flame')}${s.heat ? U.HEAT[s.heat].toLowerCase() + ' heat' : 'heat'}</button>
               <label class="opt wide ${s.text ? '' : 'empty'}">${App.glyph('pencil')}${inl(`data-text="${s.id}" aria-label="Note for this step (until…, then…)"`, s.text, 'note (until…, then…)', 'note')}</label>
-              ${(s.uses || []).length > 1 || s.makes ? `<label class="opt wide ${s.makes ? '' : 'empty'}">${App.icon('bowl')}${inl(`data-makes="${s.id}" aria-label="What this step makes, to use in a later step"`, s.makes, 'makes… (spice mix, sauce)', 'note')}</label>${!s.makes && U.suggestMix(r, s) ? `<button class="opt mix-sug" data-mix-sug="${s.id}">${App.glyph('plus')}Call it ${U.esc(U.suggestMix(r, s))}</button>` : ''}` : ''}
+              ${(s.uses || []).length > 1 || s.makes ? `<label class="opt wide ${s.makes ? '' : 'empty'}">${App.icon(U.mixIcon(s.makes))}${inl(`data-makes="${s.id}" aria-label="What this step makes, to use in a later step"`, s.makes, 'makes… (spice mix, sauce)', 'note')}</label>${!s.makes && U.suggestMix(r, s) ? `<button class="opt mix-sug" data-mix-sug="${s.id}">${App.glyph('plus')}Call it ${U.esc(U.suggestMix(r, s))}</button>` : ''}` : ''}
             </div>
           </div>
         </div>

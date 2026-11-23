@@ -300,6 +300,14 @@ U.findMixture = (r, beforeIndex, name) => {
   const n = String(name).toLowerCase().replace(/\bmixture\b/, 'mix').trim();
   return U.mixtures(r, beforeIndex).find(m => { const x = m.name.toLowerCase().replace(/\bmixture\b/, 'mix'); return x === n || x.includes(n) || n.includes(x); }) || null;
 };
+// The icon for a mix, from its name: Spice mix, Veggie mix and Sauce each have their own; anything else is a bowl.
+U.mixIcon = name => {
+  const n = String(name || '').toLowerCase();
+  if (/\b(spice|seasoning|rub|masala)/.test(n)) return 'spicemix';
+  if (/\b(veg|veggie|veggies|vegetables?|aromatics|mirepoix|soffritto|sofrito)\b/.test(n)) return 'veggiemix';
+  if (/\b(sauce|dressing|marinade|glaze|gravy|slurry|vinaigrette)\b/.test(n)) return 'saucemix';
+  return 'bowl';
+};
 // A name for what a step makes, when it looks like a mix: spices in a bowl → "Spice mix",
 // vegetables cut for one pot → "Veggie mix", liquids whisked together → "Sauce". '' when it doesn't.
 U.suggestMix = (r, step) => {
