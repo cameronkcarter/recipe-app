@@ -779,10 +779,11 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .bubble:hover { transform: none; }
 .bubble .ing-ico { flex: none; margin-top: 1px; }
 .bub-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.bub-line { display: flex; align-items: center; gap: 6px; min-width: 0; min-height: 28px; }
+.bub-line { display: flex; align-items: center; gap: 3px; min-width: 0; min-height: 28px; }
 .bubble .bub-line .inl { flex: none; padding: 1px 2px; }
+.bubble .bub-line .inl.amt { min-width: 0; }
 .bubble .bub-line .inl.nm { flex: 1 1 auto; min-width: 3em; width: auto !important; }
-.bubble .inl.un, .bubble [data-unote] { display: block; width: 100%; max-width: 100%; min-width: 0; padding: 0 2px; line-height: 1.3; }
+.bubble .inl.un, .bubble [data-unote] { display: block; width: 100%; max-width: 100%; min-width: 0; padding: 0 2px; line-height: 1.3; text-align: left; }
 .step.edit:not(.active) .bubble .inl.un.empty { display: none; }
 .bub-ctl { flex: none; display: flex; align-items: center; gap: 0; margin-top: 0; }
 .bubble .x, .step.edit .s-ings li.mix-use .x { width: 30px; height: 28px; padding: 0; margin: 0; border-radius: 6px; }
