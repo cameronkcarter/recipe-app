@@ -92,15 +92,15 @@ App.views.library = root => {
       <div class="sheet-head"><h3>Add a recipe</h3><button class="btn small" data-close>Cancel</button></div>
       <form>
         <div class="input-wrap">${App.glyph('link')}<input class="input" name="url" type="url" inputmode="url" placeholder="Paste a recipe link" autocomplete="off" required aria-label="Recipe link"></div>
-        <button class="btn primary block" data-import style="margin-top:8px">Import</button>
+        <button class="btn primary block mt8" data-import>Import</button>
         <div class="import-msg" role="status"></div>
       </form>
       <details class="paste-box"><summary class="btn block">${App.glyph('paste')}Paste recipe text</summary>
         <textarea class="input" rows="8" name="text" placeholder="Copy the whole recipe from a page or photo and paste it here"></textarea>
-        <button class="btn primary block" data-paste style="margin-top:8px">Convert</button>
+        <button class="btn primary block mt8" data-paste>Convert</button>
         <div class="import-msg paste-msg" role="status"></div>
       </details>
-      <button class="btn block" data-blank style="margin-top:8px">${App.glyph('pencil')}Start from scratch</button>`,
+      <button class="btn block mt8" data-blank>${App.glyph('pencil')}Start from scratch</button>`,
       (el, close) => {
         const input = el.querySelector('[name=url]'), msg = el.querySelector('.import-msg'), btn = el.querySelector('[data-import]');
         input.focus();

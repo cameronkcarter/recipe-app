@@ -1,6 +1,5 @@
 /* ============ Tokens ============ */
-/* Kawaii theme: cream + coral, rounded Fredoka headings, Nunito text, "puffy" cards.
-   Each tab tints the page (Search = lilac, Recipes = cream, Shopping = mint).
+/* Kawaii theme: cream + one warm brown accent on every tab, rounded Fredoka headings, Nunito text, "puffy" cards.
    Night mode: <html data-theme="dark">, set in index.html from the saved choice or the system. */
 :root {
   --bg: #fff7ec;
@@ -10,14 +9,10 @@
   --muted: #9a8574;
   --line: #f3e6d3;
   --line-strong: #e8d6bd;
-  --accent: #f27b5b;
-  --accent-deep: #d45e40;
-  --accent-soft: #fde3d6;
+  --accent: #8b5a3c;
+  --accent-deep: #6a4129;
+  --accent-soft: #f1e1d1;
   --accent-ink: #ffffff;
-  --chef-a: #f08a4b;
-  --chef-a-soft: #fde6d6;
-  --chef-b: #3baa9c;
-  --chef-b-soft: #d9f1ec;
   --good: #5daa5a;
   --good-soft: #e3f2de;
   --danger: #d9483b;
@@ -27,14 +22,6 @@
   --font-body: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color-scheme: light;
 }
-:root[data-tab="list"] {
-  --bg: #eef6ea; --surface-2: #e0eed9; --line: #dcebd5; --line-strong: #c7ddbd;
-  --accent: #5fae57; --accent-deep: #46903f; --accent-soft: #dcf0d6;
-}
-:root[data-tab="search"] {
-  --bg: #f7f0fb; --surface-2: #ece1f5; --line: #e8ddf1; --line-strong: #d6c6e7;
-  --accent: #9b7bd4; --accent-deep: #7c5db8; --accent-soft: #ece3f8;
-}
 :root[data-theme="dark"] {
   --bg: #231c18;
   --surface: #2f2621;
@@ -43,27 +30,18 @@
   --muted: #bca894;
   --line: #3e332c;
   --line-strong: #1b1512;
-  --accent: #f4876a;
-  --accent-deep: #b9573d;
-  --accent-soft: #4b3128;
-  --chef-a-soft: #4a2e1f;
-  --chef-b-soft: #183a36;
+  --accent: #d6a77c;
+  --accent-deep: #96683f;
+  --accent-soft: #4a3628;
+  --accent-ink: #2a1d15;
   --good-soft: #263b24;
   color-scheme: dark;
-}
-:root[data-theme="dark"][data-tab="list"] {
-  --bg: #19211a; --surface: #233025; --surface-2: #2d3c2f; --line: #304132; --line-strong: #121a13;
-  --accent: #78c26f; --accent-deep: #4c8a45; --accent-soft: #2b462b;
-}
-:root[data-theme="dark"][data-tab="search"] {
-  --bg: #211b27; --surface: #2c2433; --surface-2: #382e41; --line: #3b3145; --line-strong: #16111b;
-  --accent: #b497e6; --accent-deep: #8062bc; --accent-soft: #3d3150;
 }
 
 /* ============ Base ============ */
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-/* the page color lives on <html> so the whole screen (not just the content column) takes each tab's tint */
+/* the page color lives on <html> so the whole screen is cream, not just the content column */
 html { background: var(--bg); transition: background-color .35s ease; }
 body {
   color: var(--text);
@@ -257,10 +235,6 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .step .num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-deep);
   font: 600 .85rem/1 var(--font-head); display: grid; place-items: center; flex: none; margin-top: 2px; }
 :root[data-theme="dark"] .step .num { color: var(--accent); }
-.step.chef-A { border-left: 6px solid var(--chef-a); background: linear-gradient(90deg, var(--chef-a-soft), var(--surface) 70%); }
-.step.chef-B { border-left: 6px solid var(--chef-b); background: linear-gradient(90deg, var(--chef-b-soft), var(--surface) 70%); }
-.step .num.chef-A { background: var(--chef-a); color: #fff; }
-.step .num.chef-B { background: var(--chef-b); color: #fff; }
 .step .body { flex: 1; min-width: 0; }
 
 .extra { color: var(--muted); }
@@ -315,7 +289,7 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 
 /* the recipe's icon: tap it in edit mode to pick another */
 .r-ico.pick { position: relative; border: 2px dashed color-mix(in srgb, var(--muted) 45%, transparent); cursor: pointer; padding: 0; }
-.r-ico.pick .badge { position: absolute; right: -4px; bottom: -4px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff;
+.r-ico.pick .badge { position: absolute; right: -4px; bottom: -4px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
   display: grid; place-items: center; border: 2px solid var(--bg); }
 .r-ico.pick .badge .gl { width: 13px; height: 13px; stroke-width: 3; }
 .icon-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 6px; padding: 10px; margin: 0 0 14px; }
@@ -325,10 +299,7 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .hero .title-input { flex: 1; min-width: 0; font: 600 1.4rem var(--font-head); border: none; border-bottom: 2px dashed var(--line-strong); background: transparent; padding: 6px 2px; }
 .hero .title-input:focus { outline: none; border-color: var(--accent); }
 
-.coop-line { color: var(--muted); font-size: .88rem; font-weight: 700; margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
-.coop-line .a { color: var(--chef-a); font-weight: 800; }
-.coop-line .b { color: var(--chef-b); font-weight: 800; }
-button.num { border: none; cursor: pointer; padding: 0; color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.08); }
+button.num { border: none; cursor: pointer; padding: 0; }
 
 /* words you can tap: look like text with a faint dotted underline */
 .inl {
@@ -475,19 +446,12 @@ body.dragging-now { user-select: none; cursor: grabbing; }
 .settling .bubble { animation: settle .25s ease-out forwards; }
 @media (prefers-reduced-motion: reduce) { .wiggle .bubble, .settling .bubble { animation: none; } body, .topbar, .nav { transition: none; } }
 
-/* co-op in edit mode: tap the A / B tag under a step's number to switch chefs */
-.chef-pill { position: absolute; left: 10px; top: 46px; width: 28px; height: 20px; border: none; border-radius: 999px;
-  font: 600 .72rem/1 var(--font-head); color: #fff; cursor: pointer; padding: 0; }
-.chef-pill.pill-A { background: var(--chef-a); }
-.chef-pill.pill-B { background: var(--chef-b); }
-.step.edit:has(.chef-pill) { min-height: 76px; }
-
 /* ---------- swipe a step either way when it's done (cooking view) ---------- */
 .step.swipe { touch-action: pan-y; transition: transform .2s ease, opacity .2s ease; user-select: none; -webkit-user-select: none; }
 .step.swipe.will-toggle { border-color: var(--good); }
 .step.done { opacity: .45; }
 .step.done .s-ings li > span:not(.ing-ico), .step.done .vl, .step.done .s-meta > :not(.dot) { text-decoration: line-through; text-decoration-thickness: 1.5px; }
-.step.done:not(.chef-A):not(.chef-B) .num { background: var(--good); color: #fff; }
+.step.done .num { background: var(--good); color: #fff; }
 .step .num .gl { width: 15px; height: 15px; stroke-width: 3.4; }
 
 /* "Cooked it" — a big puffy button; after tapping it shows the seal with Undo */
@@ -600,7 +564,7 @@ h2.sec .count { background: var(--surface-2); color: var(--muted); border-radius
   display: flex; align-items: center; gap: 14px; max-width: min(92vw, 560px); padding: 10px 10px 10px 16px; border-radius: 999px;
   background: #4a3428; color: #fff; font-weight: 700; font-size: .9rem; box-shadow: 0 4px 0 #2e2019; animation: toast-in .2s ease-out; }
 .toast span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.toast button { border: none; border-radius: 999px; padding: 6px 14px; background: var(--accent); color: #fff; font: 500 .9rem var(--font-head); flex: none; }
+.toast button { border: none; border-radius: 999px; padding: 6px 14px; background: var(--accent); color: var(--accent-ink); font: 500 .9rem var(--font-head); flex: none; }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } }
 /* Search: "+ Filter" opens a small menu; chosen filters sit beside it as chips with ✕ */
 .chip.filter.add { border-style: dashed; color: var(--muted); }
@@ -737,9 +701,6 @@ body.dragging-now .ins-step { visibility: hidden; }
 .ing-list.edit .ing-item.lifted { background: var(--surface-2); box-shadow: 0 8px 22px rgba(0,0,0,.25); position: relative; z-index: 2; border-radius: 12px; }
 body.dragging-now .ing-grip { cursor: grabbing; }
 
-/* co-op: step numbers stay white on the chef's color (night mode used to make them orange on orange) */
-:root[data-theme="dark"] .step .num.chef-A, :root[data-theme="dark"] .step .num.chef-B { color: #fff; }
-.step .num.chef-A, .step .num.chef-B { font-weight: 600; text-shadow: 0 1px 0 rgba(0,0,0,.18); }
 /* mixtures: "makes spice mix" on the step that makes it; "spice mix · from step 5" where it's used */
 .s-meta .makes { color: var(--good); }
 .mix-use .ing-ico { border-radius: 50%; background: color-mix(in srgb, var(--good) 14%, transparent); }
@@ -763,7 +724,7 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .source-link .gl { width: 16px; height: 16px; }
 .source-link:hover { color: var(--accent); }
 .shop-recipe .stepper button.val { width: auto; height: 26px; border-radius: 999px; background: none; padding: 0 4px; font-weight: 800; color: var(--text); }
-.shop-recipe .stepper button.val.changed { background: var(--accent); color: #fff; }
+.shop-recipe .stepper button.val.changed { background: var(--accent); color: var(--accent-ink); }
 .topbar .btn.small { white-space: nowrap; }
 .topbar .btn.small .gl { width: 15px; height: 15px; }
 .mv-row { display: flex; gap: 6px; padding: 2px 0 8px; }
@@ -772,3 +733,35 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .mv-row .sug .gl { width: 16px; height: 16px; }
 .step.edit .s-ings li.mix-use .x.mv .gl { width: 15px; height: 15px; }
 .step.edit:not(.active) .mix-use .x { display: none; }
+
+/* ============ Nov 23 tidy-up ============ */
+/* shopping: the add-an-item row, the extras card, the aisle button and the aisle menu */
+.add-row { display: flex; gap: 8px; margin-top: 10px; }
+.add-row .input { flex: 1; min-width: 0; }
+.check-list.extras { margin-bottom: 10px; }
+.check-list .lbl { flex: 1; min-width: 0; }
+.check-list .rm-x.aisle { opacity: .55; padding: 4px; }
+.check-list .rm-x.aisle:hover { opacity: 1; color: var(--accent); }
+.pop .sug.on { background: var(--accent-soft); color: var(--accent-deep); }
+:root[data-theme="dark"] .pop .sug.on { color: var(--accent); }
+.sheet-done { margin-top: 14px; }
+/* recipe page */
+.delete-recipe { margin-top: 20px; }
+.meta-row .time { color: var(--muted); font-weight: 800; font-size: .95rem; }
+.meta-row .time .ic { width: 22px; height: 22px; }
+
+/* Phones: inputs at 16px so iOS doesn't zoom in when you tap one, and a finger on an
+   ingredient bubble scrolls the page (bubbles only drag with a mouse; phones use the move buttons). */
+@media (pointer: coarse) {
+  .input, .inl, .tag-row .tag-add, .inl.add-ing, .bubble .inl.un, textarea, select { font-size: max(16px, 1em); }
+  .bubble { touch-action: manipulation; user-select: auto; -webkit-user-select: auto; cursor: default; }
+  .bubble .inl, .bubble [contenteditable] { user-select: text; -webkit-user-select: text; }
+}
+
+/* Wide screens (tablet, laptop): a bit more room for the recipe grid and steps */
+@media (min-width: 900px) {
+  #app { max-width: 760px; }
+  .sheet { max-width: 720px; }
+  .fab { right: max(16px, calc(50% - 380px + 16px)); }
+}
+.mt8 { margin-top: 8px; }

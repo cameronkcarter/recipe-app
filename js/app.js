@@ -50,7 +50,7 @@
       if (m[1]) m[1] = decodeURIComponent(m[1]);
       cleanup = view(m);
       document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
-      document.documentElement.dataset.tab = tab; // each tab has its own page color
+      document.documentElement.dataset.tab = tab;
       if (!/^#\/(r|edit|new)\b/.test(hash)) App.session.from = hash;
       themeColor();
       return;
