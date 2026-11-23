@@ -48,10 +48,9 @@ App.views.shopping = root => {
     const doneCount = rows.filter(r => L.checked[r.key]).length + L.extras.filter(x => x.checked).length;
 
     root.innerHTML = `
-      ${App.ui.topbar('<h1>Shopping</h1>', (doneCount ? `<button class="btn small" data-act="clear-checked">${App.glyph('check')}Clear ${doneCount}</button>` : '') +
-        (total ? `<button class="icon-btn" data-act="copy" aria-label="Copy list">${App.glyph('copy')}</button>` : ''))}
+      ${App.ui.topbar('<h1>Shopping</h1>', total ? `<button class="icon-btn" data-act="copy" aria-label="Copy list">${App.glyph('copy')}</button>` : '')}
 
-      <div class="section-label">Recipes <button class="btn small" data-act="pick">${App.glyph('plus')}Add recipes</button></div>
+      <div class="section-label">Recipes <span class="lab-btns">${doneCount ? `<button class="btn small clear-checked" data-act="clear-checked" aria-label="Remove the ${doneCount} checked item${doneCount > 1 ? 's' : ''} from the list">${App.glyph('check')}Remove ${doneCount} checked</button>` : ''}<button class="btn small" data-act="pick">${App.glyph('plus')}Add recipes</button></span></div>
       ${L.recipes.length ? `<div class="shop-recipes">${L.recipes.map(e => {
         const r = S.recipe(e.id);
         if (!r) return '';
@@ -93,7 +92,13 @@ App.views.shopping = root => {
       if (act === 'serv') { const en = L.recipes.find(x => x.id === t.dataset.id); en.servings = Math.max(1, en.servings + +t.dataset.d); }
       else if (act === 'rm-recipe') { L.recipes = L.recipes.filter(x => x.id !== t.dataset.id); if (!L.recipes.length) { L.checked = {}; L.hidden = {}; } }
       else if (act === 'rm-extra') { L.extras = L.extras.filter(x => x.id !== t.dataset.id); }
-      else if (act === 'clear-checked') { L.extras = L.extras.filter(x => !x.checked); hideChecked(); }
+      else if (act === 'clear-checked') {
+        // Easy to tap by mistake, so it can be undone.
+        const before = JSON.stringify({ recipes: L.recipes, checked: L.checked, hidden: L.hidden, extras: L.extras });
+        const n = t.textContent.match(/\d+/)?.[0] || '';
+        L.extras = L.extras.filter(x => !x.checked); hideChecked();
+        ui.toast(`Removed ${n} checked item${n === '1' ? '' : 's'}`, () => { Object.assign(fresh(), JSON.parse(before)); S.save(); render(); });
+      }
       else if (act === 'serv-reset') { const en = L.recipes.find(x => x.id === t.dataset.id); en.servings = S.recipe(en.id)?.servings || 1; }
       else if (act === 'pick') return pickSheet();
       else if (act === 'copy') return copyList(t);

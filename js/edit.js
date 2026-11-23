@@ -16,7 +16,7 @@ App.edit = (() => {
   const ctx = document.createElement('canvas').getContext('2d');
   function autosize(el) {
     ctx.font = getComputedStyle(el).font;
-    el.style.width = Math.ceil(ctx.measureText(el.value || el.placeholder).width + 8) + 'px';
+    el.style.width = Math.ceil(ctx.measureText(el.value || el.placeholder).width + 6) + 'px';
   }
   const autosizeAll = root => root.querySelectorAll('input.inl:not(.add-ing)').forEach(autosize);
   const inl = (attrs, value, ph, cls = '') =>
@@ -34,22 +34,26 @@ App.edit = (() => {
     const canMove = (s.uses || []).length > 1 || r.steps.length > 1;
     const mvBtn = (k, name) => canMove ? `<button class="x mv" data-mv-use="${k}" aria-label="Move ${U.esc(name)}">${App.glyph('move')}</button>` : '';
     const bubbles = (s.uses || []).map((u, k) => {
-      if (u.from) return App.ui.mixtureHtml(r, u.from, `${mvBtn(k, 'mixture')}<button class="x" data-rm-from="${u.from}" aria-label="Remove">${App.glyph('x')}</button>`);
+      if (u.from) return App.ui.mixtureHtml(r, u.from, `<div class="bub-ctl">${mvBtn(k, 'mixture')}<button class="x" data-rm-from="${u.from}" aria-label="Remove">${App.glyph('x')}</button></div>`);
       const g = ing(r, u.ing);
       if (!g) return '';
       const first = !usedBefore.has(g.id);
       const amt = first && (g.qty != null || g.unit) ? U.fmtAmount(g.qty, U.normUnit(g.unit)) : '';
       return `<li class="bubble" data-ing="${g.id}" style="--i:${(i + k) % 5}">
         ${U.ingIconHtml(g)}
-        ${first ? inl(`data-amt="${g.id}" aria-label="Amount, like 1 1/2 cups" enterkeyhint="done"`, amt, 'amt', 'amt' + (amt ? '' : ' empty')) : ''}
-        ${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}
-        <span class="inl un ${u.note ? '' : 'empty'}" contenteditable="true" role="textbox" data-unote="${g.id}" data-ph="+ prep" aria-label="How it's prepped (diced, drained…)">${U.esc(u.note || '')}</span>
-        ${mvBtn(k, g.name)}
-        <button class="x" data-rm-use="${g.id}" aria-label="Remove ${U.esc(g.name)}">${App.glyph('x')}</button>
+        <div class="bub-main">
+          <div class="bub-line">${first ? inl(`data-amt="${g.id}" aria-label="Amount, like 1 1/2 cups" enterkeyhint="done"`, amt, 'amt', 'amt' + (amt ? '' : ' empty')) : ''}${inl(`data-name="${g.id}" aria-label="Ingredient"`, g.name, 'name', 'nm')}</div>
+          <span class="inl un ${u.note ? '' : 'empty'}" contenteditable="true" role="textbox" data-unote="${g.id}" data-ph="+ prep" aria-label="How it's prepped (diced, drained…)">${U.esc(u.note || '')}</span>
+        </div>
+        <div class="bub-ctl">${mvBtn(k, g.name)}<button class="x" data-rm-use="${g.id}" aria-label="Remove ${U.esc(g.name)}">${App.glyph('x')}</button></div>
       </li>`;
     }).join('');
     return `<div class="card step edit ${s.id === active ? 'active' : ''}" data-step="${s.id}">
-      <div class="num step-handle" title="Drag to move">${i + 1}</div>
+      <div class="step-side">
+        <div class="num step-handle" title="Drag to move">${i + 1}</div>
+        <button class="step-mv up" data-step-mv="-1" aria-label="Move step up" ${i ? '' : 'disabled'}>${App.glyph('up')}</button>
+        <button class="step-mv down" data-step-mv="1" aria-label="Move step down" ${i < r.steps.length - 1 ? '' : 'disabled'}>${App.glyph('down')}</button>
+      </div>
       <div class="body">
         <div class="s-grid">
           <button type="button" class="s-verb verb-pick ${v.label.length > 7 ? 'long' : ''}" data-pick-verb="${s.id}" aria-label="Action: ${U.esc(v.label)}. Tap to change"><span class="vi">${App.icon(v.icon)}</span><span class="vl">${U.esc(v.label)}</span></button>
@@ -66,8 +70,6 @@ App.edit = (() => {
         </div>
       </div>
       <button class="step-x" data-rm-step="${s.id}" aria-label="Delete step">${App.glyph('x')}</button>
-      <button class="step-mv up" data-step-mv="-1" aria-label="Move step up" ${i ? '' : 'disabled'}>${App.glyph('up')}</button>
-      <button class="step-mv down" data-step-mv="1" aria-label="Move step down" ${i < r.steps.length - 1 ? '' : 'disabled'}>${App.glyph('down')}</button>
     </div>`;
   }
 
