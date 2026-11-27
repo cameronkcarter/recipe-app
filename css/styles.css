@@ -1098,7 +1098,18 @@ html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timer
 .ft-chips { margin: 0; }
 .ft-chips .chip.filter.on { background: rgba(255,255,255,.9); border-color: transparent; }
 .feed-top .filter-menu, .feed-top .have-box { margin: 0; max-height: 55dvh; overflow: auto; }
-.under-top:not(:has(.feed)) { padding-top: calc(var(--ft-h, 64px) + 8px); }
+.under-top:not(:has(.feed)) { padding-top: calc(var(--ft-h, 64px) + 4px); }
+/* Grid: the same bar, sitting on the page instead of over a photo. */
+.feed-top.ft-grid { background: var(--bg); padding-bottom: 10px; transition: background-color .35s ease; }
+.ft-grid .ft-search .gl { color: var(--muted); }
+.ft-grid .ft-search .search { background: var(--surface); color: var(--text); border-color: var(--line); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.ft-grid .ft-search .search::placeholder { color: var(--muted); }
+.ft-grid .ft-search .search:focus { background: var(--surface); border-color: var(--accent); }
+.ft-grid .ft-btn { color: var(--text); filter: none; }
+.ft-grid .ft-btn.on { background: var(--surface-2); }
+.ft-grid .ft-acct .avatar { box-shadow: 0 0 0 2px var(--line); }
+.ft-grid .ft-chips .chip.filter.on { background: var(--accent-soft); border-color: var(--accent); }
+.feed-top .filter-menu { box-shadow: 0 14px 34px rgba(30, 18, 10, .28); }
 /* Down the right side of a post: Save, Shopping list, Hide. */
 .fp-rail { position: absolute; z-index: 2; right: 8px; bottom: 116px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .fp-act { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #fff; font-weight: 700; font-size: .72rem; line-height: 1.1;
@@ -1111,4 +1122,9 @@ html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timer
 .fp-rail .heart .ic { width: 30px; height: 30px; }
 .fp-btn.on { background: rgba(255,255,255,.9); color: var(--good-deep); }
 .fp-rail .heart.on { color: #f2667a; }
+.fp-rail .heart.mine { position: relative; cursor: default; }
+.fp-rail .heart.mine:active { transform: none; }
+.mine-badge { position: absolute; right: -3px; bottom: -3px; width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; overflow: hidden; display: grid; }
+.mine-badge .avatar { width: 22px; height: 22px; }
 .fp-body { padding-right: 76px; }
+.fp-count { font-weight: 800; font-size: .8rem; }

@@ -26,9 +26,6 @@ App.views.search = root => {
     return Object.entries(n).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   };
   const tagIcon = t => t === 'vegan' ? App.icon('leaf') : /instant ?pot/.test(t) ? App.icon('ip') : '';
-  const viewSeg = () => `<div class="seg view-seg" role="group" aria-label="View">
-      <button type="button" data-view="grid" class="${view() === 'grid' ? 'on' : ''}" aria-pressed="${view() === 'grid'}" aria-label="Grid view">${App.glyph('grid')}</button>
-      <button type="button" data-view="scroll" class="${view() === 'scroll' ? 'on' : ''}" aria-pressed="${view() === 'scroll'}" aria-label="Scroll view">${App.glyph('feed')}</button></div>`;
   const filtersHtml = () => {
     const chips = [
       ...st.people.map(id => { const p = S.profile(id); return p ? `<button class="chip filter on cook" data-person="${U.esc(id)}" aria-label="Remove filter">${U.avatarHtml(p)}${U.esc(U.firstName(p))}${App.glyph('x')}</button>` : ''; }),
@@ -47,17 +44,16 @@ App.views.search = root => {
           <input class="inl have-add" data-have-add placeholder="${st.have.length ? '+ another' : 'like chicken, rice'}" aria-label="Add an ingredient you have" enterkeyhint="done" autocomplete="off"></div>
         <p class="muted have-hint">Salt, pepper, oil and water count as on hand.</p>
       </div>` : '';
-    // Scroll view: Filter and What can I make? are icons in the floating bar, so only chosen filters show here.
-    if (view() === 'scroll') return `${chips ? `<div class="filters scroll ft-chips">${chips}</div>` : ''}${menu}${have}`;
-    return `<div class="filters"><button class="chip filter add ${open ? 'on' : ''}" data-act="filters" aria-expanded="${open}">${App.glyph('plus')}Filter</button>
-      <button class="chip filter add ${haveOpen ? 'on' : ''}" data-act="have" aria-expanded="${haveOpen}">${App.icon('basket')}What can I make?</button>${chips}${viewSeg()}</div>${menu}${have}`;
+    // Filter and What can I make? are icons in the top bar, so only chosen filters show here.
+    return `${chips ? `<div class="filters scroll ft-chips">${chips}</div>` : ''}${menu}${have}`;
   };
-  // Scroll view's floating bar: search, Filter, What can I make?, back to grid, and your account.
+  // The top bar, the same in Grid and Scroll: search, Filter, What can I make?, the other view, and your account.
   const ftBtns = () => {
     const me = S.me(), filtering = open || st.people.length || st.tags.length;
     return `<button type="button" class="ft-btn ${filtering ? 'on' : ''}" data-act="filters" aria-expanded="${open}" aria-label="Filter">${App.glyph('filter')}</button>
-      <button type="button" class="ft-btn ${haveOpen ? 'on' : ''}" data-act="have" aria-expanded="${haveOpen}" aria-label="What can I make?">${App.icon('basket')}</button>
-      <button type="button" class="ft-btn" data-view="grid" aria-label="Grid view">${App.glyph('grid')}</button>
+      <button type="button" class="ft-btn ${haveOpen ? 'on' : ''}" data-act="have" aria-expanded="${haveOpen}" aria-label="What can I make?">${App.icon('pot')}</button>
+      ${view() === 'scroll' ? `<button type="button" class="ft-btn" data-view="grid" aria-label="Grid view">${App.glyph('grid')}</button>`
+        : `<button type="button" class="ft-btn" data-view="scroll" aria-label="Scroll view">${App.glyph('feed')}</button>`}
       ${me ? `<button type="button" class="acct ft-acct" data-acct aria-label="Your account">${U.avatarHtml(me)}</button>`
         : `<button type="button" class="btn small primary" data-acct>Log in</button>`}`;
   };
@@ -89,10 +85,15 @@ App.views.search = root => {
   const post = r => {
     const mine = r.author && r.author === S.me()?.id, by = S.profile(r.author), key = U.recipeKey(r);
     const tags = U.tagIcons(r).map(t => `<span class="tag-ico" title="${t.label}">${App.icon(t.icon)}</span>`).join('');
-    const onList = !!S.myList()?.recipes.some(x => x.id === r.id), saved = S.isSaved(r.id), id = U.esc(r.id);
-    // Down the right side, like TikTok and Reels: Save (the heart), Shopping list, Hide.
+    const onList = !!S.myList()?.recipes.some(x => x.id === r.id), id = U.esc(r.id);
+    // Down the right side, like TikTok and Reels: Save (the heart) with how many have it, Shopping list, Hide.
+    // Everyone who saved it counts, and so does the cook who added it.
+    const saves = new Set(S.profiles().filter(p => (p.saved || []).includes(r.id)).map(p => p.id));
+    if (r.author) saves.add(r.author);
+    const count = `<span class="fp-count" title="Saved by ${saves.size}">${saves.size}</span>`;
     const rail = `<div class="fp-rail">
-        ${mine ? '' : `<div class="fp-act">${App.ui.heart(r.id)}<span>${saved ? 'Saved' : 'Save'}</span></div>`}
+        ${mine ? `<div class="fp-act"><span class="heart on mine" role="img" aria-label="Your recipe, saved by ${saves.size}">${App.icon('heart')}<span class="mine-badge">${U.avatarHtml(S.me())}</span></span>${count}</div>`
+          : `<div class="fp-act">${App.ui.heart(r.id)}${count}</div>`}
         <div class="fp-act"><button type="button" class="fp-btn ${onList ? 'on' : ''}" data-act="to-list" data-id="${id}" ${onList ? 'disabled' : ''} aria-label="${onList ? 'On shopping list' : 'Add to shopping list'}">${onList ? App.glyph('check') : App.icon('basket')}</button><span>${onList ? 'On list' : 'Shopping'}</span></div>
         <div class="fp-act"><button type="button" class="fp-btn" data-act="hide" data-id="${id}" aria-label="Hide from this feed">${App.glyph('hide')}</button><span>Hide</span></div>
       </div>`;
@@ -124,24 +125,24 @@ App.views.search = root => {
       ${nHid ? `<p class="muted feed-more">${nHid} hidden from this feed. <button class="link" data-view="grid">See all in grid</button></p>` : ''}`;
   };
 
-  // Grid: the usual header. Scroll: a see-through bar floats over the photos instead.
+  // Both views share one top bar. In Scroll it's see-through over the photos; in Grid it sits on the page.
+  // Results start below the bar and any chosen filters or the What can I make? box; the Filter menu drops over them.
   let ro;
   const render = () => {
     ro?.disconnect();
-    const box = `<input class="input search" type="search" placeholder="${view() === 'scroll' ? 'Search' : 'Recipes, ingredients, cooks'}" value="${U.esc(st.query)}" aria-label="Search recipes">`;
-    root.innerHTML = view() === 'scroll' ? `
-      <div class="feed-top"><div class="ft-row"><label class="ft-search">${App.glyph('search')}${box}</label><div class="ft-btns" id="ft-btns">${ftBtns()}</div></div>
+    const box = `<input class="input search" type="search" placeholder="Search" value="${U.esc(st.query)}" aria-label="Search recipes">`;
+    root.innerHTML = `
+      <div class="feed-top ${view() === 'grid' ? 'ft-grid' : ''}"><div class="ft-row"><label class="ft-search">${App.glyph('search')}${box}</label><div class="ft-btns" id="ft-btns">${ftBtns()}</div></div>
         <div id="filters">${filtersHtml()}</div></div>
-      <div id="results" class="under-top">${resultsHtml()}</div>` : `
-      ${App.ui.topbar('<h1>Search</h1>')}
-      <div class="search-wrap">${App.glyph('search')}${box}</div>
-      <div id="filters">${filtersHtml()}</div>
-      <div id="results">${resultsHtml()}</div>`;
+      <div id="results" class="under-top">${resultsHtml()}</div>`;
     const top = root.querySelector('.feed-top');
-    if (top && window.ResizeObserver) {
-      ro = new ResizeObserver(() => document.documentElement.style.setProperty('--ft-h', `${top.offsetHeight}px`));
-      ro.observe(top);
-    }
+    const measure = () => {
+      const base = top.getBoundingClientRect().top;
+      const h = Math.max(...[...top.querySelectorAll('.ft-row, .ft-chips, .have-box')].map(el => el.getBoundingClientRect().bottom - base));
+      document.documentElement.style.setProperty('--ft-h', `${Math.ceil(h)}px`);
+    };
+    measure();
+    if (window.ResizeObserver) { ro = new ResizeObserver(measure); ro.observe(top); }
   };
   render();
 
