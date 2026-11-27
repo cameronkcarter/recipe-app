@@ -155,7 +155,43 @@ App.views.search = root => {
     }
     else if (open && !e.target.closest('.filter-menu')) { open = false; redraw(); }
   };
-  return () => { root.removeEventListener('keydown', onKey); root.onchange = null; };
+  // Pull down at the top of the Scroll feed to refresh it, like Instagram: a round arrow follows your finger
+  // and spins once you let go past the line.
+  let pull = null;
+  const ptr = () => root.querySelector('#ptr') || root.insertAdjacentElement('beforeend', Object.assign(document.createElement('div'), { id: 'ptr', className: 'ptr', innerHTML: App.glyph('refresh') }));
+  const onStart = e => {
+    const f = e.target.closest?.('.feed');
+    pull = f && f.scrollTop <= 0 && e.touches.length === 1 ? { y: e.touches[0].clientY, d: 0 } : null;
+  };
+  const onMove = e => {
+    if (!pull) return;
+    const d = e.touches[0].clientY - pull.y;
+    if (d <= 0) { if (pull.d) { pull.d = 0; ptr().style.cssText = ''; } return; }
+    e.preventDefault(); // keep the page still while pulling
+    pull.d = Math.min(110, d * 0.5);
+    const el = ptr(); el.classList.add('show'); el.classList.toggle('ready', pull.d >= 60);
+    el.style.transform = `translate(-50%, ${pull.d}px) rotate(${pull.d * 4}deg)`;
+  };
+  const onEnd = () => {
+    if (!pull) return;
+    const go = pull.d >= 60; pull = null;
+    const el = root.querySelector('#ptr'); if (!el) return;
+    if (!go) { el.style.cssText = ''; el.className = 'ptr'; return; }
+    el.style.cssText = ''; el.className = 'ptr show spin';
+    setTimeout(() => {
+      root.querySelector('#results').innerHTML = resultsHtml();
+      const f = root.querySelector('.feed'); if (f) f.scrollTop = 0;
+      el.className = 'ptr';
+    }, 700);
+  };
+  root.addEventListener('touchstart', onStart, { passive: true });
+  root.addEventListener('touchmove', onMove, { passive: false });
+  root.addEventListener('touchend', onEnd); root.addEventListener('touchcancel', onEnd);
+  return () => {
+    root.removeEventListener('keydown', onKey); root.onchange = null;
+    root.removeEventListener('touchstart', onStart); root.removeEventListener('touchmove', onMove);
+    root.removeEventListener('touchend', onEnd); root.removeEventListener('touchcancel', onEnd);
+  };
 };
 
 // One person: their picture, name, and the recipes they added.

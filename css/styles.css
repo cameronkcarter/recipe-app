@@ -1054,10 +1054,21 @@ body:has(.feed) #app { min-height: 0; }
   scroll-snap-type: y mandatory; scrollbar-width: none; background: #1d1714;
 }
 .feed::-webkit-scrollbar { display: none; }
+/* Pull to refresh: a round arrow that drops in under the top bar. */
+.ptr { position: fixed; z-index: 7; left: 50%; top: calc(var(--timers-h, 0px) + var(--ft-h, 64px) - 40px);
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; pointer-events: none;
+  background: rgba(255,255,255,.92); color: #4a3428; box-shadow: 0 4px 14px rgba(0,0,0,.3);
+  opacity: 0; transform: translate(-50%, 0); transition: opacity .15s, transform .2s ease; }
+.ptr.show { opacity: 1; transition: opacity .15s; }
+.ptr.ready { color: var(--accent, #8a5a3c); }
+.ptr.spin { opacity: 1; transform: translate(-50%, 64px); }
+.ptr.spin .gl { animation: ptr-spin .7s linear infinite; }
+.ptr .gl { width: 22px; height: 22px; }
+@keyframes ptr-spin { to { transform: rotate(360deg); } }
 .feed-post {
   position: relative; height: 100%; padding: 0; margin: 0; overflow: hidden;
   border: 0; border-radius: 0; box-shadow: none; background: #1d1714;
-  scroll-snap-align: start; scroll-snap-stop: always;
+  scroll-snap-align: start;
 }
 .feed .feed-more { scroll-snap-align: end; margin: 0; padding: 18px 16px 22px; color: rgba(255,255,255,.75); }
 .fp-photo { position: absolute; inset: 0; display: block; }
