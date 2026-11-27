@@ -1046,7 +1046,7 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .have-line.all { color: var(--good); }
 /* Scroll view: one recipe fills the screen (above the tab bar), and a swipe moves one at a time. */
 html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timers-h, 0px); }
-html:has(.feed) .topbar { scroll-snap-align: start; }
+html:has(.feed) .topbar { scroll-snap-align: start; position: static; }
 .feed { display: flex; flex-direction: column; margin: 12px -16px 0; }
 .feed-post {
   --post-h: calc(100dvh - var(--nav-h) - env(safe-area-inset-bottom) - var(--timers-h, 0px));
