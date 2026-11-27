@@ -122,10 +122,11 @@ App.views.recipe = (root, { id, edit = false }) => {
       ${ingOpen ? (edit ? `<ul class="card ing-list edit">${ingHtml}<li class="ing-item"><input class="inl add-ing" data-add-list placeholder="+ ingredient (like 2 carrots)" aria-label="Add an ingredient" enterkeyhint="done" autocomplete="off"></li></ul>`
         : r.ingredients.length ? `<ul class="card ing-list">${ingHtml}</ul>` : `<div class="muted">No ingredients yet.</div>`) : ''}
 
+      ${edit ? '' : App.checkin.nextTimeHtml(r, mine)}
       <div class="section-label">Steps <span class="hint">${edit ? 'tap to change' : 'swipe when done'}</span></div>
       ${edit ? unusedHtml() : ''}
       <div class="steps">${stepHtml || (edit ? '' : '<div class="muted">No steps yet.</div>')}</div>
-      ${edit ? `<button class="btn block add-step" data-act="add-step">+ Add step</button>` : ''}
+      ${edit ? `<button class="btn block add-step" data-act="add-step">+ Add step</button>` : `<div class="ci-slot">${App.checkin.html(r, { mine, allDone: r.steps.length > 0 && r.steps.every(s => done.has(s.id)) })}</div>`}
 
       ${edit ? `
         <div class="section-label">More</div>
@@ -223,6 +224,7 @@ App.views.recipe = (root, { id, edit = false }) => {
     const t = e.target.closest('button');
     if (!t) return;
     const d = t.dataset;
+    if ('ci' in d) return App.checkin.click(t, r, { render });
     if (d.act === 'undo') return undo();
     if (d.act === 'sue') return App.sue.open(r, sueCtx);
     if (d.act === 'photo') return App.photos.menu(t, r.id, () => { const st = S.recipe(r.id); if (st?.photo) r.photo = st.photo; else delete r.photo; render(); });

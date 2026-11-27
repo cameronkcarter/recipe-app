@@ -26,6 +26,7 @@ Simple, symbol-based recipes, your own recipe book, and a shopping list.
 - `js/importer.js` — turns a recipe from a link or pasted text into symbol steps
 - `js/ui.js` — timers, bottom sheets, step rendering, notes
 - `js/kitchen.js` — kitchen help: tap an ingredient, amount or oven temperature for other units, stand-ins and vegan or gluten-free swaps; "Make a vegan copy"
+- `js/checkin.js` — after you cook: how did it turn out, the matching recipe change (with Undo) or a Next time note, then a photo; plus Sue's Last time, done temperatures, scaling and mix tips
 - `js/photos.js` — recipe photos (add, frame with buttons, shrink, save free in Firestore) and the drawn cover for recipes with no photo
 - `js/sue.js` — Sue, the helper (a wooden spoon in a chef's hat): her setting, speech bubbles, and her panel on each recipe
 - `js/edit.js` — inline edit mode (tap-to-change words, drag ingredients)
@@ -80,6 +81,10 @@ Everything she says comes from simple rules and tables in the app; nothing is se
 ## Kitchen help
 
 Tap any ingredient, amount or oven temperature on a recipe (in the list or in a step) to see it in other units (tsp, tbsp, cups, ml; g, oz, lb; cups to grams for flour, sugar, butter and the like; °F and °C), plus a stand-in if you're out of it and vegan and gluten-free swaps. This works with Sue off too. Sue's panel adds "Out of something?" for the recipe's ingredients, "Make it vegan" (with a button that saves a vegan copy and leaves the original alone) and a measurements cheat sheet. All of it comes from small tables in `js/kitchen.js`.
+
+## After you cook
+
+With Sue on (All tips or Check-in only), a recipe you own shows a "Done cooking" button under the steps, and the question opens by itself once every step is swiped done. Each answer offers one change to the recipe with Undo (More salt raises the salt a little, More spice the hottest spice, Cook longer the longest cooking step, Too watery the main liquid) or saves a Next time note, which shows above the steps until you clear it. Each time is kept on the recipe (`cooked`, last 10) and shows as "Last time" in Sue's panel.
 
 ## Photos
 - One hero photo per recipe, added in the app by the cook who added the recipe: the camera button on the recipe's cover

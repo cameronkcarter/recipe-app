@@ -1001,3 +1001,27 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .kn-vegan { margin-top: 10px; }
 .kn-vegan .ic { width: 22px; height: 22px; }
 .sue-none.small { font-size: .82rem; margin-top: 6px; }
+
+/* ============ Nov 27: after you cook (check-in) and Next time notes ============ */
+.ci-slot { margin-top: 12px; }
+.ci-start { color: var(--muted); }
+.ci-start .ic { width: 22px; height: 22px; }
+.checkin { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.ci-head { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+.ci-head > .ic { width: 26px; height: 26px; flex: none; }
+.ci-head span { flex: 1; }
+.ci-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ci-offer { margin: 0; font-weight: 700; }
+.ci-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.ci-acts .ic { width: 20px; height: 20px; }
+.ci-last { margin: 0; font-size: .86rem; }
+.ci-text { width: 100%; resize: vertical; font: inherit; }
+.next-time { padding: 10px 14px; margin: 4px 0 10px; }
+.nt-head { display: flex; align-items: center; gap: 8px; font: 500 .72rem var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+.nt-head .ic { width: 20px; height: 20px; }
+.next-time ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.next-time li { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.next-time li span { flex: 1; }
+.sue-list.plain li { font-weight: 600; }
+.ci-chips .chip { padding: 7px 13px; border: 2px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; font-family: inherit; }
+.ci-chips .chip:active { background: var(--surface-2); }
