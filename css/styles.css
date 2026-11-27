@@ -1050,7 +1050,7 @@ body:has(.feed) #app { min-height: 0; }
 .feed {
   position: fixed; z-index: 0; top: var(--timers-h, 0px); bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
   left: 0; right: 0; width: 100%; max-width: 640px; margin: 0 auto;
-  display: block; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  display: block; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y;
   scroll-snap-type: y mandatory; scrollbar-width: none; background: #1d1714;
 }
 .feed::-webkit-scrollbar { display: none; }
@@ -1071,7 +1071,10 @@ body:has(.feed) #app { min-height: 0; }
   scroll-snap-align: start;
 }
 .feed .feed-more { scroll-snap-align: end; margin: 0; padding: 18px 16px 22px; color: rgba(255,255,255,.75); }
-.fp-photo { position: absolute; inset: 0; display: block; }
+.fp-photo { position: absolute; inset: 0; display: block; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+/* The photo is only a picture to swipe over: the phone shouldn't try to pick it up or drag the link. */
+.fp-photo * { pointer-events: none; -webkit-user-drag: none; user-select: none; -webkit-user-select: none; }
+.feed-post { -webkit-user-select: none; user-select: none; }
 .fp-photo .r-cover { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; border-radius: 0; margin: 0; }
 .fp-photo .r-cover.photo img { object-fit: cover; object-position: center; }
 .fp-photo .r-cover.drawn .plate { width: min(62%, 300px); height: auto; margin-bottom: 18%; }

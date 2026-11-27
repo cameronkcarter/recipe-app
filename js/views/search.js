@@ -159,22 +159,30 @@ App.views.search = root => {
   // and spins once you let go past the line.
   let pull = null;
   const ptr = () => root.querySelector('#ptr') || root.insertAdjacentElement('beforeend', Object.assign(document.createElement('div'), { id: 'ptr', className: 'ptr', innerHTML: App.glyph('refresh') }));
+  const f0 = () => root.querySelector('.feed');
   const onStart = e => {
     const f = e.target.closest?.('.feed');
-    pull = f && f.scrollTop <= 0 && e.touches.length === 1 ? { y: e.touches[0].clientY, d: 0 } : null;
+    pull = f && f.scrollTop <= 0 && e.touches.length === 1 ? { y: e.touches[0].clientY, d: 0, on: false } : null;
   };
   const onMove = e => {
     if (!pull) return;
     const d = e.touches[0].clientY - pull.y;
-    if (d <= 0) { if (pull.d) { pull.d = 0; ptr().style.cssText = ''; } return; }
-    e.preventDefault(); // keep the page still while pulling
-    pull.d = Math.min(110, d * 0.5);
+    // Only take over once the finger has clearly moved down from the very top; any other swipe is left to the feed.
+    if (!pull.on) {
+      if (d < -6 || f0()?.scrollTop > 0) { pull = null; return; }
+      if (d < 12) return;
+      pull.on = true; pull.y += 12;
+    }
+    const dd = e.touches[0].clientY - pull.y;
+    if (dd <= 0) { pull.d = 0; const el = root.querySelector('#ptr'); if (el) { el.style.cssText = ''; el.className = 'ptr'; } return; }
+    if (e.cancelable) e.preventDefault(); // keep the page still while pulling
+    pull.d = Math.min(110, dd * 0.5);
     const el = ptr(); el.classList.add('show'); el.classList.toggle('ready', pull.d >= 60);
     el.style.transform = `translate(-50%, ${pull.d}px) rotate(${pull.d * 4}deg)`;
   };
   const onEnd = () => {
     if (!pull) return;
-    const go = pull.d >= 60; pull = null;
+    const go = pull.on && pull.d >= 60; pull = null;
     const el = root.querySelector('#ptr'); if (!el) return;
     if (!go) { el.style.cssText = ''; el.className = 'ptr'; return; }
     el.style.cssText = ''; el.className = 'ptr show spin';
