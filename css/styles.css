@@ -1098,7 +1098,7 @@ html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timer
 .ft-chips { margin: 0; }
 .ft-chips .chip.filter.on { background: rgba(255,255,255,.9); border-color: transparent; }
 .feed-top .filter-menu, .feed-top .have-box { margin: 0; max-height: 55dvh; overflow: auto; }
-.under-top:not(:has(.feed)) { padding-top: calc(var(--ft-h, 64px) + 4px); }
+.under-top:not(:has(.feed)) { padding-top: var(--ft-h, 64px); }
 /* Grid: the same bar, sitting on the page instead of over a photo. */
 .feed-top.ft-grid { background: var(--bg); padding-bottom: 10px; transition: background-color .35s ease; }
 .ft-grid .ft-search .gl { color: var(--muted); }

@@ -131,7 +131,7 @@ App.ui = {};
     const measure = () => {
       const base = top.getBoundingClientRect().top;
       const h = Math.max(...[...top.querySelectorAll('.ft-row, .ft-chips, .have-box')].map(el => el.getBoundingClientRect().bottom - base));
-      document.documentElement.style.setProperty('--ft-h', `${Math.ceil(h)}px`);
+      document.documentElement.style.setProperty('--ft-h', `${Math.ceil(h) + 10}px`);
     };
     measure();
     if (window.ResizeObserver) { barObs = new ResizeObserver(measure); barObs.observe(top); }
