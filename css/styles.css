@@ -903,8 +903,7 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .shop-recipe .stepper button.val.serv-down { color: var(--serv-down); background: var(--serv-down-bg); }
 
 /* ============ Nov 27: Sue, the helper (a wooden spoon in a chef's hat) ============ */
-.icon-btn.sue-btn { background: color-mix(in srgb, #D9A066 22%, var(--surface)); border-color: color-mix(in srgb, #D9A066 40%, var(--line)); }
-.icon-btn.sue-btn .ic { width: 34px; height: 34px; }
+.icon-btn.sue-btn .ic { width: 32px; height: 32px; }
 .sue-says { display: flex; align-items: flex-start; gap: 8px; }
 .sue-ava { width: 46px; height: 46px; flex: none; display: grid; place-items: center;
   border-radius: 46% 54% 50% 50% / 55% 48% 52% 45%; background: color-mix(in srgb, #D9A066 24%, var(--surface)); }
@@ -915,8 +914,14 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .sue-acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .sue-slot:empty { display: none; }
 .sue-slot { margin: 12px 0 2px; }
-.sue-says.nudge { animation: sue-pop .35s cubic-bezier(.3, 1.5, .5, 1) both; }
-@keyframes sue-pop { from { transform: translateY(6px) scale(.96); opacity: 0; } }
+.sue-tip { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border-radius: 14px; padding: 6px 6px 6px 8px; font-size: .9rem; font-weight: 700; }
+.sue-tip-ico .ic { width: 26px; height: 26px; display: block; }
+.sue-tip-text { flex: 1; min-width: 0; }
+.sue-tip .link { border: none; background: none; color: var(--accent); font: 600 .9rem var(--font-head); padding: 4px 6px; }
+.sue-tip-x { border: none; background: none; color: var(--muted); padding: 4px; display: grid; place-items: center; }
+.sue-tip-x .gl { width: 16px; height: 16px; }
+.sue-title { display: flex; align-items: center; gap: 6px; }
+.sue-title .ic { width: 30px; height: 30px; }
 .sue-panel .sheet-head { align-items: flex-start; gap: 10px; }
 .sue-panel .sheet-head .sue-bubble { padding: 8px 13px; }
 .sue-sec { margin: 16px 0 4px; }
@@ -938,11 +943,11 @@ body.dragging-now .ing-grip { cursor: grabbing; }
   background: color-mix(in srgb, var(--blob) 30%, var(--surface)); }
 .r-cover.drawn {
   background-color: color-mix(in srgb, var(--blob) 30%, var(--surface));
-  background-image: radial-gradient(color-mix(in srgb, var(--blob) 46%, var(--surface)) 1.6px, transparent 1.8px);
-  background-size: 14px 14px; display: grid; place-items: center; }
-.r-cover.drawn .plate { width: 52%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
+  background-image: radial-gradient(color-mix(in srgb, var(--blob) 38%, var(--surface)) 1.1px, transparent 1.3px);
+  background-size: 12px 12px; display: grid; place-items: center; }
+.r-cover.drawn .plate { width: 48%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
   background: radial-gradient(circle, #fffaf2 0 54%, #f2e6d4 56% 63%, #fffaf2 65% 100%);
-  box-shadow: 0 4px 0 color-mix(in srgb, var(--blob) 45%, #00000022), 0 8px 16px #0000001f; }
+  box-shadow: 0 6px 14px #00000024; }
 .r-cover.drawn .plate .ic { width: 66%; height: 66%; }
 .r-cover.photo img { width: 100%; height: 100%; object-fit: cover; display: block; filter: blur(.4px); transition: filter .25s; }
 .r-cover.photo img.sharp, .r-cover.card img { filter: none; }

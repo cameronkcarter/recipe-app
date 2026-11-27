@@ -128,7 +128,7 @@ App.ui = {};
       const dark = document.documentElement.dataset.theme === 'dark';
       return `<button class="acct-row" data-theme-toggle>${App.icon(dark ? 'sun' : 'moon')}<span>${dark ? 'Day mode' : 'Night mode'}</span></button>`;
     };
-    // Sue, the helper: Chatty / Quiet / Off on this device.
+    // Sue, the helper: All tips / Check-in only / Off on this device.
     const sueRow = () => `<div class="acct-row sue-row">${App.icon('sue')}<span>Sue<small>${App.sue.modeHint()}</small></span>${App.sue.modeHtml()}</div>`;
     const html = () => {
       const me = S.me();

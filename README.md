@@ -69,11 +69,12 @@ app opens instantly and works offline (`js/sync.js`).
 ## Sue, the helper
 Sue is a wooden spoon in a chef's hat (`App.icon('sue')`, also the tab icon and `icon-180.png` for the home screen).
 Everything she says comes from simple rules and tables in the app; nothing is sent anywhere and nothing costs money.
-- **Setting** (account panel, or the bottom of her panel; saved on this device): **Chatty** (tips pop up while you cook),
-  **Quiet** (only asks how it went after you cook), **Off** (no pop-ups and no Sue button).
+- **Tone**: cute icon, grown-up words. Tips are one short, plain line; no greetings, no exclamation marks, no bouncing.
+- **Setting** (account panel, or the bottom of her panel; saved on this device): **All tips**,
+  **Check-in only** (only asks how it went after you cook), **Off** (no tips and no Sue button).
 - **Her panel**: the spoon button at the top of a recipe. Sections plug in with `App.sue.section(id, fn)`.
 - **Before you start**: long waits (marinate, chill, rise, overnight), when to turn the oven on, Instant Pot pressure time.
-  In Chatty mode the first one shows as a bubble on the recipe page, once per visit.
+  With All tips on, the first one shows as one quiet line on the recipe page, once per visit.
 
 ## Photos
 - One hero photo per recipe, added in the app by the cook who added the recipe: the camera button on the recipe's cover
