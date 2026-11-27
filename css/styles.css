@@ -275,6 +275,7 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .detail { margin-top: 6px; font-size: .9rem; color: var(--muted); }
 
 /* Timers */
+body.has-timers #app { padding-top: var(--timers-h, 0px); }
 .timers { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 50; display: flex; flex-direction: column; gap: 6px; width: min(608px, calc(100% - 32px)); pointer-events: none; }
 .timer-pill { pointer-events: auto; display: flex; align-items: center; gap: 10px; background: #4a3428; color: #fff; padding: 8px 10px 8px 8px; border-radius: 999px;
   box-shadow: 0 4px 0 #2e2019; font-family: var(--font-head); font-weight: 500; }
