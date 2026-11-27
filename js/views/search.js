@@ -185,18 +185,31 @@ App.views.search = root => {
     const go = pull.on && pull.d >= 60; pull = null;
     const el = root.querySelector('#ptr'); if (!el) return;
     if (!go) { el.style.cssText = ''; el.className = 'ptr'; return; }
-    el.style.cssText = ''; el.className = 'ptr show spin';
+    refresh();
+  };
+  // Spin the arrow, then redraw the results from the top.
+  const refresh = () => {
+    const el = ptr(); el.style.cssText = ''; el.className = 'ptr show spin';
     setTimeout(() => {
       root.querySelector('#results').innerHTML = resultsHtml();
       const f = root.querySelector('.feed'); if (f) f.scrollTop = 0;
       el.className = 'ptr';
     }, 700);
   };
+  // Tapping the Search tab while you're already here goes back to the top and refreshes, like Instagram's home tab.
+  const onTab = e => {
+    if (!e.target.closest?.('.nav a[href="#/search"]') || location.hash !== '#/search') return;
+    e.preventDefault();
+    refresh();
+    const f = root.querySelector('.feed'), top = { top: 0, behavior: 'smooth' };
+    if (f) { if (f.scrollTo) f.scrollTo(top); else f.scrollTop = 0; } else window.scrollTo(top);
+  };
+  document.addEventListener('click', onTab);
   root.addEventListener('touchstart', onStart, { passive: true });
   root.addEventListener('touchmove', onMove, { passive: false });
   root.addEventListener('touchend', onEnd); root.addEventListener('touchcancel', onEnd);
   return () => {
-    root.removeEventListener('keydown', onKey); root.onchange = null;
+    root.removeEventListener('keydown', onKey); root.onchange = null; document.removeEventListener('click', onTab);
     root.removeEventListener('touchstart', onStart); root.removeEventListener('touchmove', onMove);
     root.removeEventListener('touchend', onEnd); root.removeEventListener('touchcancel', onEnd);
   };
