@@ -1043,6 +1043,8 @@ html:has(.feed) { scroll-snap-type: y proximity; scroll-padding-top: 100px; }
 .feed-post { padding: 0; overflow: hidden; scroll-snap-align: start; }
 .fp-photo { display: block; }
 .fp-photo .r-cover { border-radius: 0; margin: 0; }
+.fp-photo .r-cover.drawn { aspect-ratio: 2 / 1; }
+.fp-photo .r-cover.drawn .plate { width: auto; height: 78%; }
 .fp-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; }
 .fp-title { font-family: var(--font-head); font-weight: 600; font-size: 1.25rem; line-height: 1.2; color: var(--text); text-decoration: none; }
 .fp-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; color: var(--muted); font-size: .88rem; font-weight: 700; }
@@ -1058,6 +1060,3 @@ html:has(.feed) { scroll-snap-type: y proximity; scroll-padding-top: 100px; }
 .fp-hide { margin-left: auto; color: var(--muted); }
 .fp-hide .gl { width: 18px; height: 18px; }
 .feed-more { text-align: center; font-size: .88rem; margin: 16px 0; }
-.feed-empty { display: flex; gap: 12px; align-items: center; padding: 14px; margin-bottom: 12px; }
-.feed-empty > .ic { width: 40px; height: 40px; flex: none; }
-.feed-empty p { margin: 2px 0 0; font-size: .88rem; }

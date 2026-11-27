@@ -74,7 +74,7 @@ App.views.search = root => {
   };
   const grid = list => `<div class="recipe-grid">${list.map(r => App.ui.recipeCard(r)).join('')}</div>`;
 
-  // One post in the scroll view: the photo, what it is, who made it, and Save / Add to shopping list / Hide.
+  // One post in the scroll view: the photo (or drawn cover), what it is, who made it, and Save / Add to shopping list / Hide.
   const post = r => {
     const mine = r.author && r.author === S.me()?.id, by = S.profile(r.author), key = U.recipeKey(r);
     const tags = U.tagIcons(r).map(t => `<span class="tag-ico" title="${t.label}">${App.icon(t.icon)}</span>`).join('');
@@ -104,13 +104,11 @@ App.views.search = root => {
     }
     if (!list.length) return `<div class="empty">No recipes match${q ? ` “${U.esc(q)}”` : ''}.</div>`;
     if (view() === 'grid') return grid(list);
+    // Every recipe gets a post; ones without a photo use their drawn cover.
     const hid = new Set(hidden());
-    const withPhoto = list.filter(r => App.photos.has(r) && !hid.has(r.id));
-    const rest = list.length - withPhoto.length;
-    if (!withPhoto.length) return `<div class="card feed-empty">${App.icon('camera')}<div><b>No photos yet</b><p class="muted">Recipes with a photo show here. Add one from the top of any recipe you made.</p></div></div>
-      <div class="section-label">All recipes</div>${grid(list)}`;
-    return `<div class="feed">${withPhoto.map(post).join('')}</div>
-      ${rest ? `<p class="muted feed-more">${rest} more ${rest === 1 ? 'recipe' : 'recipes'} without a photo${hid.size ? ' or hidden' : ''}. <button class="link" data-view="grid">See all in grid</button></p>` : ''}`;
+    const shown = list.filter(r => !hid.has(r.id)), nHid = list.length - shown.length;
+    return `${shown.length ? `<div class="feed">${shown.map(post).join('')}</div>` : ''}
+      ${nHid ? `<p class="muted feed-more">${nHid} hidden from this feed. <button class="link" data-view="grid">See all in grid</button></p>` : ''}`;
   };
 
   root.innerHTML = `
