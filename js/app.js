@@ -58,6 +58,12 @@
     location.hash = '#/';
   }
 
+  // Remember where the page (and the Scroll feed, which scrolls on its own) is, to put it back after a redraw.
+  App.keepScroll = () => {
+    const y = window.scrollY, f = document.querySelector('.feed')?.scrollTop || 0;
+    return () => { window.scrollTo(0, y); const g = document.querySelector('.feed'); if (g) g.scrollTop = f; };
+  };
+
   // Another device changed something: redraw, unless you're in the middle of editing or typing.
   let pending = false;
   App.onRemoteChange = () => {
@@ -66,14 +72,14 @@
     if (busy) { pending = true; return; }
     pending = false;
     App.refreshNav(); // a profile picture may have changed on another device
-    const y = window.scrollY;
+    const back = App.keepScroll();
     render();
-    window.scrollTo(0, y);
+    back();
   };
   window.addEventListener('hashchange', () => { if (pending) setTimeout(App.onRemoteChange, 0); });
 
   // Redraw the current screen in place (after logging in or out).
-  App.rerender = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+  App.rerender = () => { const back = App.keepScroll(); render(); back(); };
 
   // The account button in every header, and the heart on recipe cards (inside the card's link).
   document.addEventListener('click', e => {

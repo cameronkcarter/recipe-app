@@ -1043,15 +1043,23 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .have-line { font-size: .8rem; font-weight: 700; color: var(--muted); padding: 0 4px; }
 .have-line.all { color: var(--good); }
 /* Scroll view: one recipe fills the screen (above the tab bar), and a swipe moves one at a time. */
-html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timers-h, 0px); }
-.feed { display: flex; flex-direction: column; margin: 0 -16px; }
+/* The feed is its own full-screen scroller between the top of the screen and the tab bar, like TikTok.
+   The page itself doesn't scroll, so the phone's address bar never slides in or out mid-swipe and every post is exactly one screen. */
+html:has(.feed), html:has(.feed) body { overflow: hidden; overscroll-behavior: none; }
+body:has(.feed) #app { min-height: 0; }
+.feed {
+  position: fixed; z-index: 0; top: var(--timers-h, 0px); bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  left: 50%; transform: translateX(-50%); width: min(640px, 100%); margin: 0;
+  display: block; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  scroll-snap-type: y mandatory; scrollbar-width: none; background: #1d1714;
+}
+.feed::-webkit-scrollbar { display: none; }
 .feed-post {
-  --post-h: calc(100svh - var(--nav-h) - env(safe-area-inset-bottom) - var(--timers-h, 0px));
-  position: relative; height: var(--post-h); min-height: 420px; padding: 0; overflow: hidden;
+  position: relative; height: 100%; padding: 0; margin: 0; overflow: hidden;
   border: 0; border-radius: 0; box-shadow: none; background: #1d1714;
   scroll-snap-align: start; scroll-snap-stop: always;
 }
-.feed-post + .feed-post { border-top: 2px solid #1d1714; }
+.feed .feed-more { scroll-snap-align: end; margin: 0; padding: 18px 16px 22px; color: rgba(255,255,255,.75); }
 .fp-photo { position: absolute; inset: 0; display: block; }
 .fp-photo .r-cover { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; border-radius: 0; margin: 0; }
 .fp-photo .r-cover.photo img { object-fit: cover; object-position: center; }

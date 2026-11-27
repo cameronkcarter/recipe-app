@@ -99,14 +99,14 @@ App.views.search = root => {
     // Every recipe gets a post; ones without a photo use their drawn cover.
     const hid = new Set(hidden());
     const shown = list.filter(r => !hid.has(r.id)), nHid = list.length - shown.length;
-    return `${shown.length ? `<div class="feed">${shown.map(post).join('')}</div>` : ''}
-      ${nHid ? `<p class="muted feed-more">${nHid} hidden from this feed. <button class="link" data-view="grid">See all in grid</button></p>` : ''}`;
+    const more = nHid ? `<p class="muted feed-more">${nHid} hidden from this feed. <button class="link" data-view="grid">See all in grid</button></p>` : '';
+    return shown.length ? `<div class="feed">${shown.map(post).join('')}${more}</div>` : more;
   };
 
   // Both views share one top bar. In Scroll it's see-through over the photos; in Grid it sits on the page.
   // Results start below the bar and any chosen filters or the What can I make? box; the Filter menu drops over them.
   const render = () => {
-    const box = `<input class="input search" type="search" placeholder="Search recipes and people" value="${U.esc(st.query)}" aria-label="Search recipes and people">`;
+    const box = `<input class="input search" type="search" placeholder="Search all recipes" value="${U.esc(st.query)}" aria-label="Search all recipes">`;
     root.innerHTML = `
       ${App.ui.bar(`<label class="ft-search">${App.glyph('search')}${box}</label>`, ftBtns(), `<div id="people">${peopleHtml()}</div><div id="filters">${filtersHtml()}</div>`, view() === 'grid' ? 'ft-grid' : '')}
       <div id="results" class="under-top">${resultsHtml()}</div>`;
@@ -114,12 +114,13 @@ App.views.search = root => {
   };
   render();
 
+  // The Scroll feed scrolls on its own, so keep its place when the results are redrawn.
+  const results = () => { const back = App.keepScroll(); root.querySelector('#results').innerHTML = resultsHtml(); back(); };
   const redraw = () => {
-    root.querySelector('#filters').innerHTML = filtersHtml(); root.querySelector('#results').innerHTML = resultsHtml();
+    root.querySelector('#filters').innerHTML = filtersHtml(); results();
     const b = root.querySelector('#ft-btns'); if (b) b.innerHTML = ftBtns() + App.ui.acctBtn();
   };
-  const results = () => { root.querySelector('#results').innerHTML = resultsHtml(); };
-  root.oninput = e => { if (e.target.classList.contains('search')) { st.query = e.target.value; root.querySelector('#people').innerHTML = peopleHtml(); results(); } };
+  root.oninput = e => { if (e.target.classList.contains('search')) { st.query = e.target.value; root.querySelector('#people').innerHTML = peopleHtml(); root.querySelector('#results').innerHTML = resultsHtml(); const f = root.querySelector('.feed'); if (f) f.scrollTop = 0; } };
   const addHave = box => {
     const add = box.value.split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
     if (!add.length) return;
