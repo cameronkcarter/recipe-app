@@ -901,3 +901,33 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .shop-recipe .stepper button.val.serv-same { color: var(--muted); background: none; }
 .shop-recipe .stepper button.val.serv-up { color: var(--serv-up); background: var(--serv-up-bg); }
 .shop-recipe .stepper button.val.serv-down { color: var(--serv-down); background: var(--serv-down-bg); }
+
+/* ============ Nov 27: Sue, the helper (a wooden spoon in a chef's hat) ============ */
+.icon-btn.sue-btn { background: color-mix(in srgb, #D9A066 22%, var(--surface)); border-color: color-mix(in srgb, #D9A066 40%, var(--line)); }
+.icon-btn.sue-btn .ic { width: 34px; height: 34px; }
+.sue-says { display: flex; align-items: flex-start; gap: 8px; }
+.sue-ava { width: 46px; height: 46px; flex: none; display: grid; place-items: center;
+  border-radius: 46% 54% 50% 50% / 55% 48% 52% 45%; background: color-mix(in srgb, #D9A066 24%, var(--surface)); }
+.sue-ava .ic { width: 40px; height: 40px; }
+.sue-bubble { position: relative; background: var(--surface); border: 2px solid var(--line); border-radius: 18px; border-top-left-radius: 6px;
+  padding: 9px 13px; font-weight: 700; font-size: .95rem; min-width: 0; }
+.sue-text b { font-family: var(--font-head); font-weight: 600; font-size: 1.05rem; }
+.sue-acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.sue-slot:empty { display: none; }
+.sue-slot { margin: 12px 0 2px; }
+.sue-says.nudge { animation: sue-pop .35s cubic-bezier(.3, 1.5, .5, 1) both; }
+@keyframes sue-pop { from { transform: translateY(6px) scale(.96); opacity: 0; } }
+.sue-panel .sheet-head { align-items: flex-start; gap: 10px; }
+.sue-panel .sheet-head .sue-bubble { padding: 8px 13px; }
+.sue-sec { margin: 16px 0 4px; }
+.sue-sec h4 { margin: 0 0 8px; font: 500 .82rem var(--font-head); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.sue-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.sue-list li { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 8px 12px; font-weight: 700; font-size: .93rem; }
+.sue-list li > .ic { width: 28px; height: 28px; flex: none; }
+.sue-none { margin: 0; font-size: .92rem; }
+.sue-setting { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 22px; font: 500 1rem var(--font-head); }
+.sue-hint { margin: 6px 2px 0; font-size: .85rem; text-align: right; }
+.sue-seg button { padding: 6px 12px; font-size: .9rem; }
+.acct-row.sue-row { flex-wrap: wrap; }
+.acct-row.sue-row > span { flex: 1; display: flex; flex-direction: column; }
+.acct-row.sue-row small { font: 700 .78rem var(--font-body); color: var(--muted); }

@@ -14,7 +14,7 @@
     return true;
   };
   App.refreshNav();
-  document.querySelector('link[rel=icon]').href = 'data:image/svg+xml,' + encodeURIComponent(App.icon('pot').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
+  document.querySelector('link[rel=icon]').href = 'data:image/svg+xml,' + encodeURIComponent(App.icon('sue').replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
 
   // Night mode is the default; the switch in the account panel saves a choice on this device.
   const themeColor = () => document.querySelector('meta[name=theme-color]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();

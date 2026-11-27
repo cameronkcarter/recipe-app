@@ -85,6 +85,7 @@ App.views.recipe = (root, { id, edit = false }) => {
           <button class="btn small undo-btn" data-act="undo" aria-label="Undo the last change" ${hist.length ? '' : 'disabled'}>${App.glyph('undo')}Undo</button>
           <a class="btn primary small" href="#/r/${enc}" data-done>Save</a></header>`
         : App.ui.topbar(`<a class="icon-btn" href="${back}" aria-label="Back">${App.glyph('back')}</a><span class="title-sm"></span>`,
+          (App.sue.on() ? `<button class="icon-btn sue-btn" data-act="sue" aria-label="Ask Sue">${App.icon('sue')}</button>` : '') +
           `<button class="icon-btn" data-act="share" aria-label="Share recipe">${App.glyph('share')}</button>` +
           (mine ? `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">${App.glyph('pencil')}</a>` : `<span class="icon-btn heart-btn">${App.ui.heart(r.id)}</span>`), { account: false })}
       ${imported ? (() => {
@@ -110,6 +111,8 @@ App.views.recipe = (root, { id, edit = false }) => {
           <button data-serv="1" aria-label="More servings">${App.glyph('plus')}</button>
         </div>
       </div>
+
+      ${edit ? '' : `<div class="sue-slot">${App.sue.recipeNudge(r)}</div>`}
 
       <div class="section-label">
         <button class="ing-toggle" data-act="toggle-ings" aria-expanded="${ingOpen}">${App.glyph('chevron')} Ingredients <span class="count">${r.ingredients.length}</span></button>
@@ -212,6 +215,13 @@ App.views.recipe = (root, { id, edit = false }) => {
     if (!t) return;
     const d = t.dataset;
     if (d.act === 'undo') return undo();
+    if (d.act === 'sue') return App.sue.open(r, sueCtx);
+    if (d.sueAct === 'nudge-ok' || d.sueAct === 'nudge-more') {
+      App.sue.dismissNudge(r);
+      root.querySelector('.sue-slot').innerHTML = '';
+      if (d.sueAct === 'nudge-more') App.sue.open(r, sueCtx);
+      return;
+    }
     if (d.place) return placeMenu(t);
     if (d.act === 'pick-icon') { picking = !picking; render(); }
     else if (d.icon) { r.icon = d.icon; picking = false; render(); }
@@ -280,6 +290,9 @@ App.views.recipe = (root, { id, edit = false }) => {
     const add = e.target.value.split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
     if (add.length) addTags(add);
   };
+
+  // What Sue's panel needs from this page.
+  const sueCtx = { scale: () => scale(), servings: () => servings(), rerender: () => render(), mine };
 
   const unbind = edit ? E.bind(root, r, render) : bindSwipe();
   if (edit) { root.addEventListener('input', trackSoon); root.addEventListener('change', trackSoon); }

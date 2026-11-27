@@ -25,6 +25,7 @@ Simple, symbol-based recipes, your own recipe book, and a shopping list.
 - `js/sync.js` — shares data across devices through Firebase
 - `js/importer.js` — turns a recipe from a link or pasted text into symbol steps
 - `js/ui.js` — timers, bottom sheets, step rendering, notes
+- `js/sue.js` — Sue, the helper (a wooden spoon in a chef's hat): her setting, speech bubbles, and her panel on each recipe
 - `js/edit.js` — inline edit mode (tap-to-change words, drag ingredients)
 - `js/views/` — one file per screen (library = recipe book, recipe, shopping, search + person, builder = new recipe)
 
@@ -63,3 +64,12 @@ note/time to type, tap heat to cycle. The tapped step shows ✕, + note and + in
 One shared set of recipes for the whole site, stored online in Firebase (Firestore) — every visitor and
 device sees the same recipes and profiles, and each person has their own shopping list. No sign-in. Each browser also keeps a copy so the
 app opens instantly and works offline (`js/sync.js`).
+
+## Sue, the helper
+Sue is a wooden spoon in a chef's hat (`App.icon('sue')`, also the tab icon and `icon-180.png` for the home screen).
+Everything she says comes from simple rules and tables in the app; nothing is sent anywhere and nothing costs money.
+- **Setting** (account panel, or the bottom of her panel; saved on this device): **Chatty** (tips pop up while you cook),
+  **Quiet** (only asks how it went after you cook), **Off** (no pop-ups and no Sue button).
+- **Her panel**: the spoon button at the top of a recipe. Sections plug in with `App.sue.section(id, fn)`.
+- **Before you start**: long waits (marinate, chill, rise, overnight), when to turn the oven on, Instant Pot pressure time.
+  In Chatty mode the first one shows as a bubble on the recipe page, once per visit.

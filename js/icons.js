@@ -255,11 +255,23 @@ window.App = window.App || {};
     peanut: { f: [11.5, 11.8], L: [['#E3B477', P('M11 5c4 0 6 3 6 6 0 2 1 3 3 4 3 1.5 5 4 4.5 7.5-.8 4-5 6-8.5 4.5-2-1-3-3-4-5-1-1-2-1.5-3.5-2.5C5 17 4.5 13 5.5 10 6.5 7 8.5 5 11 5z')], ['#C08F55', C(19, 20, .7) + C(21, 23, .7) + C(17.5, 24, .7)]] },
     nut: { f: [16, 18.5], L: [['#C8834A', P('M16 4c5 4 8 9 8 14a8 8 0 0 1-16 0c0-5 3-10 8-14z')], ['#A8683A', P('M20 7.5c2.6 3 4 6.8 4 10.5a8 8 0 0 1-8 8c2.6-2 4-5 4-8.5 0-3.4-.2-6.6 0-10z')], ['#E3A970', P('M11.5 15c.3-2.4 1.2-4.6 2.6-6.6'), 1.3]] },
     maple: { L: [[WOODD, P('M16 21v8'), 1.6], [RED, P('M16 3l2.5 5 4-2-1 5 5-1-3 4.5 4 2-5.5 1.5 1 4.5-5-2.5L16 26l-1-5.5-5 2.5 1-4.5L5.5 17l4-2L6.5 10.5l5 1-1-5 4 2z')], [REDD, P('M16 3l2.5 5 4-2-1 5 5-1-3 4.5 4 2-5.5 1.5 1 4.5-5-2.5L16 26z')]] },
+    // ---------- Sue, the app's helper: a wooden spoon in a little chef's hat (face with two tiny lashes) ----------
+    sue: { f: [16, 13.4], lash: true, L: [
+      [WOOD, R(14.7, 19, 2.6, 12.5, 1.3)], [WOODD, R(16.1, 19, 1.2, 12.5, .6)],
+      [WOOD, E(16, 13, 6.4, 7.6)], ['#C08347', P('M18.6 6.1a6.4 7.6 0 0 1 0 13.8c1.6-1.9 2.4-4.3 2.4-6.9s-.8-5-2.4-6.9z')],
+      ['#C9894F', E(16, 13.6, 4.4, 5.4)],
+      ['#E8BE8A', P('M11 11.6c.4-1.8 1.4-3.2 2.8-4'), 1.1],
+      ...((x, y, s) => [
+        [CRM, C(x - 2.7 * s, y + 3.8 * s, 2.6 * s) + C(x, y + 2.8 * s, 3.2 * s) + C(x + 2.7 * s, y + 3.8 * s, 2.6 * s) + R(x - 4 * s, y + 4 * s, 8 * s, 3.4 * s, .8 * s)],
+        [CRMD, P(`M${x + 2.7 * s} ${y + 1.2 * s}a2.6 2.6 0 0 1 0 5.2h-1.2c1-1.2 1.4-3.2 1.2-5.2z`) + R(x + 1.6 * s, y + 4 * s, 2.4 * s, 3.4 * s, .8 * s)],
+        ['#D9C6A3', P(`M${x - 4 * s} ${y + 6.2 * s}h${8 * s}`), .7 * s],
+        [WH, P(`M${x - 1.6 * s} ${y + 1.6 * s}c.6-.7 1.4-1 2.2-1`), .8 * s],
+      ])(16, -.6, .85)] },
   };
   delete I.herbface;
 
-  const face = ([x, y]) =>
-    `<g class="face"><circle cx="${x - 2.6}" cy="${y}" r=".95" fill="#3A2A20"/><circle cx="${x + 2.6}" cy="${y}" r=".95" fill="#3A2A20"/>` +
+  const face = ([x, y], lash) =>
+    `<g class="face">${lash ? `<path d="M${x - 3.45} ${y - .35}l-.85-.25M${x + 3.45} ${y - .35}l.85-.25" fill="none" stroke="#3A2A20" stroke-width=".55" stroke-linecap="round"/>` : ''}<circle cx="${x - 2.6}" cy="${y}" r=".95" fill="#3A2A20"/><circle cx="${x + 2.6}" cy="${y}" r=".95" fill="#3A2A20"/>` +
     `<path d="M${x - 1} ${y + 1.4}q1 1 2 0" fill="none" stroke="#3A2A20" stroke-width=".9" stroke-linecap="round"/>` +
     `<ellipse cx="${x - 4.3}" cy="${y + 1.5}" rx="1.3" ry=".8" fill="#F08A8A" opacity=".55"/><ellipse cx="${x + 4.3}" cy="${y + 1.5}" rx="1.3" ry=".8" fill="#F08A8A" opacity=".55"/></g>`;
   const layer = ([col, el, w]) => w
@@ -271,7 +283,7 @@ window.App = window.App || {};
   App.icon = (name, cls = '') => {
     const ic = I[name] || I.cloche;
     const key = name + '|' + cls;
-    return cache[key] ||= `<svg class="ic ${cls}" viewBox="0 0 32 32" aria-hidden="true">${ic.L.map(layer).join('')}${ic.f ? face(ic.f) : ''}</svg>`;
+    return cache[key] ||= `<svg class="ic ${cls}" viewBox="0 0 32 32" aria-hidden="true">${ic.L.map(layer).join('')}${ic.f ? face(ic.f, ic.lash) : ''}</svg>`;
   };
   // The main color of an icon, for the soft blob behind a recipe's icon.
   App.iconColor = name => (I[name] || I.cloche).L.find(l => !l[2])?.[0] || '#F9A27E';
