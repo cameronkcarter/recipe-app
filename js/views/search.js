@@ -107,8 +107,8 @@ App.views.search = root => {
     // Every recipe gets a post; ones without a photo use their drawn cover.
     const hid = new Set(hidden());
     const shown = list.filter(r => !hid.has(r.id)), nHid = list.length - shown.length;
-    return `${shown.length ? `<div class="feed">${shown.map(post).join('')}</div>` : ''}
-      ${nHid ? `<p class="muted feed-more">${nHid} hidden from this feed. <button class="link" data-view="grid">See all in grid</button></p>` : ''}`;
+    return `${nHid ? `<p class="muted feed-more">${nHid} hidden from this feed. <button class="link" data-view="grid">See all in grid</button></p>` : ''}
+      ${shown.length ? `<div class="feed">${shown.map(post).join('')}</div>` : ''}`;
   };
 
   root.innerHTML = `
@@ -133,7 +133,7 @@ App.views.search = root => {
     const p = e.target.closest('[data-person]'), t = e.target.closest('[data-tag]'), v = e.target.closest('[data-view]');
     const h = e.target.closest('[data-have]'), act = e.target.closest('[data-act]')?.dataset.act;
     const toggle = (arr, x) => arr.includes(x) ? arr.filter(y => y !== x) : [...arr, x];
-    if (v) { setView(v.dataset.view); redraw(); if (v.closest('.feed-more')) window.scrollTo(0, 0); }
+    if (v) { setView(v.dataset.view); redraw(); }
     else if (act === 'filters') { open = !open; redraw(); }
     else if (act === 'have') { haveOpen = !haveOpen; if (!haveOpen) st.have = []; redraw(); if (haveOpen) root.querySelector('[data-have-add]')?.focus(); }
     else if (h) { st.have = st.have.filter(x => x !== h.dataset.have); redraw(); }
