@@ -979,6 +979,10 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 
 /* ============ Nov 27: kitchen help (tap an ingredient or amount: other units and swaps) ============ */
 .kn { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+/* A light dotted underline says "tap me" on ingredients, amounts and oven temps (not on notes). */
+.s-ings li.kn > span:not(.ing-ico), .ing-list li.kn .qty, .ing-list li.kn .nm, .s-meta .m.kn {
+  text-decoration: underline dotted var(--muted); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.kn .un, .kn .extra { display: inline-block; text-decoration: none; }
 .kn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
 .ing-list li.kn:active, .s-ings li.kn:active { background: var(--surface-2); }
 .kn-pop { display: flex; flex-direction: column; gap: 6px; min-width: 220px; padding: 2px; }

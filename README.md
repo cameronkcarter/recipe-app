@@ -73,13 +73,13 @@ Sue is a wooden spoon in a chef's hat (`App.icon('sue')`, also the tab icon and 
 Everything she says comes from simple rules and tables in the app; nothing is sent anywhere and nothing costs money.
 - **Tone**: cute icon, grown-up words. Tips are one short, plain line; no greetings, no exclamation marks, no bouncing.
 - **Where she shows up** (no setting): the first "Before you start" tip at the top of a recipe, the spoon button for all her tips, and the Done cooking check-in.
-- **Her panel**: the spoon button at the top of a recipe. Sections plug in with `App.sue.section(id, fn)`.
+- **Her panel** (titled "Sue Chef"): the spoon button at the top of a recipe. Sections plug in with `App.sue.section(id, fn)`.
 - **Before you start**: long waits (marinate, chill, rise, overnight), when to turn the oven on, total time for long recipes.
   The first one shows as one quiet line on the recipe page, once per visit.
 
 ## Kitchen help
 
-Tap any ingredient, amount or oven temperature on a recipe (in the list or in a step) to see it in other units (tsp, tbsp, cups, ml; g, oz, lb; cups to grams for flour, sugar, butter and the like; °F and °C), plus a stand-in if you're out of it and vegan and gluten-free swaps. Sue's panel adds "Out of something?" for the recipe's ingredients, "Make it vegan" (with a button that saves a vegan copy and leaves the original alone) and a measurements cheat sheet. All of it comes from small tables in `js/kitchen.js`.
+Tap any ingredient, amount or oven temperature on a recipe (in the list or in a step; a light dotted underline marks them) to see it in other units (tsp, tbsp, cups, ml; g, oz, lb; cups to grams for flour, sugar, butter and the like; °F and °C), plus a stand-in if you're out of it and vegan and gluten-free swaps. Sue's panel adds "Out of something?" for the recipe's ingredients, "Make it vegan" (with a button that saves a vegan copy and leaves the original alone) and a measurements cheat sheet. All of it comes from small tables in `js/kitchen.js`.
 
 ## After you cook
 

@@ -55,7 +55,7 @@ App.sue = {};
       return out ? `<section class="sue-sec" data-sec="${s.id}"><h4>${out.title}</h4>${out.html}</section>` : '';
     }).join('');
     App.ui.sheet(`<div class="sue-panel">
-        <div class="sheet-head"><h3 class="sue-title">${App.icon('sue')}Sue</h3><button class="btn small" data-close>Close</button></div>
+        <div class="sheet-head"><h3 class="sue-title">${App.icon('sue')}Sue Chef</h3><button class="btn small" data-close>Close</button></div>
         <div class="sue-body">${body()}</div></div>`, (el, close) => {
       el.addEventListener('click', e => {
         for (const s of App.sue.sections) if (s.onClick?.(e, r, { ...ctx, close, el, redraw: () => { el.querySelector('.sue-body').innerHTML = body(); } })) return;
