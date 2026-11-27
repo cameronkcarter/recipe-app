@@ -47,8 +47,19 @@ App.views.search = root => {
           <input class="inl have-add" data-have-add placeholder="${st.have.length ? '+ another' : 'like chicken, rice'}" aria-label="Add an ingredient you have" enterkeyhint="done" autocomplete="off"></div>
         <p class="muted have-hint">Salt, pepper, oil and water count as on hand.</p>
       </div>` : '';
+    // Scroll view: Filter and What can I make? are icons in the floating bar, so only chosen filters show here.
+    if (view() === 'scroll') return `${chips ? `<div class="filters scroll ft-chips">${chips}</div>` : ''}${menu}${have}`;
     return `<div class="filters"><button class="chip filter add ${open ? 'on' : ''}" data-act="filters" aria-expanded="${open}">${App.glyph('plus')}Filter</button>
       <button class="chip filter add ${haveOpen ? 'on' : ''}" data-act="have" aria-expanded="${haveOpen}">${App.icon('basket')}What can I make?</button>${chips}${viewSeg()}</div>${menu}${have}`;
+  };
+  // Scroll view's floating bar: search, Filter, What can I make?, back to grid, and your account.
+  const ftBtns = () => {
+    const me = S.me(), filtering = open || st.people.length || st.tags.length;
+    return `<button type="button" class="ft-btn ${filtering ? 'on' : ''}" data-act="filters" aria-expanded="${open}" aria-label="Filter">${App.glyph('filter')}</button>
+      <button type="button" class="ft-btn ${haveOpen ? 'on' : ''}" data-act="have" aria-expanded="${haveOpen}" aria-label="What can I make?">${App.icon('basket')}</button>
+      <button type="button" class="ft-btn" data-view="grid" aria-label="Grid view">${App.glyph('grid')}</button>
+      ${me ? `<button type="button" class="acct ft-acct" data-acct aria-label="Your account">${U.avatarHtml(me)}</button>`
+        : `<button type="button" class="btn small primary" data-acct>Log in</button>`}`;
   };
 
   // "What can I make?": how many of a recipe's ingredients you're missing (staples don't count).
@@ -78,18 +89,20 @@ App.views.search = root => {
   const post = r => {
     const mine = r.author && r.author === S.me()?.id, by = S.profile(r.author), key = U.recipeKey(r);
     const tags = U.tagIcons(r).map(t => `<span class="tag-ico" title="${t.label}">${App.icon(t.icon)}</span>`).join('');
-    const onList = !!S.myList()?.recipes.some(x => x.id === r.id);
-    return `<article class="card feed-post" data-post="${U.esc(r.id)}">
+    const onList = !!S.myList()?.recipes.some(x => x.id === r.id), saved = S.isSaved(r.id), id = U.esc(r.id);
+    // Down the right side, like TikTok and Reels: Save (the heart), Shopping list, Hide.
+    const rail = `<div class="fp-rail">
+        ${mine ? '' : `<div class="fp-act">${App.ui.heart(r.id)}<span>${saved ? 'Saved' : 'Save'}</span></div>`}
+        <div class="fp-act"><button type="button" class="fp-btn ${onList ? 'on' : ''}" data-act="to-list" data-id="${id}" ${onList ? 'disabled' : ''} aria-label="${onList ? 'On shopping list' : 'Add to shopping list'}">${onList ? App.glyph('check') : App.icon('basket')}</button><span>${onList ? 'On list' : 'Shopping'}</span></div>
+        <div class="fp-act"><button type="button" class="fp-btn" data-act="hide" data-id="${id}" aria-label="Hide from this feed">${App.glyph('hide')}</button><span>Hide</span></div>
+      </div>`;
+    return `<article class="card feed-post" data-post="${id}">
       <a class="fp-photo" href="#/r/${key}" aria-label="${U.esc(r.title)}">${App.photos.coverHtml(r, 'feed')}</a>
+      ${rail}
       <div class="fp-body">
         <a class="fp-title" href="#/r/${key}">${U.esc(r.title)}</a>
         <div class="fp-meta">${by ? `<a class="fp-cook" href="#/u/${encodeURIComponent(by.id)}">${U.avatarHtml(by)}${U.esc(mine ? 'You' : U.firstName(by))}</a><span class="dot">·</span>` : ''}
           <span>${App.icon('clock')}${U.fmtMinsShort(U.schedule(r).total)}</span><span class="dot">·</span><span>${r.ingredients.length} ingredients</span>${tags}</div>
-        <div class="fp-acts">
-          ${mine ? '' : `<span class="fp-save">${App.ui.heart(r.id)}<span>${S.isSaved(r.id) ? 'Saved' : 'Save'}</span></span>`}
-          <button class="btn small" data-act="to-list" data-id="${U.esc(r.id)}" ${onList ? 'disabled' : ''}>${onList ? App.glyph('check') + 'On shopping list' : App.icon('basket') + 'Add to shopping list'}</button>
-          <button class="btn small fp-hide" data-act="hide" data-id="${U.esc(r.id)}" aria-label="Hide from this feed">${App.glyph('hide')}</button>
-        </div>
       </div></article>`;
   };
 
@@ -107,19 +120,37 @@ App.views.search = root => {
     // Every recipe gets a post; ones without a photo use their drawn cover.
     const hid = new Set(hidden());
     const shown = list.filter(r => !hid.has(r.id)), nHid = list.length - shown.length;
-    return `${nHid ? `<p class="muted feed-more">${nHid} hidden from this feed. <button class="link" data-view="grid">See all in grid</button></p>` : ''}
-      ${shown.length ? `<div class="feed">${shown.map(post).join('')}</div>` : ''}`;
+    return `${shown.length ? `<div class="feed">${shown.map(post).join('')}</div>` : ''}
+      ${nHid ? `<p class="muted feed-more">${nHid} hidden from this feed. <button class="link" data-view="grid">See all in grid</button></p>` : ''}`;
   };
 
-  root.innerHTML = `
-    ${App.ui.topbar('<h1>Search</h1>')}
-    <div class="search-wrap">${App.glyph('search')}<input class="input search" type="search" placeholder="Recipes, ingredients, cooks" value="${U.esc(st.query)}"></div>
-    <div id="filters">${filtersHtml()}</div>
-    <div id="results">${resultsHtml()}</div>`;
+  // Grid: the usual header. Scroll: a see-through bar floats over the photos instead.
+  let ro;
+  const render = () => {
+    ro?.disconnect();
+    const box = `<input class="input search" type="search" placeholder="${view() === 'scroll' ? 'Search' : 'Recipes, ingredients, cooks'}" value="${U.esc(st.query)}" aria-label="Search recipes">`;
+    root.innerHTML = view() === 'scroll' ? `
+      <div class="feed-top"><div class="ft-row"><label class="ft-search">${App.glyph('search')}${box}</label><div class="ft-btns" id="ft-btns">${ftBtns()}</div></div>
+        <div id="filters">${filtersHtml()}</div></div>
+      <div id="results" class="under-top">${resultsHtml()}</div>` : `
+      ${App.ui.topbar('<h1>Search</h1>')}
+      <div class="search-wrap">${App.glyph('search')}${box}</div>
+      <div id="filters">${filtersHtml()}</div>
+      <div id="results">${resultsHtml()}</div>`;
+    const top = root.querySelector('.feed-top');
+    if (top && window.ResizeObserver) {
+      ro = new ResizeObserver(() => document.documentElement.style.setProperty('--ft-h', `${top.offsetHeight}px`));
+      ro.observe(top);
+    }
+  };
+  render();
 
-  const redraw = () => { root.querySelector('#filters').innerHTML = filtersHtml(); root.querySelector('#results').innerHTML = resultsHtml(); };
+  const redraw = () => {
+    root.querySelector('#filters').innerHTML = filtersHtml(); root.querySelector('#results').innerHTML = resultsHtml();
+    const b = root.querySelector('#ft-btns'); if (b) b.innerHTML = ftBtns();
+  };
   const results = () => { root.querySelector('#results').innerHTML = resultsHtml(); };
-  root.querySelector('.search').addEventListener('input', e => { st.query = e.target.value; results(); });
+  root.oninput = e => { if (e.target.classList.contains('search')) { st.query = e.target.value; results(); } };
   const addHave = box => {
     const add = box.value.split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
     if (!add.length) return;
@@ -133,7 +164,7 @@ App.views.search = root => {
     const p = e.target.closest('[data-person]'), t = e.target.closest('[data-tag]'), v = e.target.closest('[data-view]');
     const h = e.target.closest('[data-have]'), act = e.target.closest('[data-act]')?.dataset.act;
     const toggle = (arr, x) => arr.includes(x) ? arr.filter(y => y !== x) : [...arr, x];
-    if (v) { setView(v.dataset.view); redraw(); }
+    if (v) { setView(v.dataset.view); open = false; render(); }
     else if (act === 'filters') { open = !open; redraw(); }
     else if (act === 'have') { haveOpen = !haveOpen; if (!haveOpen) st.have = []; redraw(); if (haveOpen) root.querySelector('[data-have-add]')?.focus(); }
     else if (h) { st.have = st.have.filter(x => x !== h.dataset.have); redraw(); }

@@ -1044,8 +1044,7 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .have-line.all { color: var(--good); }
 /* Scroll view: one recipe fills the screen (above the tab bar), and a swipe moves one at a time. */
 html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timers-h, 0px); }
-html:has(.feed) .topbar { scroll-snap-align: start; position: static; }
-.feed { display: flex; flex-direction: column; margin: 12px -16px 0; }
+.feed { display: flex; flex-direction: column; margin: 0 -16px; }
 .feed-post {
   --post-h: calc(100dvh - var(--nav-h) - env(safe-area-inset-bottom) - var(--timers-h, 0px));
   position: relative; height: var(--post-h); min-height: 420px; padding: 0; overflow: hidden;
@@ -1071,12 +1070,45 @@ html:has(.feed) .topbar { scroll-snap-align: start; position: static; }
 .fp-cook .avatar { width: 24px; height: 24px; }
 .fp-meta .tag-ico { background: rgba(255,255,255,.9); border-radius: 50%; padding: 2px; }
 .fp-meta .tag-ico .ic { width: 18px; height: 18px; }
-.fp-acts { display: flex; align-items: center; gap: 8px; }
-.fp-acts .btn { background: rgba(255,255,255,.16); color: #fff; border-color: rgba(255,255,255,.35); box-shadow: none; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-.fp-acts .btn:disabled { opacity: 1; background: rgba(255,255,255,.28); }
-.fp-acts .btn .ic { width: 20px; height: 20px; }
-.fp-save { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; font-size: .9rem; color: #fff; }
-.fp-hide { margin-left: auto; }
-.fp-hide .gl { width: 18px; height: 18px; }
 .feed-more { text-align: center; font-size: .88rem; margin: 12px 0 0; }
-.fp-save .heart { color: #fff; }
+/* The floating bar over the feed: see-through, white icons, a soft shade so they read on any photo. */
+.feed-top {
+  position: fixed; z-index: 6; left: 50%; transform: translateX(-50%); top: var(--timers-h, 0px);
+  width: min(640px, 100%); padding: calc(10px + env(safe-area-inset-top)) 12px 18px;
+  background: linear-gradient(to bottom, rgba(20,14,10,.55) 0%, rgba(20,14,10,.25) 60%, rgba(20,14,10,0) 100%);
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+.feed-top > * { pointer-events: auto; }
+.ft-row { display: flex; align-items: center; gap: 6px; }
+.ft-search { flex: 1; min-width: 0; position: relative; display: block; }
+.ft-search .gl { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: #fff; pointer-events: none; }
+.ft-search .search { width: 100%; height: 40px; padding: 0 12px 0 38px; border-radius: 999px; font-size: 1rem;
+  border: 1.5px solid rgba(255,255,255,.35); background: rgba(255,255,255,.16); color: #fff; box-shadow: none;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.ft-search .search::placeholder { color: rgba(255,255,255,.85); }
+.ft-search .search:focus { outline: none; border-color: rgba(255,255,255,.8); background: rgba(20,14,10,.45); }
+.ft-btns { display: flex; align-items: center; gap: 2px; flex: none; }
+.ft-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: none; color: #fff; display: grid; place-items: center; padding: 0;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.45)); }
+.ft-btn .gl { width: 22px; height: 22px; }
+.ft-btn .ic { width: 26px; height: 26px; }
+.ft-btn.on { background: rgba(255,255,255,.22); }
+.ft-acct { margin-left: 4px; }
+.ft-acct .avatar { width: 36px; height: 36px; box-shadow: 0 0 0 2px rgba(255,255,255,.85); }
+.ft-chips { margin: 0; }
+.ft-chips .chip.filter.on { background: rgba(255,255,255,.9); border-color: transparent; }
+.feed-top .filter-menu, .feed-top .have-box { margin: 0; max-height: 55dvh; overflow: auto; }
+.under-top:not(:has(.feed)) { padding-top: calc(var(--ft-h, 64px) + 8px); }
+/* Down the right side of a post: Save, Shopping list, Hide. */
+.fp-rail { position: absolute; z-index: 2; right: 8px; bottom: 116px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.fp-act { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #fff; font-weight: 700; font-size: .72rem; line-height: 1.1;
+  text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.fp-btn, .fp-rail .heart { width: 48px; height: 48px; margin: 0; border-radius: 50%; border: none; padding: 0; display: grid; place-items: center;
+  background: rgba(20,14,10,.38); color: #fff; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.fp-btn:disabled { opacity: 1; cursor: default; }
+.fp-btn .ic { width: 30px; height: 30px; }
+.fp-btn .gl, .fp-rail .heart .gl { width: 26px; height: 26px; }
+.fp-rail .heart .ic { width: 30px; height: 30px; }
+.fp-btn.on { background: rgba(255,255,255,.9); color: var(--good-deep); }
+.fp-rail .heart.on { color: #f2667a; }
+.fp-body { padding-right: 76px; }
