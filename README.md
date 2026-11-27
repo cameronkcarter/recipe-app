@@ -25,6 +25,7 @@ Simple, symbol-based recipes, your own recipe book, and a shopping list.
 - `js/sync.js` — shares data across devices through Firebase
 - `js/importer.js` — turns a recipe from a link or pasted text into symbol steps
 - `js/ui.js` — timers, bottom sheets, step rendering, notes
+- `js/kitchen.js` — kitchen help: tap an ingredient, amount or oven temperature for other units, stand-ins and vegan or gluten-free swaps; "Make a vegan copy"
 - `js/photos.js` — recipe photos (add, frame with buttons, shrink, save free in Firestore) and the drawn cover for recipes with no photo
 - `js/sue.js` — Sue, the helper (a wooden spoon in a chef's hat): her setting, speech bubbles, and her panel on each recipe
 - `js/edit.js` — inline edit mode (tap-to-change words, drag ingredients)
@@ -75,6 +76,10 @@ Everything she says comes from simple rules and tables in the app; nothing is se
 - **Her panel**: the spoon button at the top of a recipe. Sections plug in with `App.sue.section(id, fn)`.
 - **Before you start**: long waits (marinate, chill, rise, overnight), when to turn the oven on, Instant Pot pressure time.
   With All tips on, the first one shows as one quiet line on the recipe page, once per visit.
+
+## Kitchen help
+
+Tap any ingredient, amount or oven temperature on a recipe (in the list or in a step) to see it in other units (tsp, tbsp, cups, ml; g, oz, lb; cups to grams for flour, sugar, butter and the like; °F and °C), plus a stand-in if you're out of it and vegan and gluten-free swaps. This works with Sue off too. Sue's panel adds "Out of something?" for the recipe's ingredients, "Make it vegan" (with a button that saves a vegan copy and leaves the original alone) and a measurements cheat sheet. All of it comes from small tables in `js/kitchen.js`.
 
 ## Photos
 - One hero photo per recipe, added in the app by the cook who added the recipe: the camera button on the recipe's cover

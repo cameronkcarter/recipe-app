@@ -980,3 +980,24 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .pf-pad [data-pf=down] { grid-column: 2; grid-row: 3; }
 .pf-controls .icon-btn { color: var(--text); }
 .pf-controls .gl { width: 20px; height: 20px; }
+
+/* ============ Nov 27: kitchen help (tap an ingredient or amount: other units and swaps) ============ */
+.kn { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.kn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.ing-list li.kn:active, .s-ings li.kn:active { background: var(--surface-2); }
+.kn-pop { display: flex; flex-direction: column; gap: 6px; min-width: 220px; padding: 2px; }
+.kn-head { display: flex; align-items: center; gap: 10px; font-size: .98rem; padding: 2px 2px 4px; border-bottom: 2px solid var(--line); }
+.kn-head .ing-ico { width: 28px; height: 28px; flex: none; }
+.kn-row { display: grid; grid-template-columns: 84px 1fr; gap: 8px; font-size: .9rem; line-height: 1.35; padding: 2px; }
+.kn-lab { color: var(--muted); font-weight: 700; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; padding-top: 2px; }
+.kn-sheet { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin-top: 8px; font-size: .92rem;
+  background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 10px 14px; }
+.kn-sheet span:nth-child(odd) { font-weight: 700; }
+.kn-sheet span:nth-child(even) { color: var(--muted); }
+.sue-list.swaps li { align-items: flex-start; }
+.sue-list.swaps li > .ing-ico { width: 28px; height: 28px; flex: none; }
+.sue-list.swaps li span { display: flex; flex-direction: column; gap: 2px; }
+.sue-list.swaps small { font-weight: 500; color: var(--muted); font-size: .86rem; line-height: 1.35; }
+.kn-vegan { margin-top: 10px; }
+.kn-vegan .ic { width: 22px; height: 22px; }
+.sue-none.small { font-size: .82rem; margin-top: 6px; }

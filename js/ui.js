@@ -195,6 +195,9 @@ App.ui = {};
     return qty != null || unit ? U.fmtAmount(qty == null ? null : qty * scale, U.normUnit(unit)) : '';
   };
 
+  // Tap an ingredient or an amount to see it in other units and any swaps (js/kitchen.js).
+  App.ui.knAttrs = (ing, qty, unit) => `class="kn" tabindex="0" data-kn-name="${U.esc(ing.name || '')}" data-kn-ico="${U.esc(ing.icon || '')}"${qty != null ? ` data-kn-q="${+qty}"` : ''} data-kn-u="${U.esc(unit || '')}"`;
+
   // Two columns: the action on the left, what it uses on the right.
   // Time / heat / temp sit underneath as a quiet note line.
   App.ui.step = (recipe, step, scale = 1, opts = {}) => {
@@ -207,7 +210,8 @@ App.ui = {};
       const ing = recipe.ingredients.find(i => i.id === use.ing);
       if (!ing) return '';
       const amt = use.qty != null || !usedBefore.has(ing.id) ? App.ui.useAmount(use, ing, scale) : '';
-      return `<li>${U.ingIconHtml(ing)}<span>${amt ? `<b>${U.esc(amt)}</b> ` : ''}${U.esc(ing.name)}${use.note ? ` <span class="un">· ${U.esc(use.note)}</span>` : ''}</span></li>`;
+      const q = amt ? (use.qty != null ? use.qty : ing.qty) : null, un = amt ? (use.qty != null ? (use.unit ?? ing.unit) : ing.unit) : '';
+      return `<li ${App.ui.knAttrs(ing, q == null ? null : q * scale, un)}>${U.ingIconHtml(ing)}<span>${amt ? `<b>${U.esc(amt)}</b> ` : ''}${U.esc(ing.name)}${use.note ? ` <span class="un">· ${U.esc(use.note)}</span>` : ''}</span></li>`;
     }).join('');
     return `<div class="s-grid">
       <div class="s-verb ${v.label.length > 7 ? 'long' : ''}"><span class="vi">${App.icon(v.icon)}</span><span class="vl">${U.esc(v.label)}</span></div>
@@ -241,7 +245,7 @@ App.ui = {};
     }
     if (step.text) out.push(`<span class="s-text">${U.esc(step.text)}</span>`);
     if (step.heat) out.push(`<span class="m">${App.icon('flame')}${U.HEAT[step.heat].toLowerCase()} heat</span>`);
-    if (step.temp) out.push(`<span class="m">${App.icon('thermo')}${U.esc(step.temp)}</span>`);
+    if (step.temp) out.push(`<span class="m kn" tabindex="0" data-kn-temp="${U.esc(step.temp)}">${App.icon('thermo')}${U.esc(step.temp)}</span>`);
     if (opts.extra) out.push(opts.extra);
     return out.length ? `<div class="s-meta ${opts.solo ? 'solo' : ''}">${out.join('<span class="dot">·</span>')}</div>` : '';
   };

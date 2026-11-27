@@ -64,7 +64,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       lastGroup = g.group || '';
       if (edit) return head + E.ingRowHtml(r, g);
       const amt = g.qty != null || g.unit ? U.fmtAmount(g.qty == null ? null : g.qty * sc, U.normUnit(g.unit)) : '';
-      return `${head}<li>${U.ingIconHtml(g)}<span class="qty">${U.esc(amt) || '—'}</span>
+      return `${head}<li ${ui.knAttrs(g, g.qty == null ? null : g.qty * sc, g.unit)}>${U.ingIconHtml(g)}<span class="qty">${U.esc(amt) || '—'}</span>
         <span class="nm">${U.esc(g.name)}${g.note ? ` <span class="extra">· ${U.esc(g.note)}</span>` : ''}</span></li>`;
     }).join('');
 
