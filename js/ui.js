@@ -129,14 +129,11 @@ App.ui = {};
       const dark = document.documentElement.dataset.theme === 'dark';
       return `<button class="acct-row" data-theme-toggle>${App.icon(dark ? 'sun' : 'moon')}<span>${dark ? 'Day mode' : 'Night mode'}</span></button>`;
     };
-    // Sue, the helper: All tips / Check-in only / Off on this device.
-    const sueRow = () => `<div class="acct-row sue-row">${App.icon('sue')}<span>Sue<small>${App.sue.modeHint()}</small></span>${App.sue.modeHtml()}</div>`;
     const html = () => {
       const me = S.me();
       if (mode === 'me') return `
         <div class="acct-head">${U.avatarHtml(me, 'lg')}<div><h3>${U.esc(me.name)}</h3><button class="link" data-go="edit">Change name or picture</button></div></div>
         ${themeRow()}
-        ${sueRow()}
         <button class="acct-row" data-go="logout">${App.glyph('logout')}<span>Log out</span></button>`;
       if (mode === 'edit' || mode === 'signup') return `
         <div class="sheet-head"><h3>${mode === 'edit' ? 'Your profile' : 'Sign up'}</h3><button class="btn small" data-go="${mode === 'edit' ? 'me' : 'login'}">Cancel</button></div>
@@ -150,18 +147,16 @@ App.ui = {};
         <div class="sheet-head"><h3>Log in</h3><button class="btn small" data-close>Close</button></div>
         <div class="acct-list">${S.profiles().map(p => `<button class="acct-row" data-login="${U.esc(p.id)}">${U.avatarHtml(p)}<span>${U.esc(p.name)}</span></button>`).join('')}</div>
         <div class="acct-new"><span class="muted">New here?</span><button class="btn small" data-go="signup">Sign up</button></div>
-        ${themeRow()}
-        ${sueRow()}`;
+        ${themeRow()}`;
     };
     const done = () => { App.refreshNav?.(); App.rerender?.(); };
     App.ui.sheet(`<div class="acct-panel">${html()}</div>`, (el, close) => {
       const box = el.querySelector('.acct-panel');
       const paint = () => { box.innerHTML = html(); };
       el.addEventListener('click', e => {
-        const t = e.target.closest('[data-go], [data-login], [data-avatar], [data-color], [data-theme-toggle], [data-sue-mode]');
+        const t = e.target.closest('[data-go], [data-login], [data-avatar], [data-color], [data-theme-toggle]');
         if (!t) return;
         const d = t.dataset;
-        if (d.sueMode) { App.sue.setMode(d.sueMode); paint(); App.rerender?.(); return; }
         if (d.login) { S.setMe(d.login); close(); done(); return; }
         if (d.go === 'logout') { S.setMe(null); close(); done(); return; }
         if ('themeToggle' in d) { App.toggleTheme(); paint(); return; }

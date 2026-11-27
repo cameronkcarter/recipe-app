@@ -85,7 +85,7 @@ App.views.recipe = (root, { id, edit = false }) => {
           <button class="btn small undo-btn" data-act="undo" aria-label="Undo the last change" ${hist.length ? '' : 'disabled'}>${App.glyph('undo')}Undo</button>
           <a class="btn primary small" href="#/r/${enc}" data-done>Save</a></header>`
         : App.ui.topbar(`<a class="icon-btn" href="${back}" aria-label="Back">${App.glyph('back')}</a><span class="title-sm"></span>`,
-          (App.sue.on() ? `<button class="icon-btn sue-btn" data-act="sue" aria-label="Ask Sue">${App.icon('sue')}</button>` : '') +
+          `<button class="icon-btn sue-btn" data-act="sue" aria-label="Ask Sue">${App.icon('sue')}</button>` +
           `<button class="icon-btn" data-act="share" aria-label="Share recipe">${App.glyph('share')}</button>` +
           (mine ? `<a class="icon-btn" href="#/edit/${enc}" aria-label="Edit">${App.glyph('pencil')}</a>` : `<span class="icon-btn heart-btn">${App.ui.heart(r.id)}</span>`), { account: false })}
       ${imported ? (() => {

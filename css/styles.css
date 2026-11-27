@@ -932,12 +932,6 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .sue-list li { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 8px 12px; font-weight: 700; font-size: .93rem; }
 .sue-list li > .ic { width: 28px; height: 28px; flex: none; }
 .sue-none { margin: 0; font-size: .92rem; }
-.sue-setting { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 22px; font: 500 1rem var(--font-head); }
-.sue-hint { margin: 6px 2px 0; font-size: .85rem; text-align: right; }
-.sue-seg button { padding: 6px 12px; font-size: .9rem; }
-.acct-row.sue-row { flex-wrap: wrap; }
-.acct-row.sue-row > span { flex: 1; display: flex; flex-direction: column; }
-.acct-row.sue-row small { font: 700 .78rem var(--font-body); color: var(--muted); }
 
 /* ============ Nov 27: photos and the drawn cover (recipes with no photo) ============ */
 /* Same 3:2 shape everywhere. The drawn cover: the recipe's color, a soft dot pattern, its icon on a plate. */

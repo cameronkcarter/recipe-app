@@ -2,7 +2,7 @@
 // or a "Next time" note, then offers to add a photo. Each time is remembered on the recipe:
 //   recipe.cooked   = [{ at, by, verdict, change }]   newest last, last 10 kept
 //   recipe.nextTime = [{ id, text, at }]              notes shown above the steps until you clear them
-// Shows with Sue on All tips or Check-in only; only on recipes you own (changes go to your recipe).
+// Shows only on recipes you own (changes go to your recipe).
 // Also here: Sue's panel sections for Last time, done temperatures and scaling.
 window.App = window.App || {};
 App.checkin = {};
@@ -81,7 +81,7 @@ App.checkin = {};
 
   // ctx: { mine, allDone }
   C.html = (r, ctx) => {
-    if (!App.sue.on() || !ctx.mine || !(r.steps || []).length) return '';
+    if (!ctx.mine || !(r.steps || []).length) return '';
     const st = state(r.id), u = U();
     if (st.stage === 'closed') return '';
     if (st.stage === 'ask' && !ctx.allDone) return `<button class="btn block ci-start" data-ci="start">${App.icon('cloche')}Done cooking</button>`;

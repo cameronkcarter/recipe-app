@@ -165,7 +165,7 @@ App.kitchen = {};
     return `<div class="kn-pop"><div class="kn-head"><span class="ing-ico">${App.icon('thermo')}</span><span><b>${u.esc(t)}</b></span></div>
       ${c ? `<div class="kn-row"><span class="kn-lab">Same as</span><span>${c}</span></div>` : '<div class="kn-row muted">No conversion for this one.</div>'}</div>`;
   };
-  // Tap (or Enter on) anything marked with data-kn-* to open its little sheet. Works with Sue off too.
+  // Tap (or Enter on) anything marked with data-kn-* to open its little sheet.
   const open = el => {
     if (/^#\/edit\//.test(location.hash) || el.closest('.edit')) return;
     const d = el.dataset;

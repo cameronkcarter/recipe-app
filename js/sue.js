@@ -1,26 +1,12 @@
 // Sue: the app's helper, a wooden spoon in a chef's hat. She gives short, useful nudges from simple
 // rules and lookup tables inside the app (nothing is sent anywhere, nothing costs money).
 // Her tone: short, plain, useful. Cute icon, grown-up words.
-// How much she speaks up is a setting on this device: All tips, Check-in only (after you cook), or Off
-// (no tips and no Sue button; tapping amounts still converts).
+// Where she shows up: the first "Before you start" tip as one line at the top of a recipe, the Sue
+// button on a recipe for all her tips, and the Done cooking check-in. There's no setting for it.
 window.App = window.App || {};
 App.sue = {};
 (() => {
   const U = () => App.util;
-  const KEY = 'recipeapp.sue';
-  const MODES = [['chatty', 'All tips'], ['quiet', 'Check-in only'], ['off', 'Off']];
-
-  App.sue.mode = () => { try { const m = localStorage.getItem(KEY); return MODES.some(([k]) => k === m) ? m : 'chatty'; } catch (e) { return 'chatty'; } };
-  App.sue.setMode = m => { try { localStorage.setItem(KEY, m); } catch (e) { /* private mode */ } };
-  App.sue.on = () => App.sue.mode() !== 'off';
-  App.sue.chatty = () => App.sue.mode() === 'chatty';
-  App.sue.MODES = MODES;
-
-  // The setting as three buttons (used in the account panel and at the bottom of Sue's panel).
-  App.sue.modeHtml = () => `<div class="seg sue-seg" role="group" aria-label="How much Sue speaks up">${MODES.map(([k, l]) =>
-    `<button type="button" data-sue-mode="${k}" class="${App.sue.mode() === k ? 'on' : ''}" aria-pressed="${App.sue.mode() === k}">${l}</button>`).join('')}</div>`;
-  App.sue.modeHint = () => ({ chatty: 'Tips show on recipes.', quiet: 'Only asks how it went after you cook.', off: 'Sue stays hidden.' })[App.sue.mode()];
-
   // A speech bubble from Sue. actions: [{ act, label, primary }] become buttons with data-sue-act.
   App.sue.says = (html, actions = [], cls = '') => `<div class="sue-says ${cls}">
     <span class="sue-ava" aria-hidden="true">${App.icon('sue')}</span>
@@ -70,18 +56,8 @@ App.sue = {};
     }).join('');
     App.ui.sheet(`<div class="sue-panel">
         <div class="sheet-head"><h3 class="sue-title">${App.icon('sue')}Sue</h3><button class="btn small" data-close>Close</button></div>
-        <div class="sue-body">${body()}</div>
-        <div class="sue-setting"><span>Tips</span>${App.sue.modeHtml()}</div>
-        <p class="muted sue-hint">${App.sue.modeHint()}</p></div>`, (el, close) => {
+        <div class="sue-body">${body()}</div></div>`, (el, close) => {
       el.addEventListener('click', e => {
-        const m = e.target.closest('[data-sue-mode]');
-        if (m) {
-          App.sue.setMode(m.dataset.sueMode);
-          el.querySelector('.sue-setting .seg').outerHTML = App.sue.modeHtml();
-          el.querySelector('.sue-hint').textContent = App.sue.modeHint();
-          if (!App.sue.on()) { close(); ctx.rerender?.(); }
-          return;
-        }
         for (const s of App.sue.sections) if (s.onClick?.(e, r, { ...ctx, close, el, redraw: () => { el.querySelector('.sue-body').innerHTML = body(); } })) return;
       });
       for (const s of App.sue.sections) s.onMount?.(el, r, ctx);
@@ -89,9 +65,8 @@ App.sue = {};
   };
   App.sue.onClick = (id, fn) => { const s = App.sue.sections.find(x => x.id === id); if (s) s.onClick = fn; };
 
-  // All tips: the first heads-up shows as one quiet line on the recipe page, once per recipe per visit.
+  // The first heads-up shows as one quiet line on the recipe page, once per recipe per visit.
   App.sue.recipeNudge = r => {
-    if (!App.sue.chatty()) return '';
     const seen = (App.session.sueSeen ||= {});
     if (seen[r.id]) return '';
     const first = App.sue.headsUp(r)[0];

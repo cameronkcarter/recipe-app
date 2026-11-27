@@ -72,19 +72,18 @@ app opens instantly and works offline (`js/sync.js`).
 Sue is a wooden spoon in a chef's hat (`App.icon('sue')`, also the tab icon and `icon-180.png` for the home screen).
 Everything she says comes from simple rules and tables in the app; nothing is sent anywhere and nothing costs money.
 - **Tone**: cute icon, grown-up words. Tips are one short, plain line; no greetings, no exclamation marks, no bouncing.
-- **Setting** (account panel, or the bottom of her panel; saved on this device): **All tips**,
-  **Check-in only** (only asks how it went after you cook), **Off** (no tips and no Sue button).
+- **Where she shows up** (no setting): the first "Before you start" tip at the top of a recipe, the spoon button for all her tips, and the Done cooking check-in.
 - **Her panel**: the spoon button at the top of a recipe. Sections plug in with `App.sue.section(id, fn)`.
 - **Before you start**: long waits (marinate, chill, rise, overnight), when to turn the oven on, total time for long recipes.
-  With All tips on, the first one shows as one quiet line on the recipe page, once per visit.
+  The first one shows as one quiet line on the recipe page, once per visit.
 
 ## Kitchen help
 
-Tap any ingredient, amount or oven temperature on a recipe (in the list or in a step) to see it in other units (tsp, tbsp, cups, ml; g, oz, lb; cups to grams for flour, sugar, butter and the like; °F and °C), plus a stand-in if you're out of it and vegan and gluten-free swaps. This works with Sue off too. Sue's panel adds "Out of something?" for the recipe's ingredients, "Make it vegan" (with a button that saves a vegan copy and leaves the original alone) and a measurements cheat sheet. All of it comes from small tables in `js/kitchen.js`.
+Tap any ingredient, amount or oven temperature on a recipe (in the list or in a step) to see it in other units (tsp, tbsp, cups, ml; g, oz, lb; cups to grams for flour, sugar, butter and the like; °F and °C), plus a stand-in if you're out of it and vegan and gluten-free swaps. Sue's panel adds "Out of something?" for the recipe's ingredients, "Make it vegan" (with a button that saves a vegan copy and leaves the original alone) and a measurements cheat sheet. All of it comes from small tables in `js/kitchen.js`.
 
 ## After you cook
 
-With Sue on (All tips or Check-in only), a recipe you own shows a "Done cooking" button under the steps, and the question opens by itself once every step is swiped done. Each answer offers one change to the recipe with Undo (More salt raises the salt a little, More spice the hottest spice, Cook longer the longest cooking step, Too watery the main liquid) or saves a Next time note, which shows above the steps until you clear it. Each time is kept on the recipe (`cooked`, last 10) and shows as "Last time" in Sue's panel.
+A recipe you own shows a "Done cooking" button under the steps, and the question opens by itself once every step is swiped done. Each answer offers one change to the recipe with Undo (More salt raises the salt a little, More spice the hottest spice, Cook longer the longest cooking step, Too watery the main liquid) or saves a Next time note, which shows above the steps until you clear it. Each time is kept on the recipe (`cooked`, last 10) and shows as "Last time" in Sue's panel.
 
 ## Search: grid or scroll
 
