@@ -931,3 +931,47 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .acct-row.sue-row { flex-wrap: wrap; }
 .acct-row.sue-row > span { flex: 1; display: flex; flex-direction: column; }
 .acct-row.sue-row small { font: 700 .78rem var(--font-body); color: var(--muted); }
+
+/* ============ Nov 27: photos and the drawn cover (recipes with no photo) ============ */
+/* Same 3:2 shape everywhere. The drawn cover: the recipe's color, a soft dot pattern, its icon on a plate. */
+.r-cover { --blob: #f9a27e; position: relative; aspect-ratio: 3 / 2; border-radius: 14px; overflow: hidden; width: 100%;
+  background: color-mix(in srgb, var(--blob) 30%, var(--surface)); }
+.r-cover.drawn {
+  background-color: color-mix(in srgb, var(--blob) 30%, var(--surface));
+  background-image: radial-gradient(color-mix(in srgb, var(--blob) 46%, var(--surface)) 1.6px, transparent 1.8px);
+  background-size: 14px 14px; display: grid; place-items: center; }
+.r-cover.drawn .plate { width: 52%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle, #fffaf2 0 54%, #f2e6d4 56% 63%, #fffaf2 65% 100%);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--blob) 45%, #00000022), 0 8px 16px #0000001f; }
+.r-cover.drawn .plate .ic { width: 66%; height: 66%; }
+.r-cover.photo img { width: 100%; height: 100%; object-fit: cover; display: block; filter: blur(.4px); transition: filter .25s; }
+.r-cover.photo img.sharp, .r-cover.card img { filter: none; }
+.recipe-card { padding: 8px 8px 10px; min-height: 0; }
+.recipe-card .r-cover.card { border-radius: 13px; }
+.recipe-card .name, .recipe-card .meta { padding: 0 4px; }
+.recipe-card .tags { top: 14px; right: 14px; background: color-mix(in srgb, var(--surface) 85%, transparent); border-radius: 999px; padding: 2px 4px; }
+.hero-cover { position: relative; margin: 2px 0 12px; }
+.hero-cover .r-cover.hero { border-radius: var(--radius); }
+.hero-cover.drawn .r-cover.hero { aspect-ratio: 3 / 1.15; }
+.hero-cover.drawn .r-cover.hero .plate { width: auto; height: 82%; }
+.hero-cover.edit { margin-top: 0; }
+.cover-btn { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 999px;
+  padding: 6px 12px 6px 8px; background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--text); font: 500 .95rem var(--font-head);
+  box-shadow: 0 2px 0 #0000002a; }
+.cover-btn .ic { width: 26px; height: 26px; }
+.hero-cover.has-photo .cover-btn { padding: 6px; }
+.hero.with-cover { margin-top: 0; }
+.pop .sug.danger { color: var(--danger); }
+/* framing a photo: zoom and nudge buttons, no dragging */
+.pf-window { position: relative; aspect-ratio: 3 / 2; border-radius: 16px; overflow: hidden; background: #000; }
+.pf-window img { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0; }
+.pf-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0 16px; }
+.pf-zoom { display: flex; align-items: center; gap: 8px; font: 500 .95rem var(--font-head); color: var(--muted); }
+.pf-pad { display: grid; grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(3, 42px); gap: 4px; }
+.pf-pad [data-pf=up] { grid-column: 2; grid-row: 1; }
+.pf-pad [data-pf=left] { grid-column: 1; grid-row: 2; }
+.pf-pad [data-pf=center] { grid-column: 2; grid-row: 2; }
+.pf-pad [data-pf=right] { grid-column: 3; grid-row: 2; }
+.pf-pad [data-pf=down] { grid-column: 2; grid-row: 3; }
+.pf-controls .icon-btn { color: var(--text); }
+.pf-controls .gl { width: 20px; height: 20px; }

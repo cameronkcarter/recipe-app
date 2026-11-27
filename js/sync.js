@@ -5,9 +5,10 @@
 //   kitchens/main-shared-recipe-collection/recipes/{recipeId}   one doc per recipe
 //   kitchens/main-shared-recipe-collection/meta/lists           shopping lists { profileId: list }
 //   kitchens/main-shared-recipe-collection/meta/profiles        { items: [...] } people (no sign-in yet)
+//   kitchens/main-shared-recipe-collection/photos/{recipeId}    { data, at, by } one recipe photo (see js/photos.js)
 window.App = window.App || {};
 App.sync = (() => {
-  const off = { enabled: false, recipe() {}, removeRecipe() {}, meta() {} };
+  const off = { enabled: false, recipe() {}, removeRecipe() {}, meta() {}, photo() {}, removePhoto() {}, getPhoto: async () => null };
   const cfg = window.FIREBASE_CONFIG;
   if (!cfg || !window.firebase) return off;
 
@@ -20,7 +21,7 @@ App.sync = (() => {
 
   const S = App.store;
   const base = db.collection('kitchens').doc('main-shared-recipe-collection');
-  const recipesRef = base.collection('recipes'), metaRef = base.collection('meta');
+  const recipesRef = base.collection('recipes'), metaRef = base.collection('meta'), photosRef = base.collection('photos');
   const clean = o => JSON.parse(JSON.stringify(o)); // Firestore rejects `undefined`
   const warn = e => console.warn('Sync:', e.message || e);
   const flag = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -32,6 +33,10 @@ App.sync = (() => {
     recipe(r) { recipesRef.doc(r.id).set(clean({ ...r, addedAt: r.addedAt || Date.now() })).catch(warn); },
     removeRecipe(id) { recipesRef.doc(id).delete().catch(warn); },
     meta(name, value) { metaRef.doc(name).set(clean(Array.isArray(value) ? { items: value } : value)).catch(warn); },
+    // Photos aren't watched live: a recipe's photo.at says which version to fetch, once.
+    photo(id, p) { photosRef.doc(id).set(clean(p)).catch(e => { warn(e); App.ui?.toast?.('The photo is saved on this device only. It couldn\'t be shared.'); }); },
+    removePhoto(id) { photosRef.doc(id).delete().catch(warn); },
+    async getPhoto(id) { try { const d = await photosRef.doc(id).get(); return d.exists ? d.data() : null; } catch (e) { warn(e); return null; } },
   };
   const pushAll = recipes => {
     const now = Date.now();

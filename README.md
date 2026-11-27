@@ -25,6 +25,7 @@ Simple, symbol-based recipes, your own recipe book, and a shopping list.
 - `js/sync.js` — shares data across devices through Firebase
 - `js/importer.js` — turns a recipe from a link or pasted text into symbol steps
 - `js/ui.js` — timers, bottom sheets, step rendering, notes
+- `js/photos.js` — recipe photos (add, frame with buttons, shrink, save free in Firestore) and the drawn cover for recipes with no photo
 - `js/sue.js` — Sue, the helper (a wooden spoon in a chef's hat): her setting, speech bubbles, and her panel on each recipe
 - `js/edit.js` — inline edit mode (tap-to-change words, drag ingredients)
 - `js/views/` — one file per screen (library = recipe book, recipe, shopping, search + person, builder = new recipe)
@@ -73,3 +74,12 @@ Everything she says comes from simple rules and tables in the app; nothing is se
 - **Her panel**: the spoon button at the top of a recipe. Sections plug in with `App.sue.section(id, fn)`.
 - **Before you start**: long waits (marinate, chill, rise, overnight), when to turn the oven on, Instant Pot pressure time.
   In Chatty mode the first one shows as a bubble on the recipe page, once per visit.
+
+## Photos
+- One hero photo per recipe, added in the app by the cook who added the recipe: the camera button on the recipe's cover
+  (cooking view or edit mode). The phone offers the camera or the photo library. The importer never takes photos from other sites.
+- Framing uses zoom and nudge buttons (no dragging). Replace or remove from the same button, with Undo.
+- Each photo is shrunk to 1200×800 (about 150 KB) and saved in Firestore, one document per photo
+  (`photos/{recipeId}`), because Firebase Storage needs a card on file. The recipe keeps `photo: { at, thumb }`:
+  `at` is the version and `thumb` a tiny copy so cards show instantly. Each device keeps its own copy (IndexedDB).
+- No photo: a drawn cover in the recipe's color with a dot pattern and its icon on a plate.

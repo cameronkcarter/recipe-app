@@ -94,11 +94,12 @@ App.views.recipe = (root, { id, edit = false }) => {
         const left = r.ingredients.filter(g => !used.has(g.id)).map(g => g.name);
         return `<div class="import-banner">${App.icon('sparkle')}<span>Imported. Tap any word to fix it.${left.length ? ' Ingredients that aren\'t in a step yet are listed just above the steps.' : ''}</span></div>`;
       })() : ''}
-      <div class="hero">
+      ${coverHtml()}
+      <div class="hero ${edit ? '' : 'with-cover'}">
         ${edit
           ? `<button class="r-ico pick" data-act="pick-icon" style="--blob:${U.esc(U.recipeBlob(r))}" aria-label="Change icon" aria-expanded="${picking}">${App.icon(U.recipeIcon(r))}<span class="badge">${App.glyph('pencil')}</span></button>
              <input class="title-input" data-f="title" value="${U.esc(r.title)}" placeholder="Recipe name" aria-label="Recipe name">`
-          : `${U.recipeIconHtml(r)}<div><h2>${U.esc(r.title || 'Untitled')}</h2>${authorHtml()}</div>`}
+          : `<div><h2>${U.esc(r.title || 'Untitled')}</h2>${authorHtml()}</div>`}
       </div>
       ${edit && picking ? iconPickerHtml() : ''}
       ${tagRowHtml()}
@@ -182,6 +183,14 @@ App.views.recipe = (root, { id, edit = false }) => {
       ${App.RECIPE_ICON_GROUPS.map(([label, ics]) => `<div class="pick-head">${label}</div>${ics.map(btn).join('')}`).join('')}</div>`;
   }
 
+  // The photo across the top (or the drawn cover). The cook who added the recipe can add,
+  // replace or remove the photo here, in the cooking view and in edit mode.
+  function coverHtml() {
+    const st = S.find(r.id) || r, has = App.photos.has(st);
+    const btn = mine ? `<button class="cover-btn" data-act="photo" aria-label="${has ? 'Change photo' : 'Add photo'}">${App.icon('camera')}${has ? '' : '<span>Add photo</span>'}</button>` : '';
+    return `<div class="hero-cover ${has ? 'has-photo' : 'drawn'} ${edit ? 'edit' : ''}">${App.photos.coverHtml(st, 'hero')}${btn}</div>`;
+  }
+
   // The site the recipe came from, at the bottom of the cooking view.
   function sourceHtml() {
     const src = (r.source || '').trim();
@@ -210,12 +219,13 @@ App.views.recipe = (root, { id, edit = false }) => {
   root.onclick = e => {
     // Done: let the bubbles settle into place, then switch back to the cooking view
     const done = e.target.closest('[data-done]');
-    if (done) { e.preventDefault(); S.upsertRecipe(U.tidyRecipe(r)); root.classList.add('settling'); setTimeout(() => { root.classList.remove('settling'); location.hash = '#/r/' + U.recipeKey(r); }, 260); return; }
+    if (done) { e.preventDefault(); const st = S.recipe(r.id); if (st?.photo) r.photo = st.photo; else delete r.photo; S.upsertRecipe(U.tidyRecipe(r)); root.classList.add('settling'); setTimeout(() => { root.classList.remove('settling'); location.hash = '#/r/' + U.recipeKey(r); }, 260); return; }
     const t = e.target.closest('button');
     if (!t) return;
     const d = t.dataset;
     if (d.act === 'undo') return undo();
     if (d.act === 'sue') return App.sue.open(r, sueCtx);
+    if (d.act === 'photo') return App.photos.menu(t, r.id, () => { const st = S.recipe(r.id); if (st?.photo) r.photo = st.photo; else delete r.photo; render(); });
     if (d.sueAct === 'nudge-ok' || d.sueAct === 'nudge-more') {
       App.sue.dismissNudge(r);
       root.querySelector('.sue-slot').innerHTML = '';
@@ -236,7 +246,7 @@ App.views.recipe = (root, { id, edit = false }) => {
     else if ('insert' in d) { const n = E.newStep(r, +d.insert); render(); root.querySelector(`[data-add-ing="${n.id}"]`)?.focus(); }
     else if (d.act === 'add-step') { E.newStep(r); render(); root.querySelector('.step.edit:last-child [data-add-ing]')?.focus(); }
     else if (d.act === 'delete') {
-      if (confirm(`Delete “${r.title || 'this recipe'}”?`)) { S.deleteRecipe(r.id); location.hash = '#/'; }
+      if (confirm(`Delete “${r.title || 'this recipe'}”?`)) { if (App.photos.has(S.recipe(r.id))) App.photos.forget(r.id); S.deleteRecipe(r.id); location.hash = '#/'; }
     }
     else if (d.act === 'share') {
       // the phone's share sheet when there is one; otherwise copy the link
