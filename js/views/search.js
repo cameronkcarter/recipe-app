@@ -74,7 +74,7 @@ App.views.search = root => {
   };
   const grid = list => `<div class="recipe-grid">${list.map(r => App.ui.recipeCard(r)).join('')}</div>`;
 
-  // One post in the scroll view: the photo, what it is, who made it, and Save / Add to list / Hide.
+  // One post in the scroll view: the photo, what it is, who made it, and Save / Add to shopping list / Hide.
   const post = r => {
     const mine = r.author && r.author === S.me()?.id, by = S.profile(r.author), key = U.recipeKey(r);
     const tags = U.tagIcons(r).map(t => `<span class="tag-ico" title="${t.label}">${App.icon(t.icon)}</span>`).join('');
@@ -87,7 +87,7 @@ App.views.search = root => {
           <span>${App.icon('clock')}${U.fmtMinsShort(U.schedule(r).total)}</span><span class="dot">·</span><span>${r.ingredients.length} ingredients</span>${tags}</div>
         <div class="fp-acts">
           ${mine ? '' : `<span class="fp-save">${App.ui.heart(r.id)}<span>${S.isSaved(r.id) ? 'Saved' : 'Save'}</span></span>`}
-          <button class="btn small" data-act="to-list" data-id="${U.esc(r.id)}" ${onList ? 'disabled' : ''}>${onList ? App.glyph('check') + 'On your list' : App.icon('basket') + 'Add to list'}</button>
+          <button class="btn small" data-act="to-list" data-id="${U.esc(r.id)}" ${onList ? 'disabled' : ''}>${onList ? App.glyph('check') + 'On shopping list' : App.icon('basket') + 'Add to shopping list'}</button>
           <button class="btn small fp-hide" data-act="hide" data-id="${U.esc(r.id)}" aria-label="Hide from this feed">${App.glyph('hide')}</button>
         </div>
       </div></article>`;
@@ -147,7 +147,7 @@ App.views.search = root => {
       if (!r || list.recipes.some(x => x.id === id)) return;
       list.recipes.push({ id, servings: r.servings || 1 });
       S.save(); results();
-      App.ui.toast(`Added “${r.title}” to your list`, () => { list.recipes = list.recipes.filter(x => x.id !== id); S.save(); results(); });
+      App.ui.toast(`Added “${r.title}” to your shopping list`, () => { list.recipes = list.recipes.filter(x => x.id !== id); S.save(); results(); });
     }
     else if (act === 'hide') {
       const id = e.target.closest('[data-act]').dataset.id;

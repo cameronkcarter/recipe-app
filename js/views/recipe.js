@@ -117,7 +117,7 @@ App.views.recipe = (root, { id, edit = false }) => {
 
       <div class="section-label">
         <button class="ing-toggle" data-act="toggle-ings" aria-expanded="${ingOpen}">${App.glyph('chevron')} Ingredients <span class="count">${r.ingredients.length}</span></button>
-        <button class="btn small" data-act="to-list">${App.icon('basket')}Add to list</button>
+        <button class="btn small" data-act="to-list">${App.icon('basket')}Add to shopping list</button>
       </div>
       ${ingOpen ? (edit ? `<ul class="card ing-list edit">${ingHtml}<li class="ing-item"><input class="inl add-ing" data-add-list placeholder="+ ingredient (like 2 carrots)" aria-label="Add an ingredient" enterkeyhint="done" autocomplete="off"></li></ul>`
         : r.ingredients.length ? `<ul class="card ing-list">${ingHtml}</ul>` : `<div class="muted">No ingredients yet.</div>`) : ''}
@@ -266,7 +266,7 @@ App.views.recipe = (root, { id, edit = false }) => {
       if (ex) ex.servings = servings(); else list.recipes.push({ id: r.id, servings: servings() });
       S.save();
       t.innerHTML = App.glyph('check') + 'Added';
-      setTimeout(() => { t.innerHTML = App.icon('basket') + 'Add to list'; }, 1400);
+      setTimeout(() => { t.innerHTML = App.icon('basket') + 'Add to shopping list'; }, 1400);
     }
   };
 

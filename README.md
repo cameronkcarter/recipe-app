@@ -88,7 +88,7 @@ With Sue on (All tips or Check-in only), a recipe you own shows a "Done cooking"
 
 ## Search: grid or scroll
 
-The Search tab has a Grid / Scroll toggle (remembered on this device). Scroll is a feed of recipes that have a photo, one post each with Save, Add to list and Hide (hidden posts stay hidden on this device, with Undo); recipes without a photo are a tap away in Grid. Typing and filters work in both views. "What can I make?" takes the ingredients you have and lists recipes by how few they're missing (salt, pepper, oil and water count as on hand).
+The Search tab has a Grid / Scroll toggle (remembered on this device). Scroll is a feed of recipes that have a photo, one post each with Save, Add to shopping list and Hide (hidden posts stay hidden on this device, with Undo); recipes without a photo are a tap away in Grid. Typing and filters work in both views. "What can I make?" takes the ingredients you have and lists recipes by how few they're missing (salt, pepper, oil and water count as on hand).
 
 ## Photos
 - One hero photo per recipe, added in the app by the cook who added the recipe: the camera button on the recipe's cover
