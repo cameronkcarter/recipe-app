@@ -966,10 +966,8 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .hero.with-cover { margin-top: 0; }
 .pop .sug.danger { color: var(--danger); }
 /* framing a photo: zoom and nudge buttons, no dragging */
-.pf-shapes { display: flex; gap: 12px; align-items: flex-end; justify-content: center; }
-.pf-shape { margin: 0; display: flex; flex-direction: column; gap: 6px; align-items: center; }
-.pf-shape.feed { width: 30%; max-width: 150px; }
-.pf-shape.cover { flex: 1; max-width: 360px; }
+.pf-shapes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.6fr); gap: 12px; align-items: end; max-width: 480px; margin: 0 auto; }
+.pf-shape { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; align-items: center; }
 .pf-shape figcaption { font-size: .8rem; font-weight: 700; color: var(--muted); }
 .pf-window { position: relative; width: 100%; aspect-ratio: 3 / 2; border-radius: 14px; overflow: hidden; background: #000; }
 .pf-window img { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0; }
