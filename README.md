@@ -87,7 +87,7 @@ A recipe you own shows a "Done cooking" button under the steps, and the question
 
 ## Search: grid or scroll
 
-The Search tab has a Grid / Scroll toggle (remembered on this device). Scroll shows one recipe at a time, filling the screen above the tab bar (swipe to the next, like a video feed), with the photo filling the post (centered for now). Each post has with Save, Add to shopping list and Hide (hidden posts stay hidden on this device, with Undo, and are still in Grid). Recipes without a photo show their drawn cover. Typing and filters work in both views. "What can I make?" takes the ingredients you have and lists recipes by how few they're missing (salt, pepper, oil and water count as on hand).
+The Search tab has a Grid / Scroll toggle (remembered on this device). Scroll shows one recipe at a time, filling the screen above the tab bar (swipe to the next, like a video feed), with the photo filling the post (centered for now). Each post has Save, Add to shopping list and Hide (hidden posts stay hidden on this device, with Undo, and are still in Grid). Recipes without a photo show their drawn cover. Typing and filters work in both views. "What can I make?" takes the ingredients you have and lists recipes by how few they're missing (salt, pepper, oil and water count as on hand).
 
 ## Photos
 - One hero photo per recipe, added in the app by the cook who added the recipe: the camera button on the recipe's cover
