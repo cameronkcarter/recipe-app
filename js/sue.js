@@ -46,7 +46,6 @@ App.sue = {};
       const t = steps.slice(ovenAt).map(s => s.temp || (`${s.text || ''}`.match(/\d{3}\s*°\s*[FC]/) || [])[0]).find(Boolean);
       out.push({ ico: 'oven', text: `Preheat the oven${t ? ` to ${u.esc(t)}` : ''} at the start (used in step ${ovenAt + 1}).` });
     }
-    if (steps.some(s => App.verb(s.verb).id === 'pressure')) out.push({ ico: 'ip', text: 'Add about 10 min for the Instant Pot to come to pressure.' });
     const total = u.schedule(r).total;
     if (total >= 90 && !out.some(x => x.ico === 'hourglass')) out.push({ ico: 'clock', text: `Takes about ${u.fmtMins(total)} in total.` });
     return out;

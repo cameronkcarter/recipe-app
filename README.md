@@ -26,7 +26,7 @@ Simple, symbol-based recipes, your own recipe book, and a shopping list.
 - `js/importer.js` — turns a recipe from a link or pasted text into symbol steps
 - `js/ui.js` — timers, bottom sheets, step rendering, notes
 - `js/kitchen.js` — kitchen help: tap an ingredient, amount or oven temperature for other units, stand-ins and vegan or gluten-free swaps; "Make a vegan copy"
-- `js/checkin.js` — after you cook: how did it turn out, the matching recipe change (with Undo) or a Next time note, then a photo; plus Sue's Last time, done temperatures, scaling and mix tips
+- `js/checkin.js` — after you cook: how did it turn out, the matching recipe change (with Undo) or a Next time note, then a photo; plus Sue's Last time, done temperatures and scaling tips
 - `js/photos.js` — recipe photos (add, frame with buttons, shrink, save free in Firestore) and the drawn cover for recipes with no photo
 - `js/sue.js` — Sue, the helper (a wooden spoon in a chef's hat): her setting, speech bubbles, and her panel on each recipe
 - `js/edit.js` — inline edit mode (tap-to-change words, drag ingredients)
@@ -75,7 +75,7 @@ Everything she says comes from simple rules and tables in the app; nothing is se
 - **Setting** (account panel, or the bottom of her panel; saved on this device): **All tips**,
   **Check-in only** (only asks how it went after you cook), **Off** (no tips and no Sue button).
 - **Her panel**: the spoon button at the top of a recipe. Sections plug in with `App.sue.section(id, fn)`.
-- **Before you start**: long waits (marinate, chill, rise, overnight), when to turn the oven on, Instant Pot pressure time.
+- **Before you start**: long waits (marinate, chill, rise, overnight), when to turn the oven on, total time for long recipes.
   With All tips on, the first one shows as one quiet line on the recipe page, once per visit.
 
 ## Kitchen help

@@ -3,7 +3,7 @@
 //   recipe.cooked   = [{ at, by, verdict, change }]   newest last, last 10 kept
 //   recipe.nextTime = [{ id, text, at }]              notes shown above the steps until you clear them
 // Shows with Sue on All tips or Check-in only; only on recipes you own (changes go to your recipe).
-// Also here: Sue's panel sections for Last time, done temperatures, scaling and mixes.
+// Also here: Sue's panel sections for Last time, done temperatures and scaling.
 window.App = window.App || {};
 App.checkin = {};
 (() => {
@@ -194,24 +194,7 @@ App.checkin = {};
       html: `<ul class="sue-list plain">${tips.filter(Boolean).map(t => `<li><span>${t}</span></li>`).join('')}</ul>` };
   });
 
-  // A tip for each mix the recipe makes.
-  const MIX_TIP = [
-    [/spice|seasoning|rub/i, 'Measure it into a small bowl before you start.'],
-    [/sauce|dressing|marinade|glaze/i, 'Whisk it ahead so it\'s ready when the pan is hot.'],
-    [/veg|aromatic|mirepoix/i, 'Chop it all before the heat goes on. It keeps a day in the fridge.'],
-    [/dough|batter/i, 'Mix it just until combined.'],
-  ];
-  App.sue.section('mixes', r => {
-    const mixes = (r.steps || []).filter(s => s.makes);
-    if (!mixes.length) return null;
-    const u = U();
-    return { title: 'Mixes', html: `<ul class="sue-list swaps">${mixes.map(s => {
-      const tip = (MIX_TIP.find(([re]) => re.test(s.makes)) || [, 'Get it ready before you turn on the heat.'])[1];
-      return `<li><span class="ing-ico">${App.icon(u.mixIcon(s.makes))}</span><span><b class="mix-nm">${u.esc(s.makes)}</b><small>Step ${r.steps.indexOf(s) + 1}. ${tip}</small></span></li>`;
-    }).join('')}</ul>` };
-  });
-
   // Keep panel sections in a sensible order: what to know first, reference last.
-  const ORDER = ['heads-up', 'last', 'scale', 'mixes', 'temps', 'out', 'vegan', 'measure'];
+  const ORDER = ['heads-up', 'last', 'scale', 'temps', 'out', 'vegan', 'measure'];
   App.sue.sections.sort((a, b) => (ORDER.indexOf(a.id) + 1 || 99) - (ORDER.indexOf(b.id) + 1 || 99));
 })();
