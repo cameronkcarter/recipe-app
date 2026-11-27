@@ -57,8 +57,11 @@ App.views.search = root => {
   const missing = r => {
     const haves = st.have.map(norm);
     const need = (r.ingredients || []).filter(g => !STAPLE.test(String(g.name).toLowerCase().trim()));
-    const got = g => { const n = norm(g.name); return haves.some(h => n === h || n.includes(h) || (h.length > 3 && h.includes(n))); };
-    return { miss: need.filter(g => !got(g)), have: need.filter(got).length };
+    // "rice" doesn't cover rice vinegar, and "chicken" doesn't cover chicken broth
+    const OTHER = /\b(vinegar|flour|noodles?|wine|sauce|stock|broth|bouillon|powder|paste|oil|milk|syrup|paper|cakes?|seasoning|extract)$/;
+    const got = g => { const n = norm(g.name); return haves.some(h => n === h || (h.length > 3 && h.includes(n)) || (n.includes(h) && !(OTHER.test(n) && !OTHER.test(h)))); };
+    const have = need.filter(got).length;
+    return { miss: need.filter(g => !got(g)), have, share: need.length ? have / need.length : 0 };
   };
 
   const filtered = () => {
@@ -94,7 +97,7 @@ App.views.search = root => {
     const q = st.query.trim();
     let list = filtered();
     if (st.have.length) {
-      const ranked = list.map(r => ({ r, ...missing(r) })).filter(x => x.have > 0).sort((a, b) => a.miss.length - b.miss.length || b.have - a.have);
+      const ranked = list.map(r => ({ r, ...missing(r) })).filter(x => x.have > 0).sort((a, b) => b.share - a.share || a.miss.length - b.miss.length);
       if (!ranked.length) return `<div class="empty">No recipes use ${U.esc(st.have.join(', '))}.</div>`;
       return `<div class="recipe-grid">${ranked.map(({ r, miss }) => App.ui.recipeCard(r,
         `<div class="have-line ${miss.length ? '' : 'all'}">${miss.length ? `Missing ${miss.length}: ${U.esc(miss.slice(0, 2).map(g => g.name).join(', '))}${miss.length > 2 ? '…' : ''}` : 'You have everything'}</div>`)).join('')}</div>`;
