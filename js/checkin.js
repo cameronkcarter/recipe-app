@@ -183,11 +183,9 @@ App.checkin = {};
       'Salt and spices: start with about ¾ of the new amount, then taste.',
       'Use a bigger pot or pan. A crowded pan steams instead of browning.',
       verbs.has('bake') ? 'Fuller pans can take longer in the oven. Check at the usual time, then add more.' : '',
-      verbs.has('pressure') ? 'Instant Pot: same cook time, but it takes longer to come to pressure. Fill no more than ⅔.' : '',
     ] : [
       'Use a smaller pan so liquid doesn\'t cook off too fast.',
       'Cook times stay about the same. Check a little early.',
-      verbs.has('pressure') ? 'Instant Pot: keep at least 1 cup of liquid.' : '',
     ];
     const n = Math.round(sc * 100) / 100;
     return { title: `Making ${n === 2 ? 'twice as much' : n === .5 ? 'half as much' : `${U().fmtQty(n)}×`}`,
