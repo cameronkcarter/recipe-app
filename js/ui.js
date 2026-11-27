@@ -286,7 +286,16 @@ App.ui = {};
     } catch (e) { /* no audio */ }
   };
   const fmt = s => { s = Math.max(0, Math.ceil(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+  // Rebuild the pills only when a timer starts, stops or rings; otherwise just update the countdown text,
+  // so a tap on +1 / X / OK never lands on a button that was swapped out mid-tap.
+  let shape = '';
   const render = () => {
+    const now = Date.now(), next = timers.map(t => `${t.id}:${t.end <= now}`).join(',');
+    if (next === shape && host().children.length === timers.length) {
+      timers.forEach((t, i) => { const el = host().children[i].querySelector('.t'); if (el && t.end > now) el.textContent = fmt((t.end - now) / 1000); });
+      return;
+    }
+    shape = next;
     host().innerHTML = timers.map(t => {
       const left = (t.end - Date.now()) / 1000;
       return `<div class="timer-pill ${left <= 0 ? 'ring' : ''}" data-id="${t.id}">${App.icon('clock')}${U.esc(t.label)}
