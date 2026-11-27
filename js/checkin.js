@@ -11,9 +11,9 @@ App.checkin = {};
   const C = App.checkin;
   const VERDICTS = [
     ['perfect', 'Perfect'], ['salt', 'More salt'], ['spice', 'More spice'],
-    ['longer', 'Cook longer'], ['watery', 'Too watery'], ['other', 'Something else'],
+    ['longer', 'Cook longer'], ['watery', 'Too watery'], ['other', 'Something else…'],
   ];
-  const label = v => (VERDICTS.find(x => x[0] === v) || [, v])[1];
+  const label = v => (VERDICTS.find(x => x[0] === v) || [, v])[1].replace(/…$/, ''); // the chip says "Something else…", the log says "Something else"
   const state = id => ((App.session.checkin ||= {})[id] ||= { stage: 'ask' });
 
   // A tidy amount after scaling up or down (⅛ steps under 1, ¼ under 4, ½ above), never the same as before.
