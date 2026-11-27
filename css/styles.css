@@ -268,8 +268,10 @@ button.chip.on { background: var(--accent); color: var(--accent-ink); }
 .s-meta .dot { opacity: .5; }
 .s-meta .m { display: inline-flex; align-items: center; gap: 3px; }
 .s-meta .ic { width: 18px; height: 18px; display: inline-block; }
-.s-timer { border: none; background: none; padding: 0; color: inherit; font: inherit; display: inline-flex; align-items: center; gap: 3px;
-  text-decoration: underline dotted; text-underline-offset: 3px; }
+.s-timer { border: 1px solid var(--line-strong); background: var(--accent-soft); padding: 1px 8px 1px 4px; border-radius: 999px; color: inherit; font: inherit;
+  display: inline-flex; align-items: center; gap: 3px; cursor: pointer; }
+.s-timer:hover, .s-timer:focus-visible { border-color: var(--accent); }
+.s-timer.in-text { border: none; background: none; padding: 0; border-radius: 0; color: var(--accent); text-decoration: underline dotted; text-underline-offset: 3px; display: inline; }
 .detail { margin-top: 6px; font-size: .9rem; color: var(--muted); }
 
 /* Timers */

@@ -242,18 +242,39 @@ App.ui = {};
     if (step.makes) out.push(`<span class="m makes">${App.icon(U.mixIcon(step.makes))}makes ${U.esc(step.makes)}</span>`);
     if (step.time) {
       const v = App.verb(step.verb);
-      out.push(`<button class="s-timer" data-action="timer" data-mins="${+step.time}" data-label="${U.esc(v.label + (recipe ? ' · ' + recipe.title : ''))}" title="Start a timer">${App.icon('clock')}${U.esc(U.fmtMins(+step.time))}</button>`);
+      out.push(`<button class="s-timer" data-action="timer" data-mins="${+step.time}" data-label="${U.esc(v.label + (recipe ? ' · ' + recipe.title : ''))}" title="Start a ${U.esc(U.fmtMins(+step.time))} timer">${App.icon('clock')}${U.esc(U.fmtMins(+step.time))}</button>`);
     }
-    if (step.text) out.push(`<span class="s-text">${U.esc(step.text)}</span>`);
+    if (step.text) out.push(`<span class="s-text">${App.ui.timeLinks(step.text, step, recipe)}</span>`);
     if (step.heat) out.push(`<span class="m">${App.icon('flame')}${U.HEAT[step.heat].toLowerCase()} heat</span>`);
     if (step.temp) out.push(`<span class="m kn" tabindex="0" data-kn-temp="${U.esc(step.temp)}">${App.icon('thermo')}${U.esc(step.temp)}</span>`);
     if (opts.extra) out.push(opts.extra);
     return out.length ? `<div class="s-meta ${opts.solo ? 'solo' : ''}">${out.join('<span class="dot">·</span>')}</div>` : '';
   };
 
+  // Times written in a step's note ("about 5 minutes", "1 to 2 hours") become tap-to-start timers too.
+  // A range starts at the low end, so you check early. The step's own time is already a button.
+  App.ui.timeLinks = (text, step, recipe) => {
+    const v = App.verb(step?.verb);
+    const re = /\b(\d+(?:\.\d+)?)(\s*(?:[-–]|to)\s*\d+(?:\.\d+)?)?\s*(minutes?|mins?|hours?|hrs?)\b/gi;
+    let out = '', at = 0, m;
+    while ((m = re.exec(text))) {
+      const mins = Math.round(+m[1] * (/^h/i.test(m[3]) ? 60 : 1));
+      out += U.esc(text.slice(at, m.index));
+      out += mins > 0 && mins <= 24 * 60 && mins !== +step?.time
+        ? `<button class="s-timer in-text" data-action="timer" data-mins="${mins}" data-label="${U.esc(v.label + (recipe ? ' · ' + recipe.title : ''))}" title="Start a ${U.esc(U.fmtMins(mins))} timer">${U.esc(m[0])}</button>`
+        : U.esc(m[0]);
+      at = m.index + m[0].length;
+    }
+    return out + U.esc(text.slice(at));
+  };
+
   // ---------- Timers ----------
-  const timers = [];
-  let tickHandle = null, audioCtx = null;
+  // Saved on this device, so a timer keeps going if the page reloads or you come back to the app.
+  // An ended timer stays (ringing) until you tap OK.
+  const TKEY = 'recipeapp.timers';
+  const timers = (() => { try { return (JSON.parse(localStorage.getItem(TKEY)) || []).filter(t => t && t.id && +t.end && Date.now() - t.end < 6 * 3600e3); } catch (e) { return []; } })();
+  const saveTimers = () => { try { localStorage.setItem(TKEY, JSON.stringify(timers.map(({ id, label, end }) => ({ id, label, end })))); } catch (e) { /* private mode */ } };
+  let tickHandle = null, audioCtx = null, baseTitle = null;
   const host = () => {
     let el = document.getElementById('timers');
     if (!el) { el = document.createElement('div'); el.id = 'timers'; el.className = 'timers'; document.body.appendChild(el); }
@@ -285,14 +306,20 @@ App.ui = {};
       if (t.end <= now && now - (t.lastBeep || 0) > 1500) { t.lastBeep = now; beep(); navigator.vibrate?.(300); }
     }
     render();
+    // A finished timer shows in the browser tab's title too, for when you're in another tab.
+    const ringing = timers.filter(t => t.end <= now).length;
+    if (ringing) { baseTitle ??= document.title; document.title = `Timer done · ${baseTitle}`; }
+    else if (baseTitle != null) { document.title = baseTitle; baseTitle = null; }
     if (!timers.length) { clearInterval(tickHandle); tickHandle = null; }
   };
   App.ui.startTimer = (label, mins) => {
     try { audioCtx ||= new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume?.(); } catch (e) {}
     timers.push({ id: U.uid('t'), label, end: Date.now() + mins * 60000 });
+    saveTimers();
     render();
     tickHandle ||= setInterval(tick, 500);
   };
+  if (timers.length) { tickHandle = setInterval(tick, 500); setTimeout(render); }
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-timer]');
     if (!b) return;
@@ -300,7 +327,8 @@ App.ui = {};
     if (i < 0) return;
     if (b.dataset.timer === 'stop') timers.splice(i, 1);
     else timers[i].end += 60000;
-    render();
+    saveTimers();
+    tick();
   });
 
   // ---------- Keep screen awake while cooking ----------

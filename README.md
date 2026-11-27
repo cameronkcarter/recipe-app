@@ -98,3 +98,9 @@ The Search tab has a Grid / Scroll toggle (remembered on this device). Scroll is
   (`photos/{recipeId}`), because Firebase Storage needs a card on file. The recipe keeps `photo: { at, thumb }`:
   `at` is the version and `thumb` a tiny copy so cards show instantly. Each device keeps its own copy (IndexedDB).
 - No photo: a drawn cover in the recipe's color with a dot pattern and its icon on a plate.
+
+## Step timers
+
+- A step with a time shows it as a small clock button. Tap it to start a timer at the top of the screen (+1 adds a minute, X stops it).
+- Times written in a step's note ("about 5 minutes", "1 to 2 hours") are tappable too. A range starts at the low end.
+- Timers are saved on the device, so they keep running if the page reloads. A finished timer beeps, vibrates, shows in the tab title, and rings until you tap OK.
