@@ -87,15 +87,18 @@ A recipe you own shows a "Done cooking" button under the steps, and the question
 
 ## Search: grid or scroll
 
-The Search tab has a Grid / Scroll toggle (remembered on this device). Scroll shows one recipe at a time, filling the screen above the tab bar (swipe to the next, like a video feed), with the photo filling the post (centered for now). Each post has Save, Add to shopping list and Hide (hidden posts stay hidden on this device, with Undo, and are still in Grid). Recipes without a photo show their drawn cover. Typing and filters work in both views. "What can I make?" takes the ingredients you have and lists recipes by how few they're missing (salt, pepper, oil and water count as on hand).
+The Search tab has a Grid / Scroll toggle (remembered on this device). Scroll shows one recipe at a time, filling the screen above the tab bar (swipe to the next, like a video feed), with the photo filling the post, placed by its framing. Each post has Save, Add to shopping list and Hide (hidden posts stay hidden on this device, with Undo, and are still in Grid). Recipes without a photo show their drawn cover. Typing and filters work in both views. "What can I make?" takes the ingredients you have and lists recipes by how few they're missing (salt, pepper, oil and water count as on hand).
 
 ## Photos
 - One hero photo per recipe, added in the app by the cook who added the recipe: the camera button on the recipe's cover
   (cooking view or edit mode). The phone offers the camera or the photo library. The importer never takes photos from other sites.
-- Framing uses zoom and nudge buttons (no dragging). Replace or remove from the same button, with Undo.
-- Each photo is shrunk to 1200×800 (about 150 KB) and saved in Firestore, one document per photo
-  (`photos/{recipeId}`), because Firebase Storage needs a card on file. The recipe keeps `photo: { at, thumb }`:
-  `at` is the version and `thumb` a tiny copy so cards show instantly. Each device keeps its own copy (IndexedDB).
+- The photo is saved once, uncropped. Framing is a separate setting (`photo.view`: one zoom and center point) that places it
+  in every shape: the framing sheet shows the tall Search feed shape and the wide recipe cover side by side, and one set of
+  zoom and arrow buttons moves both (no dragging). Skipping it leaves the photo centered. "Move or zoom" on the photo button
+  changes the framing later without picking the photo again. Photos saved before this were already cropped to 3:2.
+- Each photo is shrunk to fit 1600 px (about 300 KB) and saved in Firestore, one document per photo
+  (`photos/{recipeId}`), because Firebase Storage needs a card on file. The recipe keeps `photo: { at, thumb, view }`:
+  `at` is the version and `thumb` a tiny uncropped copy so cards show instantly. Each device keeps its own copy (IndexedDB).
 - No photo: a drawn cover in the recipe's color with a dot pattern and its icon on a plate.
 
 ## Step timers

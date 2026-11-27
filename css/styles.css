@@ -946,6 +946,7 @@ body.dragging-now .ing-grip { cursor: grabbing; }
   background: radial-gradient(circle, #fffaf2 0 54%, #f2e6d4 56% 63%, #fffaf2 65% 100%);
   box-shadow: 0 6px 14px #00000024; }
 .r-cover.drawn .plate .ic { width: 66%; height: 66%; }
+.r-cover.photo img.placed { position: absolute; left: 0; top: 0; max-width: none; object-fit: fill; }
 .r-cover.photo img { width: 100%; height: 100%; object-fit: cover; display: block; filter: blur(.4px); transition: filter .25s; }
 .r-cover.photo img.sharp, .r-cover.card img { filter: none; }
 .recipe-card { padding: 8px 8px 10px; min-height: 0; }
@@ -965,7 +966,12 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .hero.with-cover { margin-top: 0; }
 .pop .sug.danger { color: var(--danger); }
 /* framing a photo: zoom and nudge buttons, no dragging */
-.pf-window { position: relative; aspect-ratio: 3 / 2; border-radius: 16px; overflow: hidden; background: #000; }
+.pf-shapes { display: flex; gap: 12px; align-items: flex-end; justify-content: center; }
+.pf-shape { margin: 0; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.pf-shape.feed { width: 30%; max-width: 150px; }
+.pf-shape.cover { flex: 1; max-width: 360px; }
+.pf-shape figcaption { font-size: .8rem; font-weight: 700; color: var(--muted); }
+.pf-window { position: relative; width: 100%; aspect-ratio: 3 / 2; border-radius: 14px; overflow: hidden; background: #000; }
 .pf-window img { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0; }
 .pf-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0 16px; }
 .pf-zoom { display: flex; align-items: center; gap: 8px; font: 500 .95rem var(--font-head); color: var(--muted); }

@@ -306,7 +306,7 @@ App.ui = {};
     // Push the page down by the timers' height so they never cover the top buttons (Back, Sue, Edit).
     const h = timers.length ? host().offsetHeight + 10 : 0;
     document.body.classList.toggle('has-timers', h > 0);
-    document.body.style.setProperty('--timers-h', `${h}px`);
+    document.documentElement.style.setProperty('--timers-h', `${h}px`);
   };
   const tick = () => {
     const now = Date.now();
