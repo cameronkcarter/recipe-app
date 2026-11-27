@@ -182,6 +182,32 @@ U.recipeIconHtml = (r, cls = '') =>
 // A profile picture: one of the food icons in a round colored blob.
 U.avatarHtml = (p, cls = '') =>
   `<span class="avatar ${cls}" style="--blob:${U.esc(p?.color || '#F9A27E')}">${App.icon(p?.avatar || 'cloche')}</span>`;
+// "What can I make?": which of a recipe's ingredients you're missing, given what you have (staples don't count).
+U.missingFor = (r, have) => {
+  const STAPLE = /^(salt|kosher salt|sea salt|(black )?pepper|water|ice|(olive |vegetable |canola |neutral |cooking )?oil|cooking spray)$/;
+  const norm = x => String(x).toLowerCase().trim().replace(/\s+/g, ' ').replace(/(es|s)$/, '');
+  const haves = have.map(norm);
+  const need = (r.ingredients || []).filter(g => !STAPLE.test(String(g.name).toLowerCase().trim()));
+  // "rice" doesn't cover rice vinegar, and "chicken" doesn't cover chicken broth
+  const OTHER = /\b(vinegar|flour|noodles?|wine|sauce|stock|broth|bouillon|powder|paste|oil|milk|syrup|paper|cakes?|seasoning|extract)$/;
+  const got = g => { const n = norm(g.name); return haves.some(h => n === h || (h.length > 3 && h.includes(n)) || (n.includes(h) && !(OTHER.test(n) && !OTHER.test(h)))); };
+  const n = need.filter(got).length;
+  return { miss: need.filter(g => !got(g)), have: n, share: need.length ? n / need.length : 0 };
+};
+// Recipes ranked by how few ingredients you're missing, as cards with a "Missing 1: butter" line.
+U.haveGrid = (list, have) => {
+  const ranked = list.map(r => ({ r, ...U.missingFor(r, have) })).filter(x => x.have > 0).sort((a, b) => b.share - a.share || a.miss.length - b.miss.length);
+  if (!ranked.length) return `<div class="empty">No recipes use ${U.esc(have.join(', '))}.</div>`;
+  return `<div class="recipe-grid">${ranked.map(({ r, miss }) => App.ui.recipeCard(r,
+    `<div class="have-line ${miss.length ? '' : 'all'}">${miss.length ? `Missing ${miss.length}: ${U.esc(miss.slice(0, 2).map(g => g.name).join(', '))}${miss.length > 2 ? '…' : ''}` : 'You have everything'}</div>`)).join('')}</div>`;
+};
+// The "What can I make?" box: chips for what you have, and a field to add more.
+U.haveBox = have => `<div class="card have-box">
+    <div class="fm-head">What can I make? <span class="muted">ingredients you have</span></div>
+    <div class="have-chips">${have.map(h => `<button class="chip filter on" data-have="${U.esc(h)}" aria-label="Remove ${U.esc(h)}">${U.ingIconHtml({ name: h })}${U.esc(h)}${App.glyph('x')}</button>`).join('')}
+      <input class="inl have-add" data-have-add placeholder="${have.length ? '+ another' : 'like chicken, rice'}" aria-label="Add an ingredient you have" enterkeyhint="done" autocomplete="off"></div>
+    <p class="muted have-hint">Salt, pepper, oil and water count as on hand.</p>
+  </div>`;
 U.firstName = p => String(p?.name || '').split(' ')[0];
 // Tags that get an icon: vegan (leaf) and Instant Pot (also spotted from a pressure-cook step or the title).
 U.tagIcons = r => {

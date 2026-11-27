@@ -18,37 +18,44 @@ App.views.library = root => {
     return { mine, saved, all: [...mine, ...saved].sort((x, y) => (y.addedAt || 0) - (x.addedAt || 0)) };
   };
 
-  // Your own filter chips (vegan, instant pot, soup…): added with +, kept on your profile until you remove them.
-  // Tapping one shows only recipes with that tag (vegan / Instant Pot also count when the recipe obviously is).
+  // Filters live in the Filter drop-down from the top bar: Show (All / Mine / Saved) and a tag
+  // (vegan / Instant Pot also count when the recipe obviously is). Chosen ones show as chips you can remove.
   let tag = App.views.library.tag || null;
-  const myChips = () => S.me()?.bookFilters || [];
+  let menuOpen = false;
+  const have = App.views.library.have ||= []; // What can I make?, from your recipes only
+  let haveOpen = have.length > 0;
   const hasTag = (r, t) => (r.tags || []).some(x => x.toLowerCase() === t) ||
     U.tagIcons(r).some(x => x.label.toLowerCase() === t || (t === 'instapot' && x.icon === 'ip'));
   const tagIcon = t => t === 'vegan' ? App.icon('leaf') : /instant ?pot/.test(t) ? App.icon('ip') : '';
+  const SHOW = { all: 'All', mine: 'Mine', saved: 'Saved' };
+  const showIcon = id => id === 'mine' ? '<i class="dot"></i>' : id === 'saved' ? App.icon('heart') : '';
   const chipsHtml = () => {
-    const b = book();
-    const chip = (id, label, n, ico) => `<button class="chip filter ${id} ${show === id ? 'on' : ''}" data-show="${id}">${ico}${label}<b>${n}</b></button>`;
-    return chip('all', 'All', b.all.length, '') + chip('mine', 'Mine', b.mine.length, '<i class="dot"></i>') + chip('saved', 'Saved', b.saved.length, App.icon('heart')) +
-      myChips().map(t => `<button class="chip filter tagf ${tag === t ? 'on' : ''}" data-tagf="${U.esc(t)}">${tagIcon(t)}${U.esc(t)}<b>${b.all.filter(r => hasTag(r, t)).length}</b></button>`).join('');
+    const chips = (show !== 'all' ? `<button class="chip filter on ${show}" data-show="${show}" aria-label="Remove filter">${showIcon(show)}${SHOW[show]}${App.glyph('x')}</button>` : '') +
+      (tag ? `<button class="chip filter on" data-tagf="${U.esc(tag)}" aria-label="Remove filter">${tagIcon(tag)}${U.esc(tag)}${App.glyph('x')}</button>` : '');
+    return chips ? `<div class="filters scroll ft-chips">${chips}</div>` : '';
   };
-  // Tags you could add as chips: vegan and Instant Pot always, then every tag your recipes use.
-  // The Filter icon in the top bar drops this menu down; tapping one adds or removes its chip.
-  let menuOpen = false;
-  const filterMenuHtml = () => {
+  const menuHtml = () => {
     if (!menuOpen) return '';
-    const n = {};
-    for (const r of book().all) for (const t of (r.tags || []).map(x => x.toLowerCase())) n[t] = (n[t] || 0) + 1;
-    const opts = [...new Set(['vegan', 'instant pot', ...Object.keys(n).sort((a, b) => n[b] - n[a])])];
-    return `<div class="card filter-menu"><div class="fm-head">Show a chip for</div>
-      <div class="fm-opts">${opts.map(t => `<button class="chip filter ${myChips().includes(t) ? 'on' : ''}" data-pick="${U.esc(t)}">${tagIcon(t)}${U.esc(t)}</button>`).join('')}</div></div>`;
+    const b = book(), n = {};
+    for (const r of b.all) for (const t of (r.tags || []).map(x => x.toLowerCase())) n[t] = (n[t] || 0) + 1;
+    const tags = [...new Set(['vegan', 'instant pot', ...Object.keys(n).sort((x, y) => n[y] - n[x])])];
+    return `<div class="card filter-menu">
+      <div class="fm-head">Show</div>
+      <div class="fm-opts">${Object.keys(SHOW).map(id => `<button class="chip filter ${id} ${show === id ? 'on' : ''}" data-show="${id}">${showIcon(id)}${SHOW[id]}<b>${b[id].length}</b></button>`).join('')}</div>
+      <div class="fm-head">Tagged</div>
+      <div class="fm-opts">${tags.map(t => `<button class="chip filter ${tag === t ? 'on' : ''}" data-tagf="${U.esc(t)}">${tagIcon(t)}${U.esc(t)}<b>${b.all.filter(r => hasTag(r, t)).length}</b></button>`).join('')}</div>
+    </div>`;
   };
-  const btnsHtml = () => `<button type="button" class="ft-btn ${menuOpen ? 'on' : ''}" data-act="filters" aria-expanded="${menuOpen}" aria-label="Filter">${App.glyph('filter')}</button>`;
+  const belowHtml = () => `${chipsHtml()}${menuHtml()}${haveOpen ? U.haveBox(have) : ''}`;
+  const btnsHtml = () => `<button type="button" class="ft-btn ${menuOpen || show !== 'all' || tag ? 'on' : ''}" data-act="filters" aria-expanded="${menuOpen}" aria-label="Filter">${App.glyph('filter')}</button>
+    <button type="button" class="ft-btn ${haveOpen ? 'on' : ''}" data-act="have" aria-expanded="${haveOpen}" aria-label="What can I make?">${App.icon('pot')}</button>`;
   const cardsHtml = () => {
     const b = book();
     const list = b[show].filter(r => match(r) && (!tag || hasTag(r, tag)));
     if (!b.all.length) return `<div class="empty"><div class="big">${App.icon('book')}</div><p>Your recipe book is empty.<br>Tap <b>+</b> to add a recipe, or save one from <a href="#/search">Search</a>.</p></div>`;
+    if (have.length) return U.haveGrid(list, have);
     if (!list.length) return query.trim()
-      ? `<div class="empty">Nothing in your book matches “${U.esc(query)}”.<br><a href="#/search">Search all recipes</a></div>`
+      ? `<div class="empty">Nothing in your recipes matches “${U.esc(query)}”.<br><a href="#/search">Search all recipes</a></div>`
       : `<div class="muted hint-line">${show === 'saved' ? `Tap ${App.glyph('heart')} on any recipe in <a href="#/search">Search</a> to save it here.` : 'Tap + to add your first recipe.'}</div>`;
     return `<div class="recipe-grid">${list.map(App.ui.recipeCard).join('')}</div>`;
   };
@@ -66,29 +73,33 @@ App.views.library = root => {
   }
 
   root.innerHTML = `
-    ${App.ui.bar(`<label class="ft-search">${App.glyph('search')}<input class="input search" type="search" placeholder="Search your book" value="${U.esc(query)}" aria-label="Search your book"></label>`,
-      btnsHtml(), `<div class="filters scroll ft-chips" id="chips">${chipsHtml()}</div><div id="lib-menu">${filterMenuHtml()}</div>`)}
+    ${App.ui.bar(`<label class="ft-search">${App.glyph('search')}<input class="input search" type="search" placeholder="Search your recipes" value="${U.esc(query)}" aria-label="Search your recipes"></label>`,
+      btnsHtml(), `<div id="below">${belowHtml()}</div>`)}
     <div id="cards" class="under-top">${cardsHtml()}</div>
     <button class="fab" aria-label="Add recipe" data-act="add">${App.glyph('plus')}</button>`;
   App.ui.watchBar(root);
 
+  const redraw = () => {
+    root.querySelector('#below').innerHTML = belowHtml(); root.querySelector('#cards').innerHTML = cardsHtml();
+    root.querySelector('#ft-btns').innerHTML = btnsHtml() + App.ui.acctBtn();
+  };
+  const addHave = box => {
+    const add = box.value.split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+    if (!add.length) return;
+    for (const a of add) if (!have.includes(a)) have.push(a);
+    redraw();
+    root.querySelector('[data-have-add]')?.focus();
+  };
+  const onKey = e => { if (e.key === 'Enter' && e.target.dataset?.haveAdd != null) { e.preventDefault(); addHave(e.target); } };
+  root.addEventListener('keydown', onKey);
+  root.onchange = e => { if (e.target.dataset?.haveAdd != null) addHave(e.target); };
   root.onclick = e => {
-    const redraw = () => {
-      root.querySelector('#chips').innerHTML = chipsHtml(); root.querySelector('#cards').innerHTML = cardsHtml();
-      root.querySelector('#lib-menu').innerHTML = filterMenuHtml();
-      root.querySelector('#ft-btns').innerHTML = btnsHtml() + App.ui.acctBtn();
-    };
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'add') { if (!App.needLogin()) addSheet(); return; }
-    const f = e.target.closest('[data-show]'), tf = e.target.closest('[data-tagf]'), pick = e.target.closest('[data-pick]');
+    const f = e.target.closest('[data-show]'), tf = e.target.closest('[data-tagf]'), h = e.target.closest('[data-have]');
     if (act === 'filters') { menuOpen = !menuOpen; redraw(); }
-    else if (pick) {
-      const t = pick.dataset.pick;
-      const list = myChips().includes(t) ? myChips().filter(x => x !== t) : [...myChips(), t];
-      if (!list.includes(tag)) tag = App.views.library.tag = null;
-      S.updateProfile(S.me().id, { bookFilters: list });
-      redraw();
-    }
+    else if (act === 'have') { haveOpen = !haveOpen; if (!haveOpen) have.length = 0; redraw(); if (haveOpen) root.querySelector('[data-have-add]')?.focus(); }
+    else if (h) { have.splice(have.indexOf(h.dataset.have), 1); redraw(); }
     else if (f) { show = App.views.library.show = f.dataset.show === show ? 'all' : f.dataset.show; redraw(); }
     else if (tf) { tag = App.views.library.tag = tag === tf.dataset.tagf ? null : tf.dataset.tagf; redraw(); }
     else if (menuOpen && !e.target.closest('.filter-menu')) { menuOpen = false; redraw(); }
@@ -139,4 +150,5 @@ App.views.library = root => {
     query = App.views.library.query = e.target.value;
     root.querySelector('#cards').innerHTML = cardsHtml();
   });
+  return () => { root.removeEventListener('keydown', onKey); root.onchange = null; };
 };

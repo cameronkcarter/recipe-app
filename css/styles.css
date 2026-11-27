@@ -1046,7 +1046,7 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timers-h, 0px); }
 .feed { display: flex; flex-direction: column; margin: 0 -16px; }
 .feed-post {
-  --post-h: calc(100dvh - var(--nav-h) - env(safe-area-inset-bottom) - var(--timers-h, 0px));
+  --post-h: calc(100svh - var(--nav-h) - env(safe-area-inset-bottom) - var(--timers-h, 0px));
   position: relative; height: var(--post-h); min-height: 420px; padding: 0; overflow: hidden;
   border: 0; border-radius: 0; box-shadow: none; background: #1d1714;
   scroll-snap-align: start; scroll-snap-stop: always;
@@ -1074,17 +1074,17 @@ html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timer
 /* The floating bar over the feed: see-through, white icons, a soft shade so they read on any photo. */
 .feed-top {
   position: fixed; z-index: 6; left: 50%; transform: translateX(-50%); top: var(--timers-h, 0px);
-  width: min(640px, 100%); padding: calc(10px + env(safe-area-inset-top)) 12px 18px;
+  width: min(640px, 100%); padding: calc(10px + env(safe-area-inset-top)) 16px 18px;
   background: linear-gradient(to bottom, rgba(20,14,10,.55) 0%, rgba(20,14,10,.25) 60%, rgba(20,14,10,0) 100%);
   display: flex; flex-direction: column; gap: 8px; pointer-events: none;
 }
 .feed-top > * { pointer-events: auto; }
+.feed-top > div:empty { display: none; }
 .ft-row { display: flex; align-items: center; gap: 6px; }
 .ft-search { flex: 1; min-width: 0; position: relative; display: block; }
 .ft-search .gl { position: absolute; z-index: 1; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: #fff; pointer-events: none; }
 .ft-search .search { width: 100%; height: 40px; padding: 0 12px 0 38px; border-radius: 999px; font-size: 1rem;
-  border: 1.5px solid rgba(255,255,255,.35); background: rgba(255,255,255,.16); color: #fff; box-shadow: none;
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  border: 1.5px solid rgba(255,255,255,.35); background: rgba(20,14,10,.28); color: #fff; box-shadow: none; }
 .ft-search .search::placeholder { color: rgba(255,255,255,.85); }
 .ft-search .search:focus { outline: none; border-color: rgba(255,255,255,.8); background: rgba(20,14,10,.45); }
 .ft-btns { display: flex; align-items: center; gap: 2px; flex: none; }
@@ -1093,16 +1093,18 @@ html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timer
 .ft-btn .gl { width: 22px; height: 22px; }
 .ft-btn .ic { width: 26px; height: 26px; }
 .ft-btn.on { background: rgba(255,255,255,.22); }
-.ft-acct { margin-left: 4px; }
+.ft-acct { margin-left: 4px; display: grid; place-items: center; width: 40px; height: 40px; line-height: 0; }
+.ft-acct .avatar { display: grid; }
 .ft-acct .avatar { width: 36px; height: 36px; box-shadow: 0 0 0 2px rgba(255,255,255,.85); }
 .ft-chips { margin: 0; }
 .ft-chips .chip.filter.on { background: rgba(255,255,255,.9); border-color: transparent; }
 .feed-top .filter-menu, .feed-top .have-box { margin: 0; max-height: 55dvh; overflow: auto; }
-.under-top:not(:has(.feed)) { padding-top: var(--ft-h, 64px); }
+.feed-top:not(.ft-grid) + .under-top:not(:has(.feed)) { padding-top: var(--ft-h, 64px); }
 /* Grid: the same bar, sitting on the page instead of over a photo. */
-.feed-top.ft-grid { background: var(--bg); padding-bottom: 10px; transition: background-color .35s ease; }
+.feed-top.ft-grid { position: sticky; left: auto; transform: none; width: auto; margin: 0 -16px 6px; background: var(--bg); padding-bottom: 10px; transition: background-color .35s ease; }
+.ft-grid .filter-menu { position: absolute; left: 16px; right: 16px; top: calc(100% - 6px); z-index: 2; }
 .ft-grid .ft-search .gl { color: var(--muted); }
-.ft-grid .ft-search .search { background: var(--surface); color: var(--text); border-color: var(--line); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.ft-grid .ft-search .search { background: var(--surface); color: var(--text); border-color: var(--line); }
 .ft-grid .ft-search .search::placeholder { color: var(--muted); }
 .ft-grid .ft-search .search:focus { background: var(--surface); border-color: var(--accent); }
 .ft-grid .ft-btn { color: var(--text); filter: none; }
@@ -1115,7 +1117,7 @@ html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timer
 .fp-act { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #fff; font-weight: 700; font-size: .72rem; line-height: 1.1;
   text-shadow: 0 1px 3px rgba(0,0,0,.5); }
 .fp-btn, .fp-rail .heart { width: 48px; height: 48px; margin: 0; border-radius: 50%; border: none; padding: 0; display: grid; place-items: center;
-  background: rgba(20,14,10,.38); color: #fff; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  background: rgba(20,14,10,.45); color: #fff; }
 .fp-btn:disabled { opacity: 1; cursor: default; }
 .fp-btn .ic { width: 30px; height: 30px; }
 .fp-btn .gl, .fp-rail .heart .gl { width: 26px; height: 26px; }
@@ -1124,8 +1126,7 @@ html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timer
 .fp-rail .heart.on { color: #f2667a; }
 .fp-rail .heart.mine { position: relative; cursor: default; }
 .fp-rail .heart.mine:active { transform: none; }
-.mine-badge { position: absolute; right: -3px; bottom: -3px; width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; overflow: hidden; display: grid; }
-.mine-badge .avatar { width: 22px; height: 22px; }
+
 .fp-body { padding-right: 76px; }
 .fp-count { font-weight: 800; font-size: .8rem; }
 /* My Recipes and Shopping use the same top bar; Shopping (and My Recipes logged out) show the page name in the pill's place. */

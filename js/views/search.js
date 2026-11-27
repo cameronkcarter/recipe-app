@@ -5,7 +5,7 @@
 App.views = App.views || {};
 App.views.search = root => {
   const U = App.util, S = App.store;
-  const st = App.views.search.state ||= { query: '', people: [], tags: [], have: [] };
+  const st = App.views.search.state ||= { query: '', tags: [], have: [] };
   st.have ||= [];
   let open = false; // the filter menu
   let haveOpen = st.have.length > 0; // the "What can I make?" box
@@ -27,29 +27,25 @@ App.views.search = root => {
   };
   const tagIcon = t => t === 'vegan' ? App.icon('leaf') : /instant ?pot/.test(t) ? App.icon('ip') : '';
   const filtersHtml = () => {
-    const chips = [
-      ...st.people.map(id => { const p = S.profile(id); return p ? `<button class="chip filter on cook" data-person="${U.esc(id)}" aria-label="Remove filter">${U.avatarHtml(p)}${U.esc(U.firstName(p))}${App.glyph('x')}</button>` : ''; }),
-      ...st.tags.map(t => `<button class="chip filter on" data-tag="${U.esc(t)}" aria-label="Remove filter">${tagIcon(t)}${U.esc(t)}${App.glyph('x')}</button>`),
-    ].join('');
-    const cooks = S.profiles().filter(p => S.recipes().some(r => r.author === p.id));
+    const chips = st.tags.map(t => `<button class="chip filter on" data-tag="${U.esc(t)}" aria-label="Remove filter">${tagIcon(t)}${U.esc(t)}${App.glyph('x')}</button>`).join('');
     const menu = open ? `<div class="card filter-menu">
-        <div class="fm-head">Added by</div>
-        <div class="fm-opts">${cooks.map(p => `<button class="chip filter cook ${st.people.includes(p.id) ? 'on' : ''}" data-person="${U.esc(p.id)}">${U.avatarHtml(p)}${U.esc(p.name)}</button>`).join('')}</div>
         <div class="fm-head">Tagged <span class="muted">labels cooks add to their recipes</span></div>
         <div class="fm-opts">${tagCounts().map(([t, n]) => `<button class="chip filter ${st.tags.includes(t) ? 'on' : ''}" data-tag="${U.esc(t)}">${tagIcon(t)}${U.esc(t)}<b>${n}</b></button>`).join('') || '<span class="muted">No tags yet.</span>'}</div>
       </div>` : '';
-    const have = haveOpen ? `<div class="card have-box">
-        <div class="fm-head">What can I make? <span class="muted">ingredients you have</span></div>
-        <div class="have-chips">${st.have.map(h => `<button class="chip filter on" data-have="${U.esc(h)}" aria-label="Remove ${U.esc(h)}">${U.ingIconHtml({ name: h })}${U.esc(h)}${App.glyph('x')}</button>`).join('')}
-          <input class="inl have-add" data-have-add placeholder="${st.have.length ? '+ another' : 'like chicken, rice'}" aria-label="Add an ingredient you have" enterkeyhint="done" autocomplete="off"></div>
-        <p class="muted have-hint">Salt, pepper, oil and water count as on hand.</p>
-      </div>` : '';
+    const have = haveOpen ? U.haveBox(st.have) : '';
     // Filter and What can I make? are icons in the top bar, so only chosen filters show here.
     return `${chips ? `<div class="filters scroll ft-chips">${chips}</div>` : ''}${menu}${have}`;
   };
+  // Typing a name also finds people: their profiles show as a row under the search box.
+  const peopleHtml = () => {
+    const q = st.query.trim().toLowerCase();
+    if (!q) return '';
+    const found = S.profiles().filter(p => p.name?.toLowerCase().split(/\s+/).some(w => w.startsWith(q)) || p.name?.toLowerCase().startsWith(q));
+    return found.length ? `<div class="filters scroll ft-chips ft-people">${found.slice(0, 8).map(p => `<a class="chip filter cook" href="#/u/${encodeURIComponent(p.id)}">${U.avatarHtml(p)}${U.esc(p.name)}</a>`).join('')}</div>` : '';
+  };
   // The top bar, the same in Grid and Scroll: search, Filter, What can I make?, the other view, and your account.
   const ftBtns = () => {
-    const filtering = open || st.people.length || st.tags.length;
+    const filtering = open || st.tags.length;
     return `<button type="button" class="ft-btn ${filtering ? 'on' : ''}" data-act="filters" aria-expanded="${open}" aria-label="Filter">${App.glyph('filter')}</button>
       <button type="button" class="ft-btn ${haveOpen ? 'on' : ''}" data-act="have" aria-expanded="${haveOpen}" aria-label="What can I make?">${App.icon('pot')}</button>
       ${view() === 'scroll' ? `<button type="button" class="ft-btn" data-view="grid" aria-label="Grid view">${App.glyph('grid')}</button>`
@@ -57,23 +53,9 @@ App.views.search = root => {
 `;
   };
 
-  // "What can I make?": how many of a recipe's ingredients you're missing (staples don't count).
-  const STAPLE = /^(salt|kosher salt|sea salt|(black )?pepper|water|ice|(olive |vegetable |canola |neutral |cooking )?oil|cooking spray)$/;
-  const norm = x => String(x).toLowerCase().trim().replace(/\s+/g, ' ').replace(/(es|s)$/, '');
-  const missing = r => {
-    const haves = st.have.map(norm);
-    const need = (r.ingredients || []).filter(g => !STAPLE.test(String(g.name).toLowerCase().trim()));
-    // "rice" doesn't cover rice vinegar, and "chicken" doesn't cover chicken broth
-    const OTHER = /\b(vinegar|flour|noodles?|wine|sauce|stock|broth|bouillon|powder|paste|oil|milk|syrup|paper|cakes?|seasoning|extract)$/;
-    const got = g => { const n = norm(g.name); return haves.some(h => n === h || (h.length > 3 && h.includes(n)) || (n.includes(h) && !(OTHER.test(n) && !OTHER.test(h)))); };
-    const have = need.filter(got).length;
-    return { miss: need.filter(g => !got(g)), have, share: need.length ? have / need.length : 0 };
-  };
-
   const filtered = () => {
     const q = st.query.trim().toLowerCase();
     return S.recipes().filter(r =>
-      (!st.people.length || st.people.includes(r.author)) &&
       st.tags.every(t => (r.tags || []).some(x => x.toLowerCase() === t)) &&
       (!q || r.title.toLowerCase().includes(q) || (r.tags || []).some(t => t.toLowerCase().includes(q)) ||
         r.ingredients.some(i => i.name.toLowerCase().includes(q)) || S.profile(r.author)?.name.toLowerCase().includes(q)));
@@ -91,7 +73,7 @@ App.views.search = root => {
     if (r.author) saves.add(r.author);
     const count = `<span class="fp-count" title="Saved by ${saves.size}">${saves.size}</span>`;
     const rail = `<div class="fp-rail">
-        ${mine ? `<div class="fp-act"><span class="heart on mine" role="img" aria-label="Your recipe, saved by ${saves.size}">${App.icon('heart')}<span class="mine-badge">${U.avatarHtml(S.me())}</span></span>${count}</div>`
+        ${mine ? `<div class="fp-act"><span class="heart on mine" role="img" aria-label="Your recipe, saved by ${saves.size}">${App.icon('heart')}</span>${count}</div>`
           : `<div class="fp-act">${App.ui.heart(r.id)}${count}</div>`}
         <div class="fp-act"><button type="button" class="fp-btn ${onList ? 'on' : ''}" data-act="to-list" data-id="${id}" ${onList ? 'disabled' : ''} aria-label="${onList ? 'On shopping list' : 'Add to shopping list'}">${onList ? App.glyph('check') : App.icon('basket')}</button><span>${onList ? 'On list' : 'Shopping'}</span></div>
         <div class="fp-act"><button type="button" class="fp-btn" data-act="hide" data-id="${id}" aria-label="Hide from this feed">${App.glyph('hide')}</button><span>Hide</span></div>
@@ -110,10 +92,7 @@ App.views.search = root => {
     const q = st.query.trim();
     let list = filtered();
     if (st.have.length) {
-      const ranked = list.map(r => ({ r, ...missing(r) })).filter(x => x.have > 0).sort((a, b) => b.share - a.share || a.miss.length - b.miss.length);
-      if (!ranked.length) return `<div class="empty">No recipes use ${U.esc(st.have.join(', '))}.</div>`;
-      return `<div class="recipe-grid">${ranked.map(({ r, miss }) => App.ui.recipeCard(r,
-        `<div class="have-line ${miss.length ? '' : 'all'}">${miss.length ? `Missing ${miss.length}: ${U.esc(miss.slice(0, 2).map(g => g.name).join(', '))}${miss.length > 2 ? '…' : ''}` : 'You have everything'}</div>`)).join('')}</div>`;
+      return U.haveGrid(list, st.have);
     }
     if (!list.length) return `<div class="empty">No recipes match${q ? ` “${U.esc(q)}”` : ''}.</div>`;
     if (view() === 'grid') return grid(list);
@@ -127,9 +106,9 @@ App.views.search = root => {
   // Both views share one top bar. In Scroll it's see-through over the photos; in Grid it sits on the page.
   // Results start below the bar and any chosen filters or the What can I make? box; the Filter menu drops over them.
   const render = () => {
-    const box = `<input class="input search" type="search" placeholder="Search" value="${U.esc(st.query)}" aria-label="Search recipes">`;
+    const box = `<input class="input search" type="search" placeholder="Search recipes and people" value="${U.esc(st.query)}" aria-label="Search recipes and people">`;
     root.innerHTML = `
-      ${App.ui.bar(`<label class="ft-search">${App.glyph('search')}${box}</label>`, ftBtns(), `<div id="filters">${filtersHtml()}</div>`, view() === 'grid' ? 'ft-grid' : '')}
+      ${App.ui.bar(`<label class="ft-search">${App.glyph('search')}${box}</label>`, ftBtns(), `<div id="people">${peopleHtml()}</div><div id="filters">${filtersHtml()}</div>`, view() === 'grid' ? 'ft-grid' : '')}
       <div id="results" class="under-top">${resultsHtml()}</div>`;
     App.ui.watchBar(root);
   };
@@ -140,7 +119,7 @@ App.views.search = root => {
     const b = root.querySelector('#ft-btns'); if (b) b.innerHTML = ftBtns() + App.ui.acctBtn();
   };
   const results = () => { root.querySelector('#results').innerHTML = resultsHtml(); };
-  root.oninput = e => { if (e.target.classList.contains('search')) { st.query = e.target.value; results(); } };
+  root.oninput = e => { if (e.target.classList.contains('search')) { st.query = e.target.value; root.querySelector('#people').innerHTML = peopleHtml(); results(); } };
   const addHave = box => {
     const add = box.value.split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
     if (!add.length) return;
@@ -148,17 +127,17 @@ App.views.search = root => {
     redraw();
     root.querySelector('[data-have-add]')?.focus();
   };
-  root.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset?.haveAdd != null) { e.preventDefault(); addHave(e.target); } });
+  const onKey = e => { if (e.key === 'Enter' && e.target.dataset?.haveAdd != null) { e.preventDefault(); addHave(e.target); } };
+  root.addEventListener('keydown', onKey);
   root.onchange = e => { if (e.target.dataset?.haveAdd != null) addHave(e.target); };
   root.onclick = e => {
-    const p = e.target.closest('[data-person]'), t = e.target.closest('[data-tag]'), v = e.target.closest('[data-view]');
+    const t = e.target.closest('[data-tag]'), v = e.target.closest('[data-view]');
     const h = e.target.closest('[data-have]'), act = e.target.closest('[data-act]')?.dataset.act;
     const toggle = (arr, x) => arr.includes(x) ? arr.filter(y => y !== x) : [...arr, x];
     if (v) { setView(v.dataset.view); open = false; render(); }
     else if (act === 'filters') { open = !open; redraw(); }
     else if (act === 'have') { haveOpen = !haveOpen; if (!haveOpen) st.have = []; redraw(); if (haveOpen) root.querySelector('[data-have-add]')?.focus(); }
     else if (h) { st.have = st.have.filter(x => x !== h.dataset.have); redraw(); }
-    else if (p) { st.people = toggle(st.people, p.dataset.person); redraw(); }
     else if (t) { st.tags = toggle(st.tags, t.dataset.tag); redraw(); }
     else if (act === 'to-list') {
       if (App.needLogin()) return;
@@ -175,6 +154,7 @@ App.views.search = root => {
     }
     else if (open && !e.target.closest('.filter-menu')) { open = false; redraw(); }
   };
+  return () => { root.removeEventListener('keydown', onKey); root.onchange = null; };
 };
 
 // One person: their picture, name, and the recipes they added.
