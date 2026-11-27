@@ -1081,7 +1081,7 @@ html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timer
 .feed-top > * { pointer-events: auto; }
 .ft-row { display: flex; align-items: center; gap: 6px; }
 .ft-search { flex: 1; min-width: 0; position: relative; display: block; }
-.ft-search .gl { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: #fff; pointer-events: none; }
+.ft-search .gl { position: absolute; z-index: 1; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: #fff; pointer-events: none; }
 .ft-search .search { width: 100%; height: 40px; padding: 0 12px 0 38px; border-radius: 999px; font-size: 1rem;
   border: 1.5px solid rgba(255,255,255,.35); background: rgba(255,255,255,.16); color: #fff; box-shadow: none;
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
