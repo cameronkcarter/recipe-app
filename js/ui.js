@@ -113,6 +113,30 @@ App.ui = {};
         : `<button class="btn small primary" data-acct>Log in</button>`}</header>`;
   };
 
+  // The top bar every tab shares (Search, My Recipes, Shopping): a pill on the left (search, or add an item),
+  // round icon buttons, and your account. It's fixed at the top; content under it sits in .under-top.
+  App.ui.acctBtn = () => {
+    const me = App.store.me();
+    return me ? `<button type="button" class="acct ft-acct" data-acct aria-label="Your account">${U.avatarHtml(me)}</button>`
+      : `<button type="button" class="btn small primary" data-acct>Log in</button>`;
+  };
+  App.ui.bar = (pill, btns = '', below = '', cls = 'ft-grid') => `<div class="feed-top ${cls}"><div class="ft-row">${pill}<div class="ft-btns" id="ft-btns">${btns}${App.ui.acctBtn()}</div></div>${below}</div>`;
+  // Keep --ft-h at the bar's height (its row, chosen chips and any box that stays open), so content starts below it.
+  // Drop-down menus (.filter-menu) float over the content instead.
+  let barObs;
+  App.ui.watchBar = root => {
+    barObs?.disconnect();
+    const top = root.querySelector('.feed-top');
+    if (!top) return;
+    const measure = () => {
+      const base = top.getBoundingClientRect().top;
+      const h = Math.max(...[...top.querySelectorAll('.ft-row, .ft-chips, .have-box')].map(el => el.getBoundingClientRect().bottom - base));
+      document.documentElement.style.setProperty('--ft-h', `${Math.ceil(h)}px`);
+    };
+    measure();
+    if (window.ResizeObserver) { barObs = new ResizeObserver(measure); barObs.observe(top); }
+  };
+
   // The account panel. Logged in: your name and picture (tap to change), night mode, Log out.
   // Logged out: Log in (pick your profile — no passwords yet) or Sign up (name + picture).
   const FOODS = ['avo', 'squash', 'onion', 'garlic', 'tomato', 'lemon', 'lime', 'orange', 'apple', 'banana', 'berries', 'carrot', 'mushroom', 'broccoli', 'corn',

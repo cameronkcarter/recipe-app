@@ -49,13 +49,12 @@ App.views.search = root => {
   };
   // The top bar, the same in Grid and Scroll: search, Filter, What can I make?, the other view, and your account.
   const ftBtns = () => {
-    const me = S.me(), filtering = open || st.people.length || st.tags.length;
+    const filtering = open || st.people.length || st.tags.length;
     return `<button type="button" class="ft-btn ${filtering ? 'on' : ''}" data-act="filters" aria-expanded="${open}" aria-label="Filter">${App.glyph('filter')}</button>
       <button type="button" class="ft-btn ${haveOpen ? 'on' : ''}" data-act="have" aria-expanded="${haveOpen}" aria-label="What can I make?">${App.icon('pot')}</button>
       ${view() === 'scroll' ? `<button type="button" class="ft-btn" data-view="grid" aria-label="Grid view">${App.glyph('grid')}</button>`
         : `<button type="button" class="ft-btn" data-view="scroll" aria-label="Scroll view">${App.glyph('feed')}</button>`}
-      ${me ? `<button type="button" class="acct ft-acct" data-acct aria-label="Your account">${U.avatarHtml(me)}</button>`
-        : `<button type="button" class="btn small primary" data-acct>Log in</button>`}`;
+`;
   };
 
   // "What can I make?": how many of a recipe's ingredients you're missing (staples don't count).
@@ -127,28 +126,18 @@ App.views.search = root => {
 
   // Both views share one top bar. In Scroll it's see-through over the photos; in Grid it sits on the page.
   // Results start below the bar and any chosen filters or the What can I make? box; the Filter menu drops over them.
-  let ro;
   const render = () => {
-    ro?.disconnect();
     const box = `<input class="input search" type="search" placeholder="Search" value="${U.esc(st.query)}" aria-label="Search recipes">`;
     root.innerHTML = `
-      <div class="feed-top ${view() === 'grid' ? 'ft-grid' : ''}"><div class="ft-row"><label class="ft-search">${App.glyph('search')}${box}</label><div class="ft-btns" id="ft-btns">${ftBtns()}</div></div>
-        <div id="filters">${filtersHtml()}</div></div>
+      ${App.ui.bar(`<label class="ft-search">${App.glyph('search')}${box}</label>`, ftBtns(), `<div id="filters">${filtersHtml()}</div>`, view() === 'grid' ? 'ft-grid' : '')}
       <div id="results" class="under-top">${resultsHtml()}</div>`;
-    const top = root.querySelector('.feed-top');
-    const measure = () => {
-      const base = top.getBoundingClientRect().top;
-      const h = Math.max(...[...top.querySelectorAll('.ft-row, .ft-chips, .have-box')].map(el => el.getBoundingClientRect().bottom - base));
-      document.documentElement.style.setProperty('--ft-h', `${Math.ceil(h)}px`);
-    };
-    measure();
-    if (window.ResizeObserver) { ro = new ResizeObserver(measure); ro.observe(top); }
+    App.ui.watchBar(root);
   };
   render();
 
   const redraw = () => {
     root.querySelector('#filters').innerHTML = filtersHtml(); root.querySelector('#results').innerHTML = resultsHtml();
-    const b = root.querySelector('#ft-btns'); if (b) b.innerHTML = ftBtns();
+    const b = root.querySelector('#ft-btns'); if (b) b.innerHTML = ftBtns() + App.ui.acctBtn();
   };
   const results = () => { root.querySelector('#results').innerHTML = resultsHtml(); };
   root.oninput = e => { if (e.target.classList.contains('search')) { st.query = e.target.value; results(); } };

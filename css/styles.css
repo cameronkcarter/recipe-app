@@ -1128,3 +1128,6 @@ html:has(.feed) { scroll-snap-type: y mandatory; scroll-padding-top: var(--timer
 .mine-badge .avatar { width: 22px; height: 22px; }
 .fp-body { padding-right: 76px; }
 .fp-count { font-weight: 800; font-size: .8rem; }
+/* My Recipes and Shopping use the same top bar; Shopping (and My Recipes logged out) show the page name in the pill's place. */
+.ft-title { flex: 1; min-width: 0; margin: 0; font-size: 1.7rem; line-height: 40px; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ft-grid .ft-chips { margin-top: 2px; }

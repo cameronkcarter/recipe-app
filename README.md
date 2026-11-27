@@ -34,7 +34,7 @@ Simple, symbol-based recipes, your own recipe book, and a shopping list.
 
 ## Tabs and accounts
 - **Search** (left): every recipe on the site, with filter chips for cooks and tags. "+ Filter" narrows by cook or tag; the heart saves a recipe to your book (with Undo).
-- **My Recipes** (middle): your recipe book in one grid: **Mine** (ones you added) and **Saved** (other people's, tinted rose). Chips on top show the counts and filter.
+- **My Recipes** (middle): your recipe book in one grid: **Mine** (ones you added) and **Saved** (other people's, tinted rose). Chips on top show the counts and filter; the Filter icon in the top bar adds tag chips (vegan, Instant Pot…). All three tabs share one top bar: a pill on the left (search, or the page name on Shopping), round icon buttons, and your account.
 - **Shopping** (right): your own shopping list.
 
 The button at the top right of every page is **Log in** (or your picture once logged in): name and picture,

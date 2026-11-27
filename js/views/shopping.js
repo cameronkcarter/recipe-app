@@ -8,13 +8,14 @@ App.views.shopping = root => {
   let L = S.myList();
   const fresh = () => { L = S.myList() || L; L.hidden ||= {}; L.cats ||= {}; return L; };
   if (!L) {
-    root.innerHTML = `${App.ui.topbar('<h1>Shopping</h1>')}
-      <div class="card logged-out">
+    root.innerHTML = `${App.ui.bar('<h1 class="ft-title">Shopping</h1>')}
+      <div class="under-top"><div class="card logged-out">
         <div class="big">${App.icon('basket')}</div>
         <h2>Log in to make a shopping list</h2>
         <p class="muted">Add recipes and their ingredients get combined into one list, sorted by aisle.</p>
         <button class="btn primary" data-act="login">Log in</button>
-      </div>`;
+      </div></div>`;
+    App.ui.watchBar(root);
     root.onclick = e => { if (e.target.closest('[data-act=login]')) App.needLogin(); };
     return;
   }
@@ -55,7 +56,8 @@ App.views.shopping = root => {
     const doneCount = rows.filter(r => L.checked[r.key]).length + L.extras.filter(x => x.checked).length;
 
     root.innerHTML = `
-      ${App.ui.topbar('<h1>Shopping</h1>', total ? `<button class="icon-btn" data-act="copy" aria-label="Copy list">${App.glyph('copy')}</button>` : '')}
+      ${App.ui.bar('<h1 class="ft-title">Shopping</h1>', total ? `<button type="button" class="ft-btn" data-act="copy" aria-label="Copy list">${App.glyph('copy')}</button>` : '')}
+      <div class="under-top">
 
       <div class="section-label">Recipes <span class="lab-btns">${doneCount ? `<button class="btn small clear-checked" data-act="clear-checked" aria-label="Remove the ${doneCount} checked item${doneCount > 1 ? 's' : ''} from the list">${App.glyph('check')}Remove ${doneCount} checked</button>` : ''}<button class="btn small" data-act="pick">${App.glyph('plus')}Add recipes</button></span></div>
       ${L.recipes.length ? `<div class="shop-recipes">${L.recipes.map(e => {
@@ -84,7 +86,8 @@ App.views.shopping = root => {
         <input class="input" name="extra" placeholder="Add an item (paper towels, coffee…)">
         <button class="btn">Add</button>
       </form>
-`;
+      </div>`;
+    App.ui.watchBar(root);
   }
 
   root.onclick = e => {
