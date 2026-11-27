@@ -29,7 +29,7 @@ App.views.search = root => {
   const filtersHtml = () => {
     const chips = st.tags.map(t => `<button class="chip filter on" data-tag="${U.esc(t)}" aria-label="Remove filter">${tagIcon(t)}${U.esc(t)}${App.glyph('x')}</button>`).join('');
     const menu = open ? `<div class="card filter-menu">
-        <div class="fm-head">Tagged <span class="muted">labels cooks add to their recipes</span></div>
+        <div class="fm-head">Tags</div>
         <div class="fm-opts">${tagCounts().map(([t, n]) => `<button class="chip filter ${st.tags.includes(t) ? 'on' : ''}" data-tag="${U.esc(t)}">${tagIcon(t)}${U.esc(t)}<b>${n}</b></button>`).join('') || '<span class="muted">No tags yet.</span>'}</div>
       </div>` : '';
     const have = haveOpen ? U.haveBox(st.have) : '';

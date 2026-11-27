@@ -42,7 +42,7 @@ App.views.library = root => {
     return `<div class="card filter-menu">
       <div class="fm-head">Show</div>
       <div class="fm-opts">${Object.keys(SHOW).map(id => `<button class="chip filter ${id} ${show === id ? 'on' : ''}" data-show="${id}">${showIcon(id)}${SHOW[id]}<b>${b[id].length}</b></button>`).join('')}</div>
-      <div class="fm-head">Tagged</div>
+      <div class="fm-head">Tags</div>
       <div class="fm-opts">${tags.map(t => `<button class="chip filter ${tag === t ? 'on' : ''}" data-tagf="${U.esc(t)}">${tagIcon(t)}${U.esc(t)}<b>${b.all.filter(r => hasTag(r, t)).length}</b></button>`).join('')}</div>
     </div>`;
   };
