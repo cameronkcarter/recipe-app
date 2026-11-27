@@ -220,7 +220,7 @@ App.photos = {};
     const STEP = .06;
     App.ui.sheet(`<div class="photo-frame">
         <div class="sheet-head"><h3>Frame your photo</h3><button class="btn small" data-close>Cancel</button></div>
-        <div class="pf-shapes">${SHAPES.map(sh => `<figure class="pf-shape ${sh.id}"><div class="pf-window" style="aspect-ratio:${sh.w} / ${sh.h}"><img src="${url}" alt=""></div><figcaption>${sh.label}</figcaption></figure>`).join('')}</div>
+        <div class="pf-shapes">${SHAPES.map(sh => `<figure class="pf-shape ${sh.id}"><div class="pf-window"><img src="${url}" alt=""></div><figcaption>${sh.label}</figcaption></figure>`).join('')}</div>
         <div class="pf-controls">
           <div class="pf-zoom"><button class="icon-btn" data-pf="out" aria-label="Zoom out">${App.glyph('minus')}</button><span>Zoom</span><button class="icon-btn" data-pf="in" aria-label="Zoom in">${App.glyph('plus')}</button></div>
           <div class="pf-pad">
@@ -232,6 +232,15 @@ App.photos = {};
           </div>
         </div>
         <button class="btn primary block" data-pf="use">${useLabel}</button></div>`, (el, close) => {
+      // Size the two frames to share the row at the same height (set in px so nothing can spill over).
+      const size = () => {
+        const row = el.querySelector('.pf-shapes'), avail = (row.clientWidth || 300) - 12;
+        const h = Math.min(280, avail / SHAPES.reduce((t, sh) => t + sh.w / sh.h, 0));
+        el.querySelectorAll('.pf-shape').forEach((f, i) => {
+          const sh = SHAPES[i], win = f.querySelector('.pf-window');
+          win.style.width = Math.floor(h * sh.w / sh.h) + 'px'; win.style.height = Math.floor(h) + 'px';
+        });
+      };
       // show each frame exactly as the photo will look there
       const paint = () => el.querySelectorAll('.pf-window').forEach(win => {
         const pic = win.querySelector('img'), cw = win.clientWidth || 150, ch = win.clientHeight || 100;
@@ -239,8 +248,8 @@ App.photos = {};
         pic.style.width = p.dw + 'px'; pic.style.height = p.dh + 'px';
         pic.style.transform = `translate(${p.left}px, ${p.top}px)`;
       });
-      paint();
-      requestAnimationFrame(paint);
+      size(); paint();
+      requestAnimationFrame(() => { size(); paint(); });
       el.addEventListener('click', e => {
         const b = e.target.closest('[data-pf]');
         if (!b) return;
