@@ -86,6 +86,10 @@ Tap any ingredient, amount or oven temperature on a recipe (in the list or in a 
 
 With Sue on (All tips or Check-in only), a recipe you own shows a "Done cooking" button under the steps, and the question opens by itself once every step is swiped done. Each answer offers one change to the recipe with Undo (More salt raises the salt a little, More spice the hottest spice, Cook longer the longest cooking step, Too watery the main liquid) or saves a Next time note, which shows above the steps until you clear it. Each time is kept on the recipe (`cooked`, last 10) and shows as "Last time" in Sue's panel.
 
+## Search: grid or scroll
+
+The Search tab has a Grid / Scroll toggle (remembered on this device). Scroll is a feed of recipes that have a photo, one post each with Save, Add to list and Hide (hidden posts stay hidden on this device, with Undo); recipes without a photo are a tap away in Grid. Typing and filters work in both views. "What can I make?" takes the ingredients you have and lists recipes by how few they're missing (salt, pepper, oil and water count as on hand).
+
 ## Photos
 - One hero photo per recipe, added in the app by the cook who added the recipe: the camera button on the recipe's cover
   (cooking view or edit mode). The phone offers the camera or the photo library. The importer never takes photos from other sites.

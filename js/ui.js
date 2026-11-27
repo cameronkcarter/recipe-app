@@ -20,7 +20,8 @@ App.ui = {};
   // ---------- Recipe card (recipe book, search, someone's recipes) ----------
   // Photo (or the drawn cover: its color, dots, and its icon on a plate) and name; along the bottom, time on the right and — on someone else's recipe — the heart
   // (save it to your recipe book) with the cook's first name. Saved recipes are tinted rose, yours stay plain.
-  App.ui.recipeCard = r => {
+  // extra: optional html under the name (a "Missing 2" line in What can I make?)
+  App.ui.recipeCard = (r, extra) => {
     const S = App.store, tags = U.tagIcons(r);
     const mine = r.author && r.author === S.me()?.id;
     const saved = !mine && S.isSaved(r.id);
@@ -28,7 +29,7 @@ App.ui = {};
     return `<a class="card recipe-card ${saved ? 'saved' : ''}" href="#/r/${U.recipeKey(r)}">
       ${App.photos.coverHtml(r, 'card')}
       ${tags.length ? `<div class="tags">${tags.map(t => `<span class="tag-ico" title="${t.label}">${App.icon(t.icon)}</span>`).join('')}</div>` : ''}
-      <div class="name">${U.esc(r.title)}</div>
+      <div class="name">${U.esc(r.title)}</div>${typeof extra === 'string' ? extra : ''}
       <div class="meta">${mine ? '<span></span>' : `<span class="who">${App.ui.heart(r.id)}${by ? `<span class="cook">${U.esc(U.firstName(by))}</span>` : ''}</span>`}
         <span class="time">${App.icon('clock')}${U.fmtMinsShort(U.schedule(r).total)}</span></div></a>`;
   };

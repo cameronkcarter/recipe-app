@@ -1025,3 +1025,38 @@ body.dragging-now .ing-grip { cursor: grabbing; }
 .sue-list.plain li { font-weight: 600; }
 .ci-chips .chip { padding: 7px 13px; border: 2px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; font-family: inherit; }
 .ci-chips .chip:active { background: var(--surface-2); }
+
+/* ============ Nov 27: Search, grid or scroll (photo feed), and What can I make? ============ */
+.view-seg { margin-left: auto; padding: 2px; }
+.view-seg button { padding: 5px 10px; }
+.view-seg .gl { width: 18px; height: 18px; }
+.have-box { padding: 12px 14px; margin: -4px 0 12px; }
+.have-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.have-chips .chip .ing-ico { width: 20px; height: 20px; }
+.have-add { flex: 1; min-width: 140px; }
+.have-hint { margin: 8px 0 0; font-size: .82rem; }
+.have-line { font-size: .8rem; font-weight: 700; color: var(--muted); padding: 0 4px; }
+.have-line.all { color: var(--good); }
+html:has(.feed) { scroll-snap-type: y proximity; scroll-padding-top: 100px; }
+.feed { display: flex; flex-direction: column; gap: 18px; }
+.feed-post { padding: 0; overflow: hidden; scroll-snap-align: start; }
+.fp-photo { display: block; }
+.fp-photo .r-cover { border-radius: 0; margin: 0; }
+.fp-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; }
+.fp-title { font-family: var(--font-head); font-weight: 600; font-size: 1.25rem; line-height: 1.2; color: var(--text); text-decoration: none; }
+.fp-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; color: var(--muted); font-size: .88rem; font-weight: 700; }
+.fp-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.fp-meta .ic { width: 18px; height: 18px; }
+.fp-meta .dot { opacity: .6; }
+.fp-cook { display: inline-flex; align-items: center; gap: 6px; color: inherit; text-decoration: none; }
+.fp-cook .avatar { width: 24px; height: 24px; }
+.fp-meta .tag-ico .ic { width: 20px; height: 20px; }
+.fp-acts { display: flex; align-items: center; gap: 8px; }
+.fp-acts .btn .ic { width: 20px; height: 20px; }
+.fp-save { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; font-size: .9rem; }
+.fp-hide { margin-left: auto; color: var(--muted); }
+.fp-hide .gl { width: 18px; height: 18px; }
+.feed-more { text-align: center; font-size: .88rem; margin: 16px 0; }
+.feed-empty { display: flex; gap: 12px; align-items: center; padding: 14px; margin-bottom: 12px; }
+.feed-empty > .ic { width: 40px; height: 40px; flex: none; }
+.feed-empty p { margin: 2px 0 0; font-size: .88rem; }
