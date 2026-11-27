@@ -129,7 +129,8 @@ App.kitchen = {};
     { match: /maple syrup/, text: 'Honey, same amount.' },
     { match: /coconut oil/, text: 'Any neutral oil, same amount.' },
     { match: /\bmilk\b/, skip: /coconut|buttermilk/, text: 'Half water, half cream or yogurt. Or any plant milk.' },
-    { match: /fresh (basil|parsley|cilantro|thyme|oregano|rosemary|dill|mint|sage|tarragon|chives)|^(basil|parsley|cilantro|thyme|oregano|rosemary|dill|mint|sage|tarragon|chives)$/, skip: /dried/, text: 'Dried, about ⅓ as much.' },
+    { match: /fresh (basil|parsley|cilantro|thyme|oregano|rosemary|dill|mint|sage|tarragon|chives)/, text: 'Dried, about ⅓ as much.' },
+    { match: /^(basil|parsley|cilantro|thyme|oregano|rosemary|dill|mint|sage|tarragon|chives)$/, text: 'Swap fresh and dried: dried is about 3 times as strong.' },
     { match: /dried (basil|parsley|thyme|oregano|rosemary|dill|mint|sage|tarragon)/, text: 'Fresh, about 3 times as much.' },
   ];
   const find = (list, name) => {
